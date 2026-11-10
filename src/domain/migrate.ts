@@ -21,6 +21,7 @@ export const migrations: Record<number, Migration> = {
   2: migrateV2ToV3,
   3: migrateV3ToV4,
   4: migrateV4ToV5,
+  5: migrateV5ToV6,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -135,6 +136,22 @@ export function migrateV4ToV5(data: Record<string, unknown>): Record<string, unk
     }
   }
   plan.schemaVersion = 5;
+  return plan;
+}
+
+/**
+ * Version 6 ergänzt den manuellen Betriebsmittelbedarf. Ältere Pläne haben ihn nicht,
+ * der Bedarf wird dann 0 und nicht aus Umsatz oder Kosten abgeleitet.
+ */
+export function migrateV5ToV6(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  const kapitalbedarf = plan.kapitalbedarf;
+  if (isRecord(kapitalbedarf) && isRecord(kapitalbedarf.betriebsmittel)) {
+    if (kapitalbedarf.betriebsmittel.betriebsmittelbedarfCents == null) {
+      kapitalbedarf.betriebsmittel.betriebsmittelbedarfCents = 0;
+    }
+  }
+  plan.schemaVersion = 6;
   return plan;
 }
 

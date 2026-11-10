@@ -1,6 +1,6 @@
 # Datenmodell des Finanzplans
 
-Dieser Text erklärt, welche Angaben eine gründende Person macht und wie sie im Plan zusammenhängen. Er ist für die fachliche Prüfung gedacht, nicht als Bedienungsanleitung. Die App rechnet in diesem Schritt noch nichts. Sie merkt sich nur die Eingaben, prüft, ob sie zusammenpassen, und kann sie als JSON-Datei speichern und wieder einlesen.
+Dieser Text erklärt, welche Angaben eine gründende Person macht und wie sie im Plan zusammenhängen. Er ist für die fachliche Prüfung gedacht, nicht als Bedienungsanleitung. Die App merkt sich die Eingaben, prüft, ob sie zusammenpassen, und kann sie als JSON-Datei speichern und wieder einlesen. Die Monatswerte und die Berichte werden daraus gerechnet und nicht in den Plan zurückgeschrieben. Die Berichte stehen in [berichte.md](berichte.md).
 
 Ein durchgängig erfundener Fall ist nicht genug, um die Formen zu sehen. Im Projekt liegen drei deutlich gekennzeichnete Beispiele: Lina Bergmann mit dem Grafikstudio „Studio Nordlicht“, der Elektromeister Jonas Heller mit Fahrzeug, Werkzeug und Thüringer Mikrodarlehen, und Mara Sommer mit dem Café Leseecke, Küche, Wareneinsatzquote, Personal und Saison. Die Beträge sind nicht als Vorlage für einen Antrag gedacht.
 
@@ -91,7 +91,9 @@ Einmalbeträge mit Monat, Umsatzsteuersatz und Zahlungsziel. Beispiele: Gewerbea
 
 ### Betriebsmittel
 
-Ein Betrag für die Liquiditätsreserve zu Beginn. Das ist kein Aufwand, sondern Geld, das als Puffer im Kapitalbedarf steht. Optional ein Waren-Erstbestand netto samt Umsatzsteuersatz. Der laufende Wareneinsatz steht bei den Umsatzlinien, nicht hier.
+Ein manuell eingegebener Betriebsmittelbedarf. Die Rechnung leitet ihn nicht aus Umsatz oder Kosten ab. Fehlt er in einem älteren Plan, wird er beim Einlesen 0.
+
+Dazu ein Betrag für die Liquiditätsreserve zu Beginn. Das ist kein Aufwand, sondern Geld, das als Puffer im Kapitalbedarf steht. Optional ein Waren-Erstbestand netto samt Umsatzsteuersatz. Der laufende Wareneinsatz steht bei den Umsatzlinien, nicht hier. Betriebsmittelbedarf und Reserve sind keine Zahlungsströme.
 
 ## Finanzierung
 
@@ -263,7 +265,7 @@ Neue Posten, die es nur im Worst Case gibt, kann ein Szenario nicht anlegen. Daf
 
 ## Was bewusst nicht im Plan steht
 
-- keine fertige GuV, keine Liquidität, kein Break-even, keine Diagrammdaten
+- keine gespeicherte GuV, keine gespeicherte Liquidität, kein gespeicherter Break-even. Die Berichte werden bei Bedarf gerechnet und nicht in den Plan geschrieben
 - keine 36 ausgeschriebenen Monatsspalten neben der Regel
 - keine Eingabe gesetzlicher Steuersätze und keine Sozialversicherungssätze. Die Steuersätze liegen im Parametersatz
 - keine Benutzerkonten
@@ -277,7 +279,7 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 5. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt.
+`schemaVersion` steht im Plan und ist derzeit 6. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt. Version 5 ergänzt den manuellen Betriebsmittelbedarf. Fehlt er, wird er 0.
 
 Ein Plan hat den Status Entwurf oder vollständig. Der Entwurf darf ohne Rechtsform, ohne Person und ohne Startmonat gespeichert werden. Listen dürfen leer sein, Namen dürfen leer sein. Was schon ausgefüllt ist, muss trotzdem formal stimmen, zum Beispiel Ids, Cent-Beträge und die Grenzen einer verknüpften Darlehensvorlage. Erst der vollständige Plan verlangt Startmonat, Rechtsform, mindestens eine passende Person, Ort, Bundesland, Gründungsmonat, einen Zweck und die Summe der Anteile von 100 Prozent.
 

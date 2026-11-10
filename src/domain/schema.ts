@@ -262,6 +262,7 @@ const einmalkostenSchema = z.union([
 ]);
 
 const betriebsmittelSchema = z.strictObject({
+  betriebsmittelbedarfCents: centsSchema,
   liquiditaetsreserveCents: centsSchema,
   warenErstbestandNettoCents: centsSchema.optional(),
   umsatzsteuerSatzWaren: satzSchema.optional(),

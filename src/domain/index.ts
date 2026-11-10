@@ -66,6 +66,8 @@ export {
   ZUSCHUSS_PROGRAMME,
 } from "./types.ts";
 export type { Planberechnung } from "./calc/index.ts";
+export { erstelleBerichte } from "./reports/index.ts";
+export type { Berichte } from "./reports/index.ts";
 export type {
   AfaMethode,
   AngewendeteVorlage,

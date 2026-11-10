@@ -1,0 +1,674 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`] = `
+{
+  "endbestand": [
+    3973700,
+    844358,
+    -1439106,
+  ],
+  "firma": "Blitzweg Elektrotechnik",
+  "guv": [
+    {
+      "planjahre": [
+        7873999,
+        8188959,
+        8516517,
+      ],
+      "summe": 24579475,
+      "zeile": "Umsatz",
+    },
+    {
+      "planjahre": [
+        1732281,
+        1801572,
+        1873636,
+      ],
+      "summe": 5407489,
+      "zeile": "Wareneinsatz",
+    },
+    {
+      "planjahre": [
+        6141718,
+        6387387,
+        6642881,
+      ],
+      "summe": 19171986,
+      "zeile": "Rohertrag",
+    },
+    {
+      "planjahre": [
+        0,
+        4684800,
+        4684800,
+      ],
+      "summe": 9369600,
+      "zeile": "Personal",
+    },
+    {
+      "planjahre": [
+        0,
+        0,
+        0,
+      ],
+      "summe": 0,
+      "zeile": "Raumkosten",
+    },
+    {
+      "planjahre": [
+        934500,
+        888000,
+        888000,
+      ],
+      "summe": 2710500,
+      "zeile": "Sonstige Kosten",
+    },
+    {
+      "planjahre": [
+        455000,
+        390000,
+        390000,
+      ],
+      "summe": 1235000,
+      "zeile": "Abschreibungen",
+    },
+    {
+      "planjahre": [
+        55000,
+        56181,
+        46250,
+      ],
+      "summe": 157431,
+      "zeile": "Zinsen",
+    },
+    {
+      "planjahre": [
+        4697218,
+        368406,
+        633831,
+      ],
+      "summe": 5699455,
+      "zeile": "Ergebnis vor Steuern",
+    },
+    {
+      "planjahre": [
+        430260,
+        123140,
+        0,
+      ],
+      "summe": 553400,
+      "zeile": "Steuern",
+    },
+    {
+      "planjahre": [
+        4266958,
+        245266,
+        633831,
+      ],
+      "summe": 5146055,
+      "zeile": "Ergebnis nach Steuern",
+    },
+    {
+      "planjahre": [
+        2868000,
+        2868000,
+        2868000,
+      ],
+      "summe": 8604000,
+      "zeile": "Privatentnahmen",
+    },
+  ],
+  "kapital": {
+    "art": "ueberdeckung",
+    "bedarf": [
+      [
+        "Investitionen",
+        2315000,
+      ],
+      [
+        "Gründungskosten",
+        6500,
+      ],
+      [
+        "Anlaufkosten",
+        40000,
+      ],
+      [
+        "Waren-Erstbestand",
+        0,
+      ],
+      [
+        "Betriebsmittel",
+        0,
+      ],
+      [
+        "Reserve",
+        800000,
+      ],
+    ],
+    "deckung": 838500,
+    "finanzierung": [
+      [
+        "Eigenmittel",
+        1500000,
+      ],
+      [
+        "Darlehen",
+        2500000,
+      ],
+      [
+        "Zuschüsse",
+        0,
+      ],
+    ],
+    "summeBedarf": 3161500,
+    "summeFinanzierung": 4000000,
+  },
+  "kennzahlen": {
+    "breakEven": "2029-02",
+    "eigenkapitalquote": 0.375,
+    "kapitaldienst": [
+      {
+        "cashflow": 1853958,
+        "dienst": 55000,
+        "quote": 33.708327272727274,
+      },
+      {
+        "cashflow": -2232734,
+        "dienst": 438123,
+        "quote": -5.096135103612456,
+      },
+      {
+        "cashflow": -1844169,
+        "dienst": 462914,
+        "quote": -3.983826369476836,
+      },
+    ],
+    "planmonat": 33,
+    "rohertragsquote": [
+      0.7799998450596705,
+      0.7799998754420434,
+      0.7799997346333014,
+    ],
+    "umsatzrendite": [
+      0.5419048186315493,
+      0.02995081548216324,
+      0.07442373449145936,
+    ],
+  },
+  "planjahre": [
+    "2026-06/2027-05",
+    "2027-06/2028-05",
+    "2028-06/2029-05",
+  ],
+  "restschuld": [
+    {
+      "name": "Thüringer Mikrodarlehen",
+      "planjahre": [
+        2500000,
+        2118058,
+        1701394,
+      ],
+    },
+  ],
+  "tiefster": {
+    "betrag": -1439106,
+    "kontokorrent": 1439106,
+    "monat": "2029-05",
+  },
+  "tragfaehigkeit": {
+    "anwendbar": true,
+    "personen": [
+      {
+        "name": "Jonas Heller (fiktiv)",
+        "planjahr2": -2622734,
+        "tragfaehig": false,
+        "verfuegbar": [
+          1398958,
+          -2622734,
+          -2234169,
+        ],
+      },
+    ],
+  },
+}
+`;
+
+exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseecke 1`] = `
+{
+  "endbestand": [
+    5880140,
+    8695928,
+    10897602,
+  ],
+  "firma": "Café Leseecke",
+  "guv": [
+    {
+      "planjahre": [
+        19967938,
+        22878776,
+        23565136,
+      ],
+      "summe": 66411850,
+      "zeile": "Umsatz",
+    },
+    {
+      "planjahre": [
+        6389740,
+        7321207,
+        7540843,
+      ],
+      "summe": 21251790,
+      "zeile": "Wareneinsatz",
+    },
+    {
+      "planjahre": [
+        13578198,
+        15557569,
+        16024293,
+      ],
+      "summe": 45160060,
+      "zeile": "Rohertrag",
+    },
+    {
+      "planjahre": [
+        3837900,
+        4342800,
+        4342800,
+      ],
+      "summe": 12523500,
+      "zeile": "Personal",
+    },
+    {
+      "planjahre": [
+        3576000,
+        3576000,
+        3576000,
+      ],
+      "summe": 10728000,
+      "zeile": "Raumkosten",
+    },
+    {
+      "planjahre": [
+        726000,
+        420000,
+        420000,
+      ],
+      "summe": 1566000,
+      "zeile": "Sonstige Kosten",
+    },
+    {
+      "planjahre": [
+        899646,
+        921432,
+        921432,
+      ],
+      "summe": 2742510,
+      "zeile": "Abschreibungen",
+    },
+    {
+      "planjahre": [
+        399397,
+        389369,
+        328603,
+      ],
+      "summe": 1117369,
+      "zeile": "Zinsen",
+    },
+    {
+      "planjahre": [
+        4139255,
+        5907968,
+        6435458,
+      ],
+      "summe": 16482681,
+      "zeile": "Ergebnis vor Steuern",
+    },
+    {
+      "planjahre": [
+        390894,
+        758237,
+        527069,
+      ],
+      "summe": 1676200,
+      "zeile": "Steuern",
+    },
+    {
+      "planjahre": [
+        3748361,
+        5149731,
+        5908389,
+      ],
+      "summe": 14806481,
+      "zeile": "Ergebnis nach Steuern",
+    },
+    {
+      "planjahre": [
+        2613600,
+        2613600,
+        2613600,
+      ],
+      "summe": 7840800,
+      "zeile": "Privatentnahmen",
+    },
+  ],
+  "kapital": {
+    "art": "ueberdeckung",
+    "bedarf": [
+      [
+        "Investitionen",
+        8205000,
+      ],
+      [
+        "Gründungskosten",
+        186000,
+      ],
+      [
+        "Anlaufkosten",
+        120000,
+      ],
+      [
+        "Waren-Erstbestand",
+        250000,
+      ],
+      [
+        "Betriebsmittel",
+        0,
+      ],
+      [
+        "Reserve",
+        1500000,
+      ],
+    ],
+    "deckung": 1739000,
+    "finanzierung": [
+      [
+        "Eigenmittel",
+        4000000,
+      ],
+      [
+        "Darlehen",
+        8000000,
+      ],
+      [
+        "Zuschüsse",
+        0,
+      ],
+    ],
+    "summeBedarf": 10261000,
+    "summeFinanzierung": 12000000,
+  },
+  "kennzahlen": {
+    "breakEven": "2026-09",
+    "eigenkapitalquote": 0.3333333333333333,
+    "kapitaldienst": [
+      {
+        "cashflow": 2034407,
+        "dienst": 831102,
+        "quote": 2.447842743730613,
+      },
+      {
+        "cashflow": 3457563,
+        "dienst": 1466640,
+        "quote": 2.3574721813123873,
+      },
+      {
+        "cashflow": 4216221,
+        "dienst": 1466640,
+        "quote": 2.8747484045164455,
+      },
+    ],
+    "planmonat": 2,
+    "rohertragsquote": [
+      0.6800000080128454,
+      0.6800000576953942,
+      0.6800000220664969,
+    ],
+    "umsatzrendite": [
+      0.18771898230052597,
+      0.22508769699917514,
+      0.25072586044061024,
+    ],
+  },
+  "planjahre": [
+    "2026-08/2027-07",
+    "2027-08/2028-07",
+    "2028-08/2029-07",
+  ],
+  "restschuld": [
+    {
+      "name": "Investitionskredit Hausbank",
+      "planjahre": [
+        7568295,
+        6491024,
+        5352987,
+      ],
+    },
+  ],
+  "tiefster": {
+    "betrag": 1770127,
+    "kontokorrent": 0,
+    "monat": "2026-09",
+  },
+  "tragfaehigkeit": {
+    "anwendbar": true,
+    "personen": [
+      {
+        "name": "Mara Sommer (fiktiv)",
+        "planjahr2": 2536131,
+        "tragfaehig": true,
+        "verfuegbar": [
+          1134761,
+          2536131,
+          3294789,
+        ],
+      },
+    ],
+  },
+}
+`;
+
+exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Hafenlicht GmbH 1`] = `
+{
+  "endbestand": [
+    13912700,
+    18415760,
+    26247290,
+  ],
+  "firma": "Hafenlicht GmbH",
+  "guv": [
+    {
+      "planjahre": [
+        18000000,
+        18000000,
+        18000000,
+      ],
+      "summe": 54000000,
+      "zeile": "Umsatz",
+    },
+    {
+      "planjahre": [
+        0,
+        0,
+        0,
+      ],
+      "summe": 0,
+      "zeile": "Wareneinsatz",
+    },
+    {
+      "planjahre": [
+        18000000,
+        18000000,
+        18000000,
+      ],
+      "summe": 54000000,
+      "zeile": "Rohertrag",
+    },
+    {
+      "planjahre": [
+        4800000,
+        4800000,
+        4800000,
+      ],
+      "summe": 14400000,
+      "zeile": "Personal",
+    },
+    {
+      "planjahre": [
+        1800000,
+        1800000,
+        1800000,
+      ],
+      "summe": 5400000,
+      "zeile": "Raumkosten",
+    },
+    {
+      "planjahre": [
+        240000,
+        240000,
+        240000,
+      ],
+      "summe": 720000,
+      "zeile": "Sonstige Kosten",
+    },
+    {
+      "planjahre": [
+        0,
+        0,
+        0,
+      ],
+      "summe": 0,
+      "zeile": "Abschreibungen",
+    },
+    {
+      "planjahre": [
+        0,
+        0,
+        0,
+      ],
+      "summe": 0,
+      "zeile": "Zinsen",
+    },
+    {
+      "planjahre": [
+        11160000,
+        11160000,
+        11160000,
+      ],
+      "summe": 33480000,
+      "zeile": "Ergebnis vor Steuern",
+    },
+    {
+      "planjahre": [
+        3328470,
+        3328470,
+        3328470,
+      ],
+      "summe": 9985410,
+      "zeile": "Steuern",
+    },
+    {
+      "planjahre": [
+        7831530,
+        7831530,
+        7831530,
+      ],
+      "summe": 23494590,
+      "zeile": "Ergebnis nach Steuern",
+    },
+  ],
+  "kapital": {
+    "art": "ueberdeckung",
+    "bedarf": [
+      [
+        "Investitionen",
+        0,
+      ],
+      [
+        "Gründungskosten",
+        0,
+      ],
+      [
+        "Anlaufkosten",
+        0,
+      ],
+      [
+        "Waren-Erstbestand",
+        0,
+      ],
+      [
+        "Betriebsmittel",
+        0,
+      ],
+      [
+        "Reserve",
+        1000000,
+      ],
+    ],
+    "deckung": 1500000,
+    "finanzierung": [
+      [
+        "Eigenmittel",
+        2500000,
+      ],
+      [
+        "Darlehen",
+        0,
+      ],
+      [
+        "Zuschüsse",
+        0,
+      ],
+    ],
+    "summeBedarf": 1000000,
+    "summeFinanzierung": 2500000,
+  },
+  "kennzahlen": {
+    "breakEven": "2026-01",
+    "eigenkapitalquote": 1,
+    "kapitaldienst": [
+      {
+        "cashflow": 7831530,
+        "dienst": 0,
+        "quote": null,
+      },
+      {
+        "cashflow": 7831530,
+        "dienst": 0,
+        "quote": null,
+      },
+      {
+        "cashflow": 7831530,
+        "dienst": 0,
+        "quote": null,
+      },
+    ],
+    "planmonat": 1,
+    "rohertragsquote": [
+      1,
+      1,
+      1,
+    ],
+    "umsatzrendite": [
+      0.435085,
+      0.435085,
+      0.435085,
+    ],
+  },
+  "planjahre": [
+    "2026-01/2026-12",
+    "2027-01/2027-12",
+    "2028-01/2028-12",
+  ],
+  "restschuld": [],
+  "tiefster": {
+    "betrag": 3682700,
+    "kontokorrent": 0,
+    "monat": "2026-01",
+  },
+  "tragfaehigkeit": {
+    "anwendbar": false,
+    "personen": [],
+  },
+}
+`;

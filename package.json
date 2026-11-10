@@ -10,6 +10,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "export:check": "tsx scripts/export-check.ts",
+    "export:berichte": "tsx scripts/export-berichte.ts",
     "format": "prettier --write ."
   },
   "dependencies": {

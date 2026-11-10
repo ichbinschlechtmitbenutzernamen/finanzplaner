@@ -8,7 +8,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielGmbh = {
   id: "plan-beispiel-hafenlicht-gmbh",
-  schemaVersion: 5,
+  schemaVersion: 6,
   status: "vollstaendig",
   erstelltAm: "2026-01-08T09:00:00.000Z",
   geaendertAm: "2026-01-20T09:00:00.000Z",
@@ -57,7 +57,7 @@ export const beispielGmbh = {
     investitionen: [],
     gruendungskosten: [],
     anlaufkosten: [],
-    betriebsmittel: { liquiditaetsreserveCents: 1_000_000 },
+    betriebsmittel: { betriebsmittelbedarfCents: 0, liquiditaetsreserveCents: 1_000_000 },
   },
   finanzierung: {
     eigenkapital: [

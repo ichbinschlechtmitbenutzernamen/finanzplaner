@@ -57,7 +57,7 @@ function shell(
       investitionen: [],
       gruendungskosten: [],
       anlaufkosten: [],
-      betriebsmittel: { liquiditaetsreserveCents: 0 },
+      betriebsmittel: { betriebsmittelbedarfCents: 0, liquiditaetsreserveCents: 0 },
     },
     finanzierung: {
       eigenkapital: [],
