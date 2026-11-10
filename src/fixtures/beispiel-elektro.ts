@@ -8,7 +8,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielElektro = {
   id: "plan-beispiel-blitzweg-elektro",
-  schemaVersion: 3,
+  schemaVersion: 5,
   status: "vollstaendig",
   erstelltAm: "2026-04-02T08:00:00.000Z",
   geaendertAm: "2026-04-20T08:00:00.000Z",
@@ -233,6 +233,7 @@ export const beispielElektro = {
       betriebsausgabe: true,
     },
   ],
+  steuerplanung: { abschlusszahlungMonat: 9 },
   umsatzsteuer: {
     regime: "regelbesteuerung",
     vorsteuerabzugsberechtigt: true,

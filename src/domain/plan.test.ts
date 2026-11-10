@@ -3,6 +3,7 @@ import { ZodError } from "zod";
 import { beispielCafe } from "../fixtures/beispiel-cafe.ts";
 import { beispielEinzelunternehmen } from "../fixtures/beispiel-einzelunternehmen.ts";
 import { beispielElektro } from "../fixtures/beispiel-elektro.ts";
+import { beispielGmbh } from "../fixtures/beispiel-gmbh.ts";
 import { createDraftFinanzplan, createEmptyFinanzplan } from "./empty-plan.ts";
 import { exportPlanToJson, importPlanFromJson } from "./io.ts";
 import { SchemaMigrationError, applyMigrations, migratePlan, migrations } from "./migrate.ts";
@@ -27,7 +28,7 @@ function issuesOf(data: unknown): string {
 }
 
 describe("Beispielpläne", () => {
-  const plaene = [beispielEinzelunternehmen, beispielElektro, beispielCafe];
+  const plaene = [beispielEinzelunternehmen, beispielElektro, beispielCafe, beispielGmbh];
 
   it("sind als Fiktion gekennzeichnet und erfüllen das Schema", () => {
     for (const plan of plaene) {
@@ -45,7 +46,7 @@ describe("Beispielpläne", () => {
       const imported = importPlanFromJson(json);
       expect(imported).toEqual(plan);
       expect(importPlanFromJson(exportPlanToJson(imported))).toEqual(imported);
-      expect(json).toContain('"schemaVersion": 3');
+      expect(json).toContain('"schemaVersion": 5');
       expect(json.endsWith("\n")).toBe(true);
     }
   });
@@ -211,9 +212,11 @@ describe("Schemaregeln", () => {
 
 describe("Migration und Datei-Import", () => {
   it("hebt Version 1 auf den Parametersatz und lehnt Monats-Wareneinsatz ab", () => {
-    expect(SCHEMA_VERSION).toBe(3);
+    expect(SCHEMA_VERSION).toBe(5);
     expect(typeof migrations[1]).toBe("function");
     expect(typeof migrations[2]).toBe("function");
+    expect(typeof migrations[3]).toBe("function");
+    expect(typeof migrations[4]).toBe("function");
 
     const current = emptyPlan();
     const v1 = structuredClone(current) as unknown as Record<string, unknown>;
@@ -224,7 +227,9 @@ describe("Migration und Datei-Import", () => {
     delete ust.vorsteuerabzugsberechtigt;
 
     const migrated = migratePlan(v1);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.steuerplanung.abschlusszahlungMonat).toBe(9);
+    expect(migrated.parameter.steuer.einkommensteuerTarif.zone2BisEuro).toBe(17_799);
     expect(migrated.status).toBe("vollstaendig");
     expect(migrated.parameter.version).toBe("de-2026");
     expect(migrated.umsatzsteuer.vorsteuerabzugsberechtigt).toBe(true);
@@ -287,7 +292,7 @@ describe("Migration und Datei-Import", () => {
     });
 
     const migrated = migratePlan(roh);
-    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.schemaVersion).toBe(5);
     expect(migrated.finanzierung.eigenkapital.map((posten) => posten.id)).toEqual(["ek-bar"]);
     expect(migrated.finanzierung.eigenkapital[0]).not.toHaveProperty("investitionId");
     expect(migrated.kapitalbedarf.investitionen[0]).not.toHaveProperty("nutzungsdauerMonate");
@@ -295,6 +300,52 @@ describe("Migration und Datei-Import", () => {
     expect(migrated.kapitalbedarf.gruendungskosten[0]).not.toHaveProperty(
       "steuerlichSofortAbzugsfaehig",
     );
+  });
+
+  it("ergänzt Tarif, Soli-Gleitzone und den Zahlungsmonat aus Version 3", () => {
+    const roh = structuredClone(emptyPlan()) as unknown as Record<string, unknown>;
+    roh.schemaVersion = 3;
+    delete roh.steuerplanung;
+    const steuer = (roh.parameter as { steuer: Record<string, unknown> }).steuer;
+    delete steuer.einkommensteuerTarif;
+    delete steuer.solidaritaetszuschlagMilderungSatz;
+    delete steuer.gewerbeertragAbrundungCents;
+    delete steuer.gewerbesteuerAnrechnungFaktor;
+    steuer.einkommensteuerGrundfreibetragCents = 1_200_000;
+
+    const migrated = migratePlan(roh);
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.steuerplanung.abschlusszahlungMonat).toBe(9);
+    expect(migrated.parameter.steuer.einkommensteuerGrundfreibetragCents).toBe(1_200_000);
+    expect(migrated.parameter.steuer.einkommensteuerTarif.zone2FaktorHundertstel).toBe(91_451);
+    expect(migrated.parameter.steuer.solidaritaetszuschlagMilderungSatz).toBe(0.119);
+    expect(migrated.parameter.steuer.gewerbeertragAbrundungCents).toBe(10_000);
+    expect(migrated.parameter.steuer.gewerbesteuerAnrechnungFaktor).toBe(4);
+  });
+
+  it("streicht den Progressionsvorbehalt aus Version 4", () => {
+    const roh = structuredClone(emptyPlan()) as unknown as Record<string, unknown>;
+    roh.schemaVersion = 4;
+    const finanzierung = roh.finanzierung as { zuschuesse: Record<string, unknown>[] };
+    finanzierung.zuschuesse.push({
+      id: "zuschuss-alt",
+      bezeichnung: "Gründungszuschuss",
+      steuerfrei: true,
+      progressionsvorbehalt: true,
+      auszahlung: {
+        art: "gruendungszuschuss",
+        alg1MonatlichCents: 100_000,
+        phase1Monate: 1,
+        pauschaleCents: 30_000,
+        phase2Geplant: false,
+        phase2Monate: 0,
+        startMonat: "2026-04",
+      },
+    });
+    const migrated = migratePlan(roh);
+    expect(migrated.schemaVersion).toBe(5);
+    expect(migrated.finanzierung.zuschuesse[0]).not.toHaveProperty("progressionsvorbehalt");
+    expect(migrated.finanzierung.zuschuesse[0]?.steuerfrei).toBe(true);
   });
 
   it("führt eine Versionskette aus und lehnt neuere Dateien ab", () => {

@@ -82,7 +82,7 @@ function uebersicht(ergebnis: Planberechnung, vergleich?: SzenarioVergleich): Ch
   const { zeilen, kopfzeile } = kopf(
     ergebnis,
     "Übersicht",
-    "Betriebsergebnis vor Ertragsteuern und erfasste Zahlungen. Kein Liquiditätsplan, keine Einkommen-, Gewerbe- oder Körperschaftsteuer.",
+    "Betriebsergebnis vor Ertragsteuern. Steuerzahlungen mindern den Saldo, die empfohlene Steuerrücklage nicht.",
   );
   const u = ergebnis.uebersicht;
   zeilen.push(
@@ -111,7 +111,11 @@ function uebersicht(ergebnis: Planberechnung, vergleich?: SzenarioVergleich): Ch
     fluss("Darlehensauszahlung", u.darlehensauszahlungCents),
     fluss("Zuschüsse", u.zuschuesseZahlungCents),
     fluss("Privatentnahmen", u.entnahmenCents),
+    fluss("Einkommensteuer, Soli und Kirchensteuer", u.steuerEinkommenZahlungCents),
+    fluss("Gewerbesteuer", u.steuerGewerbeZahlungCents),
+    fluss("Körperschaftsteuer und Soli", u.steuerKoerperschaftZahlungCents),
     fluss("Saldo der erfassten Zahlungen", u.zahlungssaldoCents),
+    fluss("Empfohlene Steuerrücklage (kein Zahlungsstrom)", u.steuerRuecklageCents),
     leer(),
     stand("Restschuld Darlehen am Monatsende", u.restschuldCents),
     stand("Restbuchwert Anlagen am Monatsende", u.restbuchwertCents),

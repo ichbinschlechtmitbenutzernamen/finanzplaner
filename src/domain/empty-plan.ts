@@ -1,6 +1,7 @@
 import { createParameterSnapshot } from "./parameter.ts";
 import { toIsoMonth } from "./months.ts";
 import {
+  ABSCHLUSSZAHLUNG_MONAT_STANDARD,
   PLAN_HORIZON_MONTHS,
   SCHEMA_VERSION,
   WAEHRUNG,
@@ -41,6 +42,7 @@ function shell(
   | "personal"
   | "laufendeKosten"
   | "umsatzsteuer"
+  | "steuerplanung"
   | "szenarien"
 > {
   return {
@@ -66,6 +68,7 @@ function shell(
     personal: [],
     laufendeKosten: [],
     umsatzsteuer: { ...standardUmsatzsteuer },
+    steuerplanung: { abschlusszahlungMonat: ABSCHLUSSZAHLUNG_MONAT_STANDARD },
     szenarien: {
       aktiv: "base",
       best: { bezeichnung: "Best Case", anpassungen: [] },

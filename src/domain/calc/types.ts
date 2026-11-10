@@ -143,10 +143,8 @@ export interface ZuschussErgebnis {
   id: Id;
   bezeichnung: string;
   steuerfrei: boolean;
-  progressionsvorbehalt: boolean;
   betragCents: number[];
   ertragCents: number[];
-  progressionsvorbehaltCents: number[];
 }
 
 export interface DarlehenErgebnis {
@@ -173,7 +171,6 @@ export interface FinanzierungsBlock {
   summeEinlagenCents: number[];
   summeZuschussCents: number[];
   summeZuschussErtragCents: number[];
-  summeProgressionsvorbehaltCents: number[];
   summeDarlehenAuszahlungCents: number[];
   summeZinsCents: number[];
   summeTilgungCents: number[];
@@ -227,6 +224,14 @@ export interface UebersichtBlock {
   darlehensauszahlungCents: number[];
   zuschuesseZahlungCents: number[];
   entnahmenCents: number[];
+  /** Einkommensteuer, Solidaritätszuschlag und Kirchensteuer. Bei GmbH und UG 0. */
+  steuerEinkommenZahlungCents: number[];
+  /** Gewerbesteuer. Keine Betriebsausgabe, aber eine Auszahlung. */
+  steuerGewerbeZahlungCents: number[];
+  /** Körperschaftsteuer und der Solidaritätszuschlag darauf. Bei Personenunternehmen 0. */
+  steuerKoerperschaftZahlungCents: number[];
+  /** Empfehlung, kein Zahlungsstrom und nicht im Saldo. */
+  steuerRuecklageCents: number[];
   zahlungssaldoCents: number[];
   restschuldCents: number[];
   forderungenCents: number[];
@@ -234,6 +239,92 @@ export interface UebersichtBlock {
   offeneUmsatzsteuerCents: number[];
   restbuchwertCents: number[];
   warenbestandCents: number[];
+}
+
+export interface SteuerPersonJahr {
+  personId: Id;
+  name: string;
+  anteil: number;
+  gewinnanteilCents: number;
+  weitereEinkuenfteCents: number;
+  kinderabzugCents: number;
+  /** Gewinnanteil plus weitere Einkünfte, vor dem Kinderfreibetrag. */
+  summeEinkuenfteCents: number;
+  zvECents: number;
+  zvEEuro: number;
+  splitting: boolean;
+  kirchensteuerSatz: number;
+  /** Nur positive gewerbliche Einkünfte, volle Euro. Bei Freiberuf 0. */
+  positiveGewerblicheEuro: number;
+  /** Summe aller positiven Einkünfte, volle Euro. Nenner des Ermäßigungshöchstbetrags. */
+  positiveEinkuenfteEuro: number;
+  tariflicheEinkommensteuerCents: number;
+  messbetragAnteilCents: number;
+  gewerbesteuerAnteilCents: number;
+  anrechnungVierfachCents: number;
+  ermaessigungshoechstbetragCents: number;
+  anrechnungCents: number;
+  einkommensteuerCents: number;
+  solidaritaetszuschlagCents: number;
+  kirchensteuerCents: number;
+}
+
+export interface SteuerJahr {
+  jahr: number;
+  vonMonat: IsoMonth;
+  bisMonat: IsoMonth;
+  monateImPlan: number;
+  rumpf: boolean;
+  gewinnCents: number;
+  /** Bei Freiberuf und ohne Rechtsform 0, sonst der Gewinn, auch wenn er negativ ist. */
+  gewerbeertragCents: number;
+  gewerbeertragAbgerundetCents: number;
+  freibetragCents: number;
+  massgebenderErtragCents: number;
+  messbetragCents: number;
+  hebesatz: number | null;
+  gewerbesteuerCents: number;
+  koerperschaftsteuerCents: number;
+  koerperschaftsteuerSoliCents: number;
+  personen: SteuerPersonJahr[];
+  einkommensteuerCents: number;
+  solidaritaetszuschlagCents: number;
+  kirchensteuerCents: number;
+  /** Festgesetzte Steuern des Jahres, ohne die empfohlene Rücklage. */
+  steuerLastCents: number;
+  einkommensteuerGezahltCents: number;
+  gewerbesteuerGezahltCents: number;
+  koerperschaftsteuerGezahltCents: number;
+  einkommensteuerOffenCents: number;
+  gewerbesteuerOffenCents: number;
+  koerperschaftsteuerOffenCents: number;
+  ruecklageImPlanCents: number;
+}
+
+export interface SteuerMonat {
+  monat: IsoMonth;
+  einkommensteuerAbschlussCents: number;
+  einkommensteuerVorauszahlungCents: number;
+  gewerbesteuerAbschlussCents: number;
+  gewerbesteuerVorauszahlungCents: number;
+  koerperschaftsteuerAbschlussCents: number;
+  koerperschaftsteuerVorauszahlungCents: number;
+  einkommensteuerZahlungCents: number;
+  gewerbesteuerZahlungCents: number;
+  koerperschaftsteuerZahlungCents: number;
+  zahlungCents: number;
+  ruecklageCents: number;
+  ruecklageKumuliertCents: number;
+  zahlungKumuliertCents: number;
+}
+
+export interface SteuerBlock {
+  /** `keine`, solange die Rechtsform fehlt. */
+  art: "einkommensteuer" | "koerperschaftsteuer" | "keine";
+  abschlusszahlungMonat: number;
+  jahre: SteuerJahr[];
+  monate: SteuerMonat[];
+  hinweise: BerechnungHinweis[];
 }
 
 export interface Planberechnung {
@@ -254,6 +345,7 @@ export interface Planberechnung {
   finanzierung: FinanzierungsBlock;
   umsatzsteuer: UmsatzsteuerBlock;
   entnahmen: EntnahmeBlock;
+  steuern: SteuerBlock;
   uebersicht: UebersichtBlock;
   liquiditaetsreserveCents: number;
 }
