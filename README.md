@@ -4,7 +4,7 @@ Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland
 
 Dieser Stand ist **Schritt 3**: Der Rechenkern erzeugt aus einem Plan die 36 Monatswerte und die Ertragsteuer. Die Seite zeigt weiterhin die fiktiven Beispielpläne und lässt zwischen ihnen wechseln. Auswertungen und der Assistent fehlen noch.
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md). Schema-Version ist 4. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen.
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md). Schema-Version ist 5. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen.
 
 ## Voraussetzungen
 
@@ -52,4 +52,4 @@ npm run export:check
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 4. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei ist dann der Inhalt, der im Browser liegt.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 5. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei ist dann der Inhalt, der im Browser liegt.

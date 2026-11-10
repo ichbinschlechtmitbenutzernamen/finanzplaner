@@ -83,7 +83,7 @@ Am Ende von Monat 36 steht der Restbuchwert. Was danach noch abzuschreiben wäre
 
 Bareinlagen und Kapitalrücklagen kommen im genannten Monat als Geld. Sacheinlagen gibt es im Modell nicht. Ein älterer Plan verliert sie beim Einlesen.
 
-Zuschüsse kommen als Geld in den genannten Monaten. Der Gründungszuschuss zahlt in Phase 1 Arbeitslosengeld I plus Pauschale und danach, wenn Phase 2 geplant ist, nur die Pauschale. Steuerfreie Zuschüsse stehen nicht im Betriebsergebnis. Steuerpflichtige schon, als sonstiger Ertrag. Ein Progressionsvorbehalt wird mitgeführt, aber nicht in eine Steuer umgerechnet.
+Zuschüsse kommen als Geld in den genannten Monaten. Der Gründungszuschuss zahlt in Phase 1 Arbeitslosengeld I plus Pauschale und danach, wenn Phase 2 geplant ist, nur die Pauschale. Steuerfreie Zuschüsse stehen nicht im Betriebsergebnis. Steuerpflichtige schon, als sonstiger Ertrag. Einen Progressionsvorbehalt gibt es nicht.
 
 Darlehen laufen monatlich, auch über die 36 Monate hinaus. Gezeigt werden die Monate im Plan. Die Restschuld am letzten Planmonat bleibt stehen.
 

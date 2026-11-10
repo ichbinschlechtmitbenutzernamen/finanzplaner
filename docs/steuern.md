@@ -36,7 +36,7 @@ y ist ein Zehntausendstel des Betrags über 12.348 Euro, z ein Zehntausendstel d
 
 Ehegattensplitting steht im Steuerprofil. Die Steuer ist dann das Doppelte der Steuer auf die Hälfte des zu versteuernden Einkommens, die Hälfte vor dem Tarif auf volle Euro abgerundet. Gesplittet wird nur das Einkommen, das der Plan kennt: Gewinnanteil plus weitere Einkünfte. Einkommen einer anderen Person, das nicht dort steht, fehlt.
 
-Der Gründungszuschuss ist steuerfrei und steht nicht im Gewinn. Steht bei einem Zuschuss der Progressionsvorbehalt, wird § 32b EStG so angewendet: der Steuersatz aus dem um den Zuschuss erhöhten Einkommen wird auf das zu versteuernde Einkommen gelegt, das Ergebnis auf volle Euro abgerundet. Bei einer Personengesellschaft wird der Zuschuss wie der Gewinn nach Anteilen verteilt, weil der Plan ihn nicht einer Person zuordnet.
+Der Gründungszuschuss ist nach § 3 Nr. 2 EStG steuerfrei und steht nicht im Gewinn. Er gehört nicht zum Katalog des § 32b EStG. Einen Progressionsvorbehalt gibt es nicht, auch nicht als Schalter.
 
 ## Solidaritätszuschlag und Kirchensteuer
 
@@ -44,7 +44,7 @@ Der Solidaritätszuschlag auf die Einkommensteuer folgt § 3 Abs. 3 und § 4 des
 
 Auf die Körperschaftsteuer gibt es keine Freigrenze. Der Zuschlag ist 5,5 Prozent der Körperschaftsteuer.
 
-Die Kirchensteuer ist 8 Prozent in Bayern und Baden-Württemberg und 9 Prozent in den übrigen Ländern, aber nur, wenn die Person im Steuerprofil kirchensteuerpflichtig ist. Der Satz folgt dem Bundesland des Plans. Eine eigene Wohnsitzangabe gibt es nicht. Basis ist ebenfalls die festgesetzte Einkommensteuer, nicht der Solidaritätszuschlag. Bruchteile eines Cents entfallen.
+Die Kirchensteuer ist 8 Prozent in Bayern und Baden-Württemberg und 9 Prozent in den übrigen Ländern, aber nur, wenn die Person im Steuerprofil kirchensteuerpflichtig ist. Der Satz folgt dem Bundesland des Plans. Eine eigene Wohnsitzangabe gibt es nicht. Nach § 51a Abs. 2 EStG ist die Bemessungsgrundlage die tarifliche Einkommensteuer ohne die Anrechnung des § 35, nicht der Solidaritätszuschlag und nicht die festgesetzte Steuer nach der Anrechnung. Bruchteile eines Cents entfallen.
 
 ## Gewerbesteuer
 
@@ -88,14 +88,18 @@ Ausschüttungen und die Steuer darauf, Kapitalertragsteuer und das Teileinkünft
 
 Im ersten Kalenderjahr des Plans gibt es keine Vorauszahlung. Die gesamte Steuer dieses Jahres wird im zweiten Kalenderjahr an einem Tag gezahlt. Der Kalendermonat steht im Plan unter `steuerplanung.abschlusszahlungMonat`, Standard ist 9, also September. September liegt auf einem gesetzlichen Vorauszahlungstermin der Einkommensteuer und nach der Abgabefrist Ende Juli für eine Erklärung ohne Berater. Der Bescheid kann früher oder später kommen. Der Monat ist deshalb eine Planungsannahme und lässt sich ändern. Gewerbesteuer und Einkommensteuer oder Körperschaftsteuer nutzen denselben Monat, damit es eine Eingabe bleibt.
 
-Ab dem zweiten Kalenderjahr werden Vorauszahlungen angesetzt, jeweils ein Viertel der für dasselbe Jahr geplanten Steuer:
+Ab dem zweiten Kalenderjahr werden Vorauszahlungen angesetzt, jeweils ein Viertel der Steuer des Vorjahres. Für das zweite Jahr ist das die geplante Steuer des ersten Jahres.
 
 - Einkommensteuer und Körperschaftsteuer im März, Juni, September und Dezember
 - Gewerbesteuer im Februar, Mai, August und November
 
-Die ersten drei Termine werden auf volle Euro abgerundet. Der vierte Termin trägt den Rest einschließlich übrig gebliebener Cent, damit die Summe der Jahressteuer entspricht. Gesetzlich richten sich die Vorauszahlungen nach dem letzten Bescheid, also nach dem Vorjahr. Der Plan setzt sie auf die Steuer desselben Jahres. Dadurch gibt es keine zweite Nachzahlung, solange alle vier Termine im Horizont liegen: Vorauszahlung und geplante Steuer sind gleich, die Differenz ist null. Weicht die Wirklichkeit später vom Plan ab, sieht man das hier nicht. Termine nach dem letzten Monat bleiben offen.
+Die ersten drei Termine werden auf volle Euro abgerundet. Der vierte Termin trägt den Rest einschließlich übrig gebliebener Cent, damit die vier Termine zusammen die Vorjahressteuer ergeben.
 
-Im September des zweiten Jahres können deshalb zwei Dinge zusammenfallen: die ganze Steuer des ersten Jahres und die September-Vorauszahlung des zweiten Jahres.
+Die Differenz zwischen der tatsächlichen Steuer des Jahres und diesen Vorauszahlungen wird im September des Folgejahres gebucht. Ist die Steuer höher als die Vorauszahlungen, ist das eine Nachzahlung. Ist sie niedriger, ist das eine Erstattung, im Plan ein negativer Betrag. Für das erste Jahr gibt es keine Vorauszahlungen, die Differenz ist die ganze Steuer und wird wie bisher im September des Folgejahres fällig.
+
+Im September des zweiten Jahres liegen deshalb zwei Dinge: die ganze Steuer des ersten Jahres und die September-Vorauszahlung des zweiten Jahres, berechnet aus der Steuer des ersten. Im September des dritten Jahres liegen die Differenz des zweiten Jahres und die September-Vorauszahlung des dritten Jahres.
+
+Termine nach dem letzten Planmonat sind noch nicht fällig. Sie werden nicht vorgezogen. Die Summe aus gezahltem und noch nicht fälligem Betrag eines Jahres ist die Steuer dieses Jahres.
 
 ## Steuerrücklage
 
@@ -114,13 +118,12 @@ Der kumulierte Stand zählt die Empfehlungen von Beginn des Plans an. Er wird ni
 - Hinzurechnungen und Kürzungen beim Gewerbeertrag
 - Sonderausgaben, Vorsorge, Kindergeld und die Günstigerprüfung
 - Kirchensteuer als Sonderausgabe
-- Vorauszahlungen nach dem Vorjahresbescheid statt nach der geplanten Steuer desselben Jahres
 - eine Hochrechnung des letzten Rumpfjahres
+- den Progressionsvorbehalt. Der Gründungszuschuss ist steuerfrei und steht nicht in § 32b EStG
 
-## Noch offen für die Fachberatung
+## Bestätigt nach der Fachberatung zu Schritt 3
 
-- Ob der September als Standard für die Abschlusszahlung des ersten Jahres passt.
-- Ob das letzte Rumpfjahr für die Planung doch auf ein volles Jahr hochgerechnet werden soll.
-- Ob die Vorauszahlung lieber dem Vorjahresbescheid folgen soll, mit einer eigenen Nachzahlung.
-- Ob der Progressionsvorbehalt des Gründungszuschusses so, wie hier nach § 32b, bleiben soll.
-- Ob Kirchensteuer und Solidaritätszuschlag auf der Einkommensteuer nach § 35 liegen sollen. Hier tun sie das.
+- Die Steuer des ersten Jahres wird im September des Folgejahres gezahlt.
+- Rumpfjahre werden nicht hochgerechnet.
+- Vorauszahlungen ab dem zweiten Jahr folgen der Steuer des Vorjahres. Die Differenz wird im September des Folgejahres nachgezahlt oder erstattet.
+- Die Kirchensteuer rechnet auf der Einkommensteuer ohne § 35. Der Solidaritätszuschlag rechnet auf der Einkommensteuer nach § 35.

@@ -20,6 +20,7 @@ export const migrations: Record<number, Migration> = {
   1: migrateV1ToV2,
   2: migrateV2ToV3,
   3: migrateV3ToV4,
+  4: migrateV4ToV5,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -117,6 +118,23 @@ export function migrateV3ToV4(data: Record<string, unknown>): Record<string, unk
     }
   }
   plan.schemaVersion = 4;
+  return plan;
+}
+
+/**
+ * Version 5 streicht den Progressionsvorbehalt. Der Gründungszuschuss ist steuerfrei
+ * und steht nicht im Katalog des § 32b EStG. Ein Schalter dafür gibt es nicht mehr.
+ */
+export function migrateV4ToV5(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  const finanzierung = plan.finanzierung;
+  if (isRecord(finanzierung) && Array.isArray(finanzierung.zuschuesse)) {
+    for (const eintrag of finanzierung.zuschuesse) {
+      if (!isRecord(eintrag)) continue;
+      delete eintrag.progressionsvorbehalt;
+    }
+  }
+  plan.schemaVersion = 5;
   return plan;
 }
 

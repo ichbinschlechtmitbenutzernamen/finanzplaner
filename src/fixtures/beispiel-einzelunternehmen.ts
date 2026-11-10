@@ -8,7 +8,7 @@ import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 4,
+  schemaVersion: 5,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -170,7 +170,6 @@ export const beispielEinzelunternehmen = {
         id: "zuschuss-gruendung",
         bezeichnung: "Gründungszuschuss (fiktiver Bescheid)",
         steuerfrei: true,
-        progressionsvorbehalt: true,
         auszahlung: {
           art: "gruendungszuschuss",
           alg1MonatlichCents: 145_000,
@@ -181,7 +180,7 @@ export const beispielEinzelunternehmen = {
           startMonat: "2026-04",
         },
         notizen:
-          "Phase 1: erfundenes ALG I plus 300 Euro. Phase 2: nur die Pauschale. Steuerfreiheit und Progressionsvorbehalt bitte fachlich prüfen.",
+          "Phase 1: erfundenes ALG I plus 300 Euro. Phase 2: nur die Pauschale. Der Zuschuss ist steuerfrei und ohne Progressionsvorbehalt.",
       },
     ],
   },

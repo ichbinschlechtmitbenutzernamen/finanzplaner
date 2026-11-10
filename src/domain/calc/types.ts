@@ -143,10 +143,8 @@ export interface ZuschussErgebnis {
   id: Id;
   bezeichnung: string;
   steuerfrei: boolean;
-  progressionsvorbehalt: boolean;
   betragCents: number[];
   ertragCents: number[];
-  progressionsvorbehaltCents: number[];
 }
 
 export interface DarlehenErgebnis {
@@ -173,7 +171,6 @@ export interface FinanzierungsBlock {
   summeEinlagenCents: number[];
   summeZuschussCents: number[];
   summeZuschussErtragCents: number[];
-  summeProgressionsvorbehaltCents: number[];
   summeDarlehenAuszahlungCents: number[];
   summeZinsCents: number[];
   summeTilgungCents: number[];
@@ -257,7 +254,6 @@ export interface SteuerPersonJahr {
   zvEEuro: number;
   splitting: boolean;
   kirchensteuerSatz: number;
-  progressionsvorbehaltEuro: number;
   /** Nur positive gewerbliche Einkünfte, volle Euro. Bei Freiberuf 0. */
   positiveGewerblicheEuro: number;
   /** Summe aller positiven Einkünfte, volle Euro. Nenner des Ermäßigungshöchstbetrags. */
@@ -280,7 +276,6 @@ export interface SteuerJahr {
   monateImPlan: number;
   rumpf: boolean;
   gewinnCents: number;
-  progressionsvorbehaltCents: number;
   /** Bei Freiberuf und ohne Rechtsform 0, sonst der Gewinn, auch wenn er negativ ist. */
   gewerbeertragCents: number;
   gewerbeertragAbgerundetCents: number;

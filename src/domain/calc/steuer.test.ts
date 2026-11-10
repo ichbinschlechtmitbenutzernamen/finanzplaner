@@ -93,17 +93,18 @@ describe("Steuer eines Plans", () => {
     // Gewinn 30.000 Euro. Tarif nach der Handrechnung oben: 4.217 Euro.
     // Gewerbeertrag 30.000, maßgebend 5.500, Messbetrag 192 Euro, Gewerbesteuer floor(192 · 4,6) = 883 Euro.
     // Anrechnung min(768, 883, 4.217) = 768. Festgesetzt 3.449 Euro.
-    // Soli 0, weil 3.449 unter 20.350 liegt. Kirchensteuer 9 Prozent = 310,41 Euro.
+    // Soli 0, weil 3.449 unter 20.350 liegt.
+    // Kirchensteuer 9 Prozent von 4.217 Euro, ohne § 35: 379,53 Euro.
     expect(jahr?.gewinnCents).toBe(3_000_000);
     expect(jahr?.rumpf).toBe(false);
     expect(person?.tariflicheEinkommensteuerCents).toBe(421_700);
     expect(person?.anrechnungCents).toBe(76_800);
     expect(person?.einkommensteuerCents).toBe(344_900);
     expect(person?.solidaritaetszuschlagCents).toBe(0);
-    expect(person?.kirchensteuerCents).toBe(31_041);
+    expect(person?.kirchensteuerCents).toBe(37_953);
     expect(jahr?.messbetragCents).toBe(19_200);
     expect(jahr?.gewerbesteuerCents).toBe(88_300);
-    expect(jahr?.steuerLastCents).toBe(344_900 + 31_041 + 88_300);
+    expect(jahr?.steuerLastCents).toBe(344_900 + 37_953 + 88_300);
     expect(ergebnis.uebersicht.betriebsergebnisCents[5]).toBe(3_000_000);
 
     const ohneHebesatz = planMitUmsatz({
@@ -176,12 +177,13 @@ describe("Steuer eines Plans", () => {
     expect(ayla?.anrechnungCents).toBe(634_000);
     expect(ayla?.einkommensteuerCents).toBe(789_300);
     expect(ayla?.kirchensteuerCents).toBe(0);
-    // Bela: Einkommen 40.000, Steuer 7.209, Anrechnung 4.228, festgesetzt 2.981. Kirchensteuer Bayern 8 Prozent = 238,48 Euro.
+    // Bela: Einkommen 40.000, Steuer 7.209, Anrechnung 4.228, festgesetzt 2.981.
+    // Kirchensteuer 8 Prozent von 7.209 Euro, ohne § 35: 576,72 Euro.
     expect(bela?.tariflicheEinkommensteuerCents).toBe(720_900);
     expect(bela?.anrechnungCents).toBe(422_800);
     expect(bela?.einkommensteuerCents).toBe(298_100);
     expect(bela?.kirchensteuerSatz).toBe(0.08);
-    expect(bela?.kirchensteuerCents).toBe(23_848);
+    expect(bela?.kirchensteuerCents).toBe(57_672);
     expect(
       kirchensteuerSatz(
         bela ? { kirchensteuer: true, splitting: false } : undefined,
@@ -235,9 +237,18 @@ describe("Steuer eines Plans", () => {
     expect(september?.monat).toBe("2027-09");
     expect(september?.einkommensteuerAbschlussCents).toBe(344_900);
     expect(september?.gewerbesteuerAbschlussCents).toBe(88_300);
-    expect(september?.einkommensteuerVorauszahlungCents).toBe(0);
-    expect(erstes.uebersicht.steuerEinkommenZahlungCents[20]).toBe(344_900);
+    // Im selben September liegt die Vorauszahlung für 2027, ein Viertel der Steuer 2026.
+    expect(september?.einkommensteuerVorauszahlungCents).toBe(86_200);
+    expect(erstes.uebersicht.steuerEinkommenZahlungCents[20]).toBe(344_900 + 86_200);
     expect(erstes.uebersicht.steuerGewerbeZahlungCents[20]).toBe(88_300);
+    expect(zahlung(erstes, "2027-03").einkommensteuerVorauszahlungCents).toBe(86_200);
+    expect(zahlung(erstes, "2027-12").einkommensteuerVorauszahlungCents).toBe(86_300);
+    expect(zahlung(erstes, "2027-02").gewerbesteuerVorauszahlungCents).toBe(22_000);
+    expect(zahlung(erstes, "2027-11").gewerbesteuerVorauszahlungCents).toBe(22_300);
+    // 2027 hat keine eigene Steuer. Die Vorauszahlungen werden im September 2028 erstattet.
+    expect(erstes.steuern.jahre[1]?.einkommensteuerGezahltCents).toBe(0);
+    expect(zahlung(erstes, "2028-09").einkommensteuerAbschlussCents).toBe(-344_900);
+    expect(zahlung(erstes, "2028-09").gewerbesteuerAbschlussCents).toBe(-88_300);
     expect(
       erstes.steuern.hinweise.some((hinweis) => hinweis.message === STEUERRUECKLAGE_HINWEIS),
     ).toBe(true);
@@ -252,49 +263,66 @@ describe("Steuer eines Plans", () => {
     expect(viertel(88_300)).toEqual([22_000, 22_000, 22_000, 22_300]);
     // 17.660,70 Euro: die 70 Cent bleiben auf dem letzten Termin, die Summe bleibt erhalten.
     expect(viertel(1_766_070)).toEqual([441_500, 441_500, 441_500, 441_570]);
-    expect(zahlung(folge, "2027-03").einkommensteuerVorauszahlungCents).toBe(86_200);
-    expect(zahlung(folge, "2027-06").einkommensteuerVorauszahlungCents).toBe(86_200);
-    expect(zahlung(folge, "2027-09").einkommensteuerVorauszahlungCents).toBe(86_200);
-    expect(zahlung(folge, "2027-12").einkommensteuerVorauszahlungCents).toBe(86_300);
-    expect(zahlung(folge, "2027-02").gewerbesteuerVorauszahlungCents).toBe(22_000);
-    expect(zahlung(folge, "2027-05").gewerbesteuerVorauszahlungCents).toBe(22_000);
-    expect(zahlung(folge, "2027-08").gewerbesteuerVorauszahlungCents).toBe(22_000);
-    expect(zahlung(folge, "2027-11").gewerbesteuerVorauszahlungCents).toBe(22_300);
+    // 2026 ist null. Die Steuer 2027 wird deshalb nicht vorausgezahlt, sondern im September 2028 abgeschlossen.
+    expect(zahlung(folge, "2027-03").einkommensteuerVorauszahlungCents).toBe(0);
     expect(zahlung(folge, "2027-09").einkommensteuerAbschlussCents).toBe(0);
+    expect(zahlung(folge, "2028-09").einkommensteuerAbschlussCents).toBe(344_900);
+    expect(zahlung(folge, "2028-09").gewerbesteuerAbschlussCents).toBe(88_300);
+    // Die Vorauszahlungen 2028 sind ein Viertel der Steuer 2027 und liegen zusätzlich auf dem Abschluss.
+    expect(zahlung(folge, "2028-03").einkommensteuerVorauszahlungCents).toBe(86_200);
+    expect(zahlung(folge, "2028-09").einkommensteuerVorauszahlungCents).toBe(86_200);
+    expect(zahlung(folge, "2028-12").einkommensteuerVorauszahlungCents).toBe(86_300);
+    expect(zahlung(folge, "2028-02").gewerbesteuerVorauszahlungCents).toBe(22_000);
+    expect(zahlung(folge, "2028-11").gewerbesteuerVorauszahlungCents).toBe(22_300);
     const jahr2027 = folge.steuern.jahre[1];
     expect(jahr2027?.einkommensteuerOffenCents).toBe(0);
     expect(jahr2027?.gewerbesteuerOffenCents).toBe(0);
     expect(jahr2027?.einkommensteuerGezahltCents).toBe(344_900);
+    // Die Erstattung der Vorauszahlungen 2028 liegt im September 2029, nach dem Horizont.
+    expect(folge.steuern.jahre[2]?.einkommensteuerOffenCents).toBe(-344_900);
+    expect(folge.steuern.jahre[2]?.gewerbesteuerOffenCents).toBe(-88_300);
   });
 
   it("lässt Termine nach dem Horizont offen und rechnet ein Rumpfjahr nicht hoch", () => {
     const plan = planMitUmsatz({
       startMonat: "2026-11",
-      umsatz: [{ monat: "2029-01", cents: 3_000_000 }],
+      umsatz: [{ monat: "2028-06", cents: 3_000_000 }],
       hebesatz: 460,
     });
     const ergebnis = berechnePlan(plan);
-    const letztes = ergebnis.steuern.jahre.at(-1);
-    expect(letztes?.jahr).toBe(2029);
-    expect(letztes?.rumpf).toBe(true);
-    expect(letztes?.monateImPlan).toBeLessThan(12);
-    expect(letztes?.gewinnCents).toBe(3_000_000);
-    // Start November 2026, letzter Monat Oktober 2029.
-    // Einkommensteuer: März, Juni und September liegen drin, der Dezember mit dem Rest 863 Euro nicht.
-    // Gewerbesteuer: Februar, Mai und August liegen drin, der November mit dem Rest 223 Euro nicht.
+    const jahr2026 = ergebnis.steuern.jahre[0];
+    const jahr2028 = ergebnis.steuern.jahre.find((jahr) => jahr.jahr === 2028);
+    const jahr2029 = ergebnis.steuern.jahre.at(-1);
+    expect(jahr2026?.rumpf).toBe(true);
+    expect(jahr2026?.monateImPlan).toBe(2);
+    expect(jahr2026?.gewinnCents).toBe(0);
+    expect(jahr2028?.gewinnCents).toBe(3_000_000);
+    expect(jahr2028?.rumpf).toBe(false);
+    expect(jahr2029?.jahr).toBe(2029);
+    expect(jahr2029?.rumpf).toBe(true);
+    expect(jahr2029?.monateImPlan).toBe(10);
+    expect(jahr2029?.gewinnCents).toBe(0);
+    // Vorauszahlungen 2029 aus der Steuer 2028. November und Dezember liegen nach Oktober 2029.
+    // Der Abschluss 2028 liegt im September 2029, weil 2027 keine Steuer hatte.
     expect(zahlung(ergebnis, "2029-02").gewerbesteuerVorauszahlungCents).toBe(22_000);
     expect(zahlung(ergebnis, "2029-08").gewerbesteuerVorauszahlungCents).toBe(22_000);
     expect(zahlung(ergebnis, "2029-03").einkommensteuerVorauszahlungCents).toBe(86_200);
     expect(zahlung(ergebnis, "2029-09").einkommensteuerVorauszahlungCents).toBe(86_200);
-    expect(letztes?.einkommensteuerOffenCents).toBe(86_300);
-    expect(letztes?.gewerbesteuerOffenCents).toBe(22_300);
+    expect(zahlung(ergebnis, "2029-09").einkommensteuerAbschlussCents).toBe(344_900);
+    expect(jahr2029?.einkommensteuerGezahltCents).toBe(86_200 * 3);
+    expect(jahr2029?.einkommensteuerOffenCents).toBe(86_300 - 344_900);
+    expect(jahr2029?.gewerbesteuerOffenCents).toBe(22_300 - 88_300);
     expect(ergebnis.steuern.hinweise.some((hinweis) => hinweis.code === "steuer_rumpfjahr")).toBe(
       true,
     );
     expect(ergebnis.steuern.hinweise.some((hinweis) => hinweis.code === "steuer_offen")).toBe(true);
   });
 
-  it("hält den Gründungszuschuss aus dem Gewinn und im Progressionsvorbehalt", () => {
+  it("lässt den Gründungszuschuss steuerfrei und ohne Progressionsvorbehalt", () => {
+    const ohne = planMitUmsatz({
+      umsatz: [{ monat: "2026-06", cents: 3_000_000 }],
+      hebesatz: 400,
+    });
     const plan = planMitUmsatz({
       umsatz: [{ monat: "2026-06", cents: 3_000_000 }],
       hebesatz: 400,
@@ -303,7 +331,6 @@ describe("Steuer eines Plans", () => {
       id: "zuschuss-gz",
       bezeichnung: "Gründungszuschuss",
       steuerfrei: true,
-      progressionsvorbehalt: true,
       auszahlung: {
         art: "gruendungszuschuss",
         alg1MonatlichCents: 100_000,
@@ -315,10 +342,13 @@ describe("Steuer eines Plans", () => {
       },
     });
     const jahr = berechnePlan(plan).steuern.jahre[0];
+    const vergleich = berechnePlan(ohne).steuern.jahre[0];
     expect(jahr?.gewinnCents).toBe(3_000_000);
-    expect(jahr?.progressionsvorbehaltCents).toBe(130_000);
-    expect(jahr?.personen[0]?.progressionsvorbehaltEuro).toBe(1_300);
-    expect(jahr?.personen[0]?.tariflicheEinkommensteuerCents).toBeGreaterThan(421_700);
+    expect(jahr?.personen[0]?.tariflicheEinkommensteuerCents).toBe(
+      vergleich?.personen[0]?.tariflicheEinkommensteuerCents,
+    );
+    expect(berechnePlan(plan).finanzierung.summeZuschussCents[5]).toBe(130_000);
+    expect(berechnePlan(plan).uebersicht.betriebsergebnisCents[5]).toBe(3_000_000);
   });
 
   it("legt den Rest der Rücklage nur in einem vollen Jahr auf den Dezember", () => {

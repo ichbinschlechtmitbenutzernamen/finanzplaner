@@ -7,7 +7,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielCafe = {
   id: "plan-beispiel-cafe-leseecke",
-  schemaVersion: 4,
+  schemaVersion: 5,
   status: "vollstaendig",
   erstelltAm: "2026-05-10T10:00:00.000Z",
   geaendertAm: "2026-06-01T10:00:00.000Z",

@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 4 as const;
+export const SCHEMA_VERSION = 5 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -432,8 +432,6 @@ export interface Zuschuss {
   bezeichnung: string;
   /** true = nicht in der steuerlichen GuV. Liquidität bleibt trotzdem. */
   steuerfrei: boolean;
-  /** true = trotz Steuerfreiheit später im Progressionsvorbehalt berücksichtigen. */
-  progressionsvorbehalt: boolean;
   auszahlung: GruendungszuschussAuszahlung | FreieZuschussAuszahlung;
   notizen?: string;
 }

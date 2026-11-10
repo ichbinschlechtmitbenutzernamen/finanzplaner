@@ -44,13 +44,9 @@ describe("Einkommensteuer § 32a EStG 2026", () => {
     expect(steuer(30_001, { splitting: true })).toBe(steuer(15_000) * 2);
   });
 
-  it("wendet den Progressionsvorbehalt als besonderen Satz auf das zu versteuernde Einkommen an", () => {
-    // Steuer auf 40.000: z = 2,2201.
-    // (173,10 · 2,2201 + 2.397) · 2,2201 + 1.034,87 = 7.209,632… → 7.209.
+  it("rechnet 40.000 Euro in der zweiten Progressionszone", () => {
+    // z = 2,2201. (173,10 · 2,2201 + 2.397) · 2,2201 + 1.034,87 = 7.209,632… → 7.209.
     expect(steuer(40_000)).toBe(720_900);
-    // floor(7.209 · 30.000 / 40.000) = floor(5.406,75) = 5.406.
-    expect(steuer(30_000, { progression: 10_000 })).toBe(540_600);
-    expect(steuer(0, { progression: 20_000 })).toBe(0);
   });
 });
 
@@ -94,14 +90,10 @@ describe("Kirchensteuer", () => {
   });
 });
 
-function steuer(
-  zvEEuro: number,
-  optionen: { splitting?: boolean; progression?: number } = {},
-): number {
+function steuer(zvEEuro: number, optionen: { splitting?: boolean } = {}): number {
   return einkommensteuerCents({
     zvEEuro,
     splitting: optionen.splitting ?? false,
-    progressionsvorbehaltEuro: optionen.progression ?? 0,
     parameter,
   }).tariflicheEinkommensteuerCents;
 }

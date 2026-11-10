@@ -342,7 +342,6 @@ const zuschussSchema = z.strictObject({
   id: idSchema,
   bezeichnung: textSchema(200),
   steuerfrei: z.boolean(),
-  progressionsvorbehalt: z.boolean(),
   auszahlung: z.discriminatedUnion("art", [gruendungszuschussSchema, freieZuschussSchema]),
   notizen: optionalTextSchema(2000).optional(),
 });

@@ -9,7 +9,7 @@ export interface SteuerCheckpointPlan {
 }
 
 const HINWEIS_RUECKLAGE =
-  "Die Rücklage ist eine Empfehlung je Monat (Jahressteuer durch 12) und keine Zahlung. Gezahlt wird die Steuer des ersten Kalenderjahres im Zahlungsmonat des zweiten Jahres, danach vierteljährlich.";
+  "Die Rücklage ist eine Empfehlung je Monat (Jahressteuer durch 12) und keine Zahlung. Die Steuer des ersten Jahres wird im September des Folgejahres gezahlt. Danach sind die Viertel Vorauszahlungen auf die Steuer des Vorjahres, die Differenz folgt im September darauf.";
 
 /** Blätter mit Jahresrechnung und Monatszahlungen für die Beispiele des dritten Schritts. */
 export function steuerCheckpointBlaetter(
@@ -45,7 +45,7 @@ function lesen(plaene: readonly SteuerCheckpointPlan[]): CheckpointBlatt {
     ],
     [
       "KiSt",
-      "8 Prozent in Bayern und Baden-Württemberg, sonst 9 Prozent, nur wenn Kirchensteuer im Steuerprofil steht. Basis ist die festgesetzte Einkommensteuer.",
+      "8 Prozent in Bayern und Baden-Württemberg, sonst 9 Prozent, nur wenn Kirchensteuer im Steuerprofil steht. Basis ist die tarifliche Einkommensteuer ohne § 35.",
     ],
     [
       "Gewerbeertrag",
@@ -148,11 +148,6 @@ function jahre(plan: SteuerCheckpointPlan): CheckpointBlatt {
       ],
       ["Monate im Plan", String(jahr.monateImPlan), `${jahr.vonMonat} bis ${jahr.bisMonat}`],
       ["Gewinn", euro(jahr.gewinnCents), "Summe Betriebsergebnis vor Ertragsteuern"],
-      [
-        "Progressionsvorbehalt",
-        euro(jahr.progressionsvorbehaltCents),
-        "Steuerfrei, wirkt nur auf den Steuersatz",
-      ],
       ["Gewerbeertrag", euro(jahr.gewerbeertragCents), "Bei Freiberuf 0"],
       [
         "Gewerbeertrag abgerundet",
@@ -204,9 +199,9 @@ function jahre(plan: SteuerCheckpointPlan): CheckpointBlatt {
       [
         "davon im Plan gezahlt",
         euro(gezahlt(jahr)),
-        "Abschlusszahlung oder Vorauszahlungen im Horizont",
+        "Vorauszahlungen und Abschluss im Horizont, Erstattung negativ",
       ],
-      ["davon offen", euro(offen(jahr)), "Termine nach dem letzten Planmonat"],
+      ["davon noch nicht fällig", euro(offen(jahr)), "Termine nach dem letzten Planmonat"],
       [
         "Rücklage im Plan",
         euro(jahr.ruecklageImPlanCents),
@@ -246,7 +241,7 @@ function personZeilen(person: SteuerPersonJahr): Zelle[][] {
     [
       "tarifliche ESt",
       euro(person.tariflicheEinkommensteuerCents),
-      "§ 32a EStG, mit Progressionsvorbehalt, vor § 35",
+      "§ 32a EStG, vor § 35. Die Kirchensteuer rechnet hierauf",
     ],
     [
       "positive gewerbliche Einkünfte",
@@ -284,7 +279,7 @@ function personZeilen(person: SteuerPersonJahr): Zelle[][] {
       `${Math.round(person.kirchensteuerSatz * 1000) / 10} %`.replace(".", ","),
       "0, wenn keine Kirchensteuer",
     ],
-    ["Kirchensteuer", euro(person.kirchensteuerCents), "Satz mal festgesetzte ESt"],
+    ["Kirchensteuer", euro(person.kirchensteuerCents), "Satz mal tarifliche ESt, ohne § 35"],
   ];
 }
 
@@ -293,7 +288,7 @@ function monate(plan: SteuerCheckpointPlan): CheckpointBlatt {
     [`${plan.blatt} – Monate`],
     [HINWEIS_RUECKLAGE],
     [
-      "Beträge in Euro. Abschluss ist die Steuer des ersten Kalenderjahres. Vorauszahlung ist ein Viertel der Steuer desselben Jahres.",
+      "Beträge in Euro. Abschluss ist die Steuer des ersten Jahres oder später die Differenz zum Vorjahr. Vorauszahlung ist ein Viertel der Steuer des Vorjahres. Negativ ist eine Erstattung.",
     ],
     [],
     [

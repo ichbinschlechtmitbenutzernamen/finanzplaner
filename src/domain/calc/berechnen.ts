@@ -97,12 +97,7 @@ export function berechnePlan(
     umsatzsteuer,
     entnahmen,
   );
-  const steuern = berechneErtragsteuer(
-    plan,
-    monate,
-    uebersicht.betriebsergebnisCents,
-    finanzierung.summeProgressionsvorbehaltCents,
-  );
+  const steuern = berechneErtragsteuer(plan, monate, uebersicht.betriebsergebnisCents);
   for (let index = 0; index < monate.length; index += 1) {
     const monat = steuern.monate[index];
     uebersicht.steuerEinkommenZahlungCents[index] = monat?.einkommensteuerZahlungCents ?? 0;
@@ -577,7 +572,6 @@ function berechneFinanzierung(plan: Finanzplan, monate: readonly IsoMonth[]): Fi
     summeEinlagenCents: leereReihe(monate.length),
     summeZuschussCents: leereReihe(monate.length),
     summeZuschussErtragCents: leereReihe(monate.length),
-    summeProgressionsvorbehaltCents: leereReihe(monate.length),
     summeDarlehenAuszahlungCents: darlehenSummen.auszahlungCents,
     summeZinsCents: darlehenSummen.zinsCents,
     summeTilgungCents: darlehenSummen.tilgungCents,
@@ -588,7 +582,6 @@ function berechneFinanzierung(plan: Finanzplan, monate: readonly IsoMonth[]): Fi
   for (const posten of zuschuesse) {
     addiere(block.summeZuschussCents, posten.betragCents);
     addiere(block.summeZuschussErtragCents, posten.ertragCents);
-    addiere(block.summeProgressionsvorbehaltCents, posten.progressionsvorbehaltCents);
   }
   return block;
 }
@@ -603,17 +596,12 @@ function berechneZuschuss(
     setzen(betragCents, indexImPlan(start, posten.monat, monate.length), posten.betragCents);
   }
   const ertragCents = zuschuss.steuerfrei ? leereReihe(monate.length) : betragCents.slice();
-  const progressionsvorbehaltCents = zuschuss.progressionsvorbehalt
-    ? betragCents.slice()
-    : leereReihe(monate.length);
   return {
     id: zuschuss.id,
     bezeichnung: zuschuss.bezeichnung,
     steuerfrei: zuschuss.steuerfrei,
-    progressionsvorbehalt: zuschuss.progressionsvorbehalt,
     betragCents,
     ertragCents,
-    progressionsvorbehaltCents,
   };
 }
 

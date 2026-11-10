@@ -425,7 +425,6 @@ describe("Finanzierung, Zuschuss und Lebensbedarf", () => {
       id: "gz",
       bezeichnung: "Gründungszuschuss",
       steuerfrei: true,
-      progressionsvorbehalt: true,
       auszahlung: {
         art: "gruendungszuschuss",
         alg1MonatlichCents: 100_000,
@@ -441,7 +440,6 @@ describe("Finanzierung, Zuschuss und Lebensbedarf", () => {
       130_000, 130_000, 30_000,
     ]);
     expect(ergebnis.finanzierung.summeZuschussErtragCents[0]).toBe(0);
-    expect(ergebnis.finanzierung.summeProgressionsvorbehaltCents[0]).toBe(130_000);
     expect(ergebnis.uebersicht.betriebsergebnisCents[0]).toBe(0);
     expect(ergebnis.uebersicht.zahlungssaldoCents[0]).toBe(130_000);
   });

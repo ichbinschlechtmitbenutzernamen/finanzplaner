@@ -44,7 +44,6 @@ export function berechneErtragsteuer(
   plan: Finanzplan,
   monate: readonly IsoMonth[],
   betriebsergebnisCents: readonly number[],
-  progressionsvorbehaltCents: readonly number[],
 ): SteuerBlock {
   const abschlusszahlungMonat =
     plan.steuerplanung?.abschlusszahlungMonat ?? ABSCHLUSSZAHLUNG_MONAT_STANDARD;
@@ -68,15 +67,7 @@ export function berechneErtragsteuer(
 
   const art = istKapitalgesellschaft(rechtsform) ? "koerperschaftsteuer" : "einkommensteuer";
   const jahre = gruppiereJahre(monate).map((gruppe) =>
-    steuerJahr(
-      plan,
-      rechtsform,
-      gruppe.jahr,
-      gruppe.indizes,
-      monate,
-      betriebsergebnisCents,
-      progressionsvorbehaltCents,
-    ),
+    steuerJahr(plan, rechtsform, gruppe.jahr, gruppe.indizes, monate, betriebsergebnisCents),
   );
 
   const zahlung = baueZahlungen(jahre, monate, abschlusszahlungMonat);
@@ -99,7 +90,7 @@ export function berechneErtragsteuer(
       message: rumpf
         .map(
           (jahr) =>
-            `Rumpfjahr ${jahr.jahr} umfasst ${jahr.monateImPlan} von 12 Monaten (${jahr.vonMonat} bis ${jahr.bisMonat}). Versteuert wird der bekannte Gewinn ohne Hochrechnung. Kinderfreibeträge und weitere Einkünfte bleiben Jahresbeträge. Vorauszahlungen nach dem letzten Planmonat stehen als offen.`,
+            `Rumpfjahr ${jahr.jahr} umfasst ${jahr.monateImPlan} von 12 Monaten (${jahr.vonMonat} bis ${jahr.bisMonat}). Versteuert wird der bekannte Gewinn ohne Hochrechnung. Kinderfreibeträge und weitere Einkünfte bleiben Jahresbeträge. Termine nach dem letzten Planmonat sind noch nicht fällig.`,
         )
         .join(" "),
     });
@@ -107,7 +98,7 @@ export function berechneErtragsteuer(
   hinweise.push({
     code: "steuer_vorauszahlung",
     message:
-      "Die Steuer des ersten Kalenderjahres wird geschlossen im Zahlungsmonat des zweiten Kalenderjahres gezahlt. Ab dem zweiten Kalenderjahr sind die Vorauszahlungen je ein Viertel der für dasselbe Jahr geplanten Steuer, Einkommen- und Körperschaftsteuer im März, Juni, September und Dezember, Gewerbesteuer im Februar, Mai, August und November. Der letzte Termin trägt den Rundungsrest. Eine Nachzahlung gegen das Vorjahr wird nicht zusätzlich angesetzt: im Plan entsprechen die Vorauszahlungen der geplanten Steuer, die Differenz ist null, soweit alle vier Termine im Horizont liegen.",
+      "Im ersten Kalenderjahr gibt es keine Vorauszahlung. Die Steuer dieses Jahres wird im Zahlungsmonat des Folgejahres gezahlt. Ab dem zweiten Kalenderjahr sind die Vorauszahlungen je ein Viertel der Steuer des Vorjahres, Einkommen- und Körperschaftsteuer im März, Juni, September und Dezember, Gewerbesteuer im Februar, Mai, August und November. Die Differenz zur Steuer des laufenden Jahres wird im September des Folgejahres nachgezahlt oder erstattet. Termine nach dem letzten Planmonat sind noch nicht fällig.",
   });
 
   const offen = jahre.reduce(
@@ -118,10 +109,10 @@ export function berechneErtragsteuer(
       jahr.koerperschaftsteuerOffenCents,
     0,
   );
-  if (offen > 0) {
+  if (offen !== 0) {
     hinweise.push({
       code: "steuer_offen",
-      message: `Steuertermine nach dem letzten Planmonat bleiben offen: ${offen} Cent. Sie werden nicht in den Horizont vorgezogen.`,
+      message: `Steuertermine nach dem letzten Planmonat sind noch nicht fällig: ${offen} Cent. Sie werden nicht in den Horizont vorgezogen.`,
     });
   }
 
@@ -171,11 +162,9 @@ function steuerJahr(
   indizes: number[],
   monate: readonly IsoMonth[],
   betriebsergebnisCents: readonly number[],
-  progressionsvorbehaltCents: readonly number[],
 ): SteuerJahr {
   const parameter = plan.parameter.steuer;
   const gewinnCents = summe(indizes.map((index) => betriebsergebnisCents[index] ?? 0));
-  const progressionCents = summe(indizes.map((index) => progressionsvorbehaltCents[index] ?? 0));
   const kapital = istKapitalgesellschaft(rechtsform);
   const gewerbe = rechtsform !== "freiberufler";
   const freibetrag = kapital
@@ -187,9 +176,7 @@ function steuerJahr(
     : gewerbesteuer(0, parameter, null, 0);
 
   const kst = kapital ? koerperschaftsteuer(gewinnCents, parameter) : { kstCents: 0, soliCents: 0 };
-  const personen = kapital
-    ? []
-    : personenDesJahres(plan, gewinnCents, progressionCents, gesellschaft, gewerbe);
+  const personen = kapital ? [] : personenDesJahres(plan, gewinnCents, gesellschaft, gewerbe);
 
   const einkommensteuerCents = summe(personen.map((person) => person.einkommensteuerCents));
   const soliPersonen = summe(personen.map((person) => person.solidaritaetszuschlagCents));
@@ -206,7 +193,6 @@ function steuerJahr(
     monateImPlan: indizes.length,
     rumpf: indizes.length !== 12,
     gewinnCents,
-    progressionsvorbehaltCents: progressionCents,
     gewerbeertragCents: gesellschaft.gewerbeertragCents,
     gewerbeertragAbgerundetCents: gesellschaft.abgerundetCents,
     freibetragCents: gesellschaft.freibetragCents,
@@ -234,7 +220,6 @@ function steuerJahr(
 function personenDesJahres(
   plan: Finanzplan,
   gewinnCents: number,
-  progressionCents: number,
   gesellschaft: GesellschaftSteuer,
   gewerbe: boolean,
 ): SteuerPersonJahr[] {
@@ -242,7 +227,6 @@ function personenDesJahres(
   if (personen.length === 0) return [];
   const anteile = personen.map((person) => person.anteil);
   const gewinnAnteile = verteile(gewinnCents, anteile);
-  const progressionAnteile = verteile(progressionCents, anteile);
   // Messbetrag und Gewerbesteuer sind volle Euro. Verteilt wird der Eurobetrag,
   // damit die Summe der Anteile dem festgesetzten Betrag entspricht.
   const messAnteile = verteile(Math.floor(gesellschaft.messbetragCents / 100), anteile).map(
@@ -257,7 +241,6 @@ function personenDesJahres(
       plan.stammdaten.bundesland,
       plan.parameter.steuer,
       gewinnAnteile[index] ?? 0,
-      progressionAnteile[index] ?? 0,
       messAnteile[index] ?? 0,
       gewstAnteile[index] ?? 0,
       gewerbe,
@@ -270,7 +253,6 @@ function personJahr(
   bundesland: Bundesland | undefined,
   parameter: Steuerparameter,
   gewinnanteilCents: number,
-  progressionCents: number,
   messbetragAnteilCents: number,
   gewerbesteuerAnteilCents: number,
   gewerbe: boolean,
@@ -281,12 +263,10 @@ function personJahr(
   const summeEinkuenfteCents = gewinnanteilCents + weitere;
   const zvECents = summeEinkuenfteCents - kinderabzugCents;
   const zvEEuro = zvECents > 0 ? Math.floor(zvECents / 100) : 0;
-  const progressionEuro = euroAbgeschnitten(progressionCents);
   const splitting = profil?.splitting ?? false;
   const tarif = einkommensteuerCents({
     zvEEuro,
     splitting,
-    progressionsvorbehaltEuro: progressionEuro,
     parameter,
   });
   const positiveGewerblicheEuro =
@@ -316,7 +296,6 @@ function personJahr(
     zvEEuro,
     splitting,
     kirchensteuerSatz: satz,
-    progressionsvorbehaltEuro: progressionEuro,
     positiveGewerblicheEuro,
     positiveEinkuenfteEuro,
     tariflicheEinkommensteuerCents: tarif.tariflicheEinkommensteuerCents,
@@ -327,7 +306,8 @@ function personJahr(
     anrechnungCents: anrechnung.anrechnungCents,
     einkommensteuerCents: einkommensteuer,
     solidaritaetszuschlagCents: soli,
-    kirchensteuerCents: kirchensteuerCents(einkommensteuer, satz),
+    // § 51a Abs. 2 EStG: Kirchensteuer ohne die Anrechnung nach § 35.
+    kirchensteuerCents: kirchensteuerCents(tarif.tariflicheEinkommensteuerCents, satz),
   };
 }
 
@@ -417,52 +397,52 @@ function baueZahlungen(
   const indexNachMonat = new Map(monate.map((monat, index) => [monat, index]));
 
   jahre.forEach((jahr, jahrIndex) => {
-    const estPaket =
-      jahr.einkommensteuerCents + jahr.solidaritaetszuschlagCents + jahr.kirchensteuerCents;
-    const kstPaket = jahr.koerperschaftsteuerCents + jahr.koerperschaftsteuerSoliCents;
+    const estPaket = einkommenPaket(jahr);
+    const kstPaket = koerperschaftPaket(jahr);
     const gewst = jahr.gewerbesteuerCents;
-    if (jahrIndex === 0) {
-      const ziel = isoMonat(jahr.jahr + 1, abschlusszahlungMonat);
-      const index = indexNachMonat.get(ziel);
-      if (index == null) {
-        jahr.einkommensteuerOffenCents = estPaket;
-        jahr.gewerbesteuerOffenCents = gewst;
-        jahr.koerperschaftsteuerOffenCents = kstPaket;
-      } else {
-        const zeile = zeilen[index];
-        if (zeile) {
-          zeile.einkommensteuerAbschlussCents += estPaket;
-          zeile.gewerbesteuerAbschlussCents += gewst;
-          zeile.koerperschaftsteuerAbschlussCents += kstPaket;
-        }
-        jahr.einkommensteuerGezahltCents = estPaket;
-        jahr.gewerbesteuerGezahltCents = gewst;
-        jahr.koerperschaftsteuerGezahltCents = kstPaket;
-        jahr.einkommensteuerOffenCents = 0;
-        jahr.gewerbesteuerOffenCents = 0;
-        jahr.koerperschaftsteuerOffenCents = 0;
-      }
-    } else {
-      const estTeile = viertel(estPaket);
-      const gewstTeile = viertel(gewst);
-      const kstTeile = viertel(kstPaket);
-      const est = legeViertel(jahr, EST_MONATE, estTeile, indexNachMonat, zeilen, "einkommen");
-      const gewerbeZahlung = legeViertel(
-        jahr,
-        GEWST_MONATE,
-        gewstTeile,
-        indexNachMonat,
-        zeilen,
-        "gewerbe",
-      );
-      const kst = legeViertel(jahr, EST_MONATE, kstTeile, indexNachMonat, zeilen, "koerperschaft");
-      jahr.einkommensteuerGezahltCents = est.gezahlt;
-      jahr.einkommensteuerOffenCents = est.offen;
-      jahr.gewerbesteuerGezahltCents = gewerbeZahlung.gezahlt;
-      jahr.gewerbesteuerOffenCents = gewerbeZahlung.offen;
-      jahr.koerperschaftsteuerGezahltCents = kst.gezahlt;
-      jahr.koerperschaftsteuerOffenCents = kst.offen;
-    }
+    const vorjahr = jahrIndex === 0 ? null : jahre[jahrIndex - 1];
+    const vorEst = vorjahr ? einkommenPaket(vorjahr) : 0;
+    const vorKst = vorjahr ? koerperschaftPaket(vorjahr) : 0;
+    const vorGewst = vorjahr?.gewerbesteuerCents ?? 0;
+    const estVoraus = vorjahr
+      ? legeViertel(jahr.jahr, EST_MONATE, viertel(vorEst), indexNachMonat, zeilen, "einkommen")
+      : { gezahlt: 0, offen: 0 };
+    const gewstVoraus = vorjahr
+      ? legeViertel(jahr.jahr, GEWST_MONATE, viertel(vorGewst), indexNachMonat, zeilen, "gewerbe")
+      : { gezahlt: 0, offen: 0 };
+    const kstVoraus = vorjahr
+      ? legeViertel(jahr.jahr, EST_MONATE, viertel(vorKst), indexNachMonat, zeilen, "koerperschaft")
+      : { gezahlt: 0, offen: 0 };
+    const estAbschluss = bucheAbschluss(
+      jahr.jahr + 1,
+      abschlusszahlungMonat,
+      estPaket - vorEst,
+      indexNachMonat,
+      zeilen,
+      "einkommen",
+    );
+    const gewstAbschluss = bucheAbschluss(
+      jahr.jahr + 1,
+      abschlusszahlungMonat,
+      gewst - vorGewst,
+      indexNachMonat,
+      zeilen,
+      "gewerbe",
+    );
+    const kstAbschluss = bucheAbschluss(
+      jahr.jahr + 1,
+      abschlusszahlungMonat,
+      kstPaket - vorKst,
+      indexNachMonat,
+      zeilen,
+      "koerperschaft",
+    );
+    jahr.einkommensteuerGezahltCents = estVoraus.gezahlt + estAbschluss.gezahlt;
+    jahr.einkommensteuerOffenCents = estVoraus.offen + estAbschluss.offen;
+    jahr.gewerbesteuerGezahltCents = gewstVoraus.gezahlt + gewstAbschluss.gezahlt;
+    jahr.gewerbesteuerOffenCents = gewstVoraus.offen + gewstAbschluss.offen;
+    jahr.koerperschaftsteuerGezahltCents = kstVoraus.gezahlt + kstAbschluss.gezahlt;
+    jahr.koerperschaftsteuerOffenCents = kstVoraus.offen + kstAbschluss.offen;
 
     const ruecklage = ruecklageJeMonat(jahr.steuerLastCents, jahr.monateImPlan === 12);
     for (const [monat, betrag] of ruecklage) {
@@ -493,34 +473,83 @@ function baueZahlungen(
   return { monate: zeilen };
 }
 
+function einkommenPaket(jahr: SteuerJahr): number {
+  return jahr.einkommensteuerCents + jahr.solidaritaetszuschlagCents + jahr.kirchensteuerCents;
+}
+
+function koerperschaftPaket(jahr: SteuerJahr): number {
+  return jahr.koerperschaftsteuerCents + jahr.koerperschaftsteuerSoliCents;
+}
+
+type SteuerArt = "einkommen" | "gewerbe" | "koerperschaft";
+
 function legeViertel(
-  jahr: SteuerJahr,
+  kalenderjahr: number,
   termine: readonly number[],
   teile: readonly number[],
   indexNachMonat: Map<string, number>,
   zeilen: SteuerMonat[],
-  art: "einkommen" | "gewerbe" | "koerperschaft",
+  art: SteuerArt,
 ): { gezahlt: number; offen: number } {
   let gezahlt = 0;
   let offen = 0;
   termine.forEach((monat, index) => {
     const betrag = teile[index] ?? 0;
-    const ziel = indexNachMonat.get(isoMonat(jahr.jahr, monat));
-    if (ziel == null) {
-      offen += betrag;
-      return;
-    }
-    const zeile = zeilen[ziel];
-    if (!zeile) {
-      offen += betrag;
-      return;
-    }
-    if (art === "einkommen") zeile.einkommensteuerVorauszahlungCents += betrag;
-    if (art === "gewerbe") zeile.gewerbesteuerVorauszahlungCents += betrag;
-    if (art === "koerperschaft") zeile.koerperschaftsteuerVorauszahlungCents += betrag;
-    gezahlt += betrag;
+    const offenAnteil = buche(
+      kalenderjahr,
+      monat,
+      betrag,
+      indexNachMonat,
+      zeilen,
+      art,
+      "vorauszahlung",
+    );
+    offen += offenAnteil;
+    gezahlt += betrag - offenAnteil;
   });
   return { gezahlt, offen };
+}
+
+function bucheAbschluss(
+  kalenderjahr: number,
+  monat: number,
+  betrag: number,
+  indexNachMonat: Map<string, number>,
+  zeilen: SteuerMonat[],
+  art: SteuerArt,
+): { gezahlt: number; offen: number } {
+  const offen = buche(kalenderjahr, monat, betrag, indexNachMonat, zeilen, art, "abschluss");
+  return { gezahlt: betrag - offen, offen };
+}
+
+/** Liefert den Betrag, der nicht im Horizont liegt. Null wird nicht gebucht. */
+function buche(
+  kalenderjahr: number,
+  monat: number,
+  betrag: number,
+  indexNachMonat: Map<string, number>,
+  zeilen: SteuerMonat[],
+  art: SteuerArt,
+  buchung: "abschluss" | "vorauszahlung",
+): number {
+  if (betrag === 0) return 0;
+  const index = indexNachMonat.get(isoMonat(kalenderjahr, monat));
+  const zeile = index == null ? undefined : zeilen[index];
+  if (!zeile) return betrag;
+  if (art === "einkommen" && buchung === "abschluss") zeile.einkommensteuerAbschlussCents += betrag;
+  if (art === "einkommen" && buchung === "vorauszahlung") {
+    zeile.einkommensteuerVorauszahlungCents += betrag;
+  }
+  if (art === "gewerbe" && buchung === "abschluss") zeile.gewerbesteuerAbschlussCents += betrag;
+  if (art === "gewerbe" && buchung === "vorauszahlung")
+    zeile.gewerbesteuerVorauszahlungCents += betrag;
+  if (art === "koerperschaft" && buchung === "abschluss") {
+    zeile.koerperschaftsteuerAbschlussCents += betrag;
+  }
+  if (art === "koerperschaft" && buchung === "vorauszahlung") {
+    zeile.koerperschaftsteuerVorauszahlungCents += betrag;
+  }
+  return 0;
 }
 
 /**
@@ -606,9 +635,4 @@ function isoMonat(jahr: number, monat: number): IsoMonth {
 
 function istKapitalgesellschaft(rechtsform: Rechtsform): boolean {
   return rechtsform === "gmbh" || rechtsform === "ug";
-}
-
-function euroAbgeschnitten(cents: number): number {
-  if (cents >= 0) return Math.floor(cents / 100);
-  return -Math.floor(-cents / 100);
 }

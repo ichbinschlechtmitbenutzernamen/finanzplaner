@@ -11,11 +11,6 @@ export interface TarifEingabe {
   /** Zu versteuerndes Einkommen in vollen Euro, bereits abgerundet. Negativ wird wie 0 behandelt. */
   zvEEuro: number;
   splitting: boolean;
-  /**
-   * Einkünfte mit Progressionsvorbehalt in vollen Euro, vorzeichenbehaftet.
-   * 0 lässt den Tarif unverändert.
-   */
-  progressionsvorbehaltEuro: number;
   parameter: Steuerparameter;
 }
 
@@ -29,16 +24,8 @@ export interface TarifErgebnis {
 export function einkommensteuerCents(eingabe: TarifEingabe): TarifErgebnis {
   const zvE = Math.trunc(eingabe.zvEEuro);
   if (zvE <= 0) return { tariflicheEinkommensteuerCents: 0, zone: 0 };
-  const progression = Math.trunc(eingabe.progressionsvorbehaltEuro);
-  if (progression === 0) {
-    const tarif = grundtarif(zvE, eingabe.splitting, eingabe.parameter);
-    return { tariflicheEinkommensteuerCents: tarif.euro * 100, zone: tarif.zone };
-  }
-  const bemessung = zvE + progression;
-  if (bemessung <= 0) return { tariflicheEinkommensteuerCents: 0, zone: 0 };
-  const aufBemessung = grundtarif(bemessung, eingabe.splitting, eingabe.parameter);
-  const euro = Number((BigInt(aufBemessung.euro) * BigInt(zvE)) / BigInt(bemessung));
-  return { tariflicheEinkommensteuerCents: euro * 100, zone: aufBemessung.zone };
+  const tarif = grundtarif(zvE, eingabe.splitting, eingabe.parameter);
+  return { tariflicheEinkommensteuerCents: tarif.euro * 100, zone: tarif.zone };
 }
 
 /**
@@ -67,7 +54,11 @@ export function solidaritaetszuschlagCents(
   return Math.min(voll, milderung);
 }
 
-/** Kirchensteuer auf die festgesetzte Einkommensteuer. Satz 0 lässt sie entfallen. */
+/**
+ * Kirchensteuer auf die übergebene Einkommensteuer.
+ * Nach § 51a Abs. 2 EStG ist das die Steuer ohne die Anrechnung des § 35.
+ * Satz 0 lässt sie entfallen.
+ */
 export function kirchensteuerCents(einkommensteuerCents: number, satz: number): number {
   if (einkommensteuerCents <= 0 || satz <= 0) return 0;
   return anteilCents(einkommensteuerCents, millis(satz));
