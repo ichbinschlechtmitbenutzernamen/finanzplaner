@@ -9,6 +9,7 @@
     "lint": "eslint . && prettier --check .",
     "preview": "vite preview",
     "test": "vitest run",
+    "export:check": "tsx scripts/export-check.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
@@ -26,14 +27,16 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^7.1.1",
+    "exceljs": "^4.4.0",
     "globals": "^17.14.0",
     "prettier": "^3.9.10",
+    "tsx": "^4.23.15",
     "typescript": "~6.0.3",
     "typescript-eslint": "^8.72.2",
     "vite": "^8.3.6",
     "vitest": "^5.1.0"
   },
-  "description": "Finanzplaner für Existenzgründer – Grundlage und Datenmodell",
+  "description": "Finanzplaner für Existenzgründer – Datenmodell und Rechenkern",
   "engines": {
     "node": ">=22"
   }
