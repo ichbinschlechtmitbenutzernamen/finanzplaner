@@ -18,6 +18,7 @@ export type Migration = (data: Record<string, unknown>) => Record<string, unknow
  */
 export const migrations: Record<number, Migration> = {
   1: migrateV1ToV2,
+  2: migrateV2ToV3,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,6 +45,46 @@ export function migrateV1ToV2(data: Record<string, unknown>): Record<string, unk
   if (plan.status == null) plan.status = "vollstaendig";
   if (plan.parameter == null) plan.parameter = createParameterSnapshot();
   plan.schemaVersion = 2;
+  return plan;
+}
+
+/**
+ * Version 3 streicht Sacheinlagen, bucht Gründungs- und Anlaufkosten als Aufwand
+ * und entfernt die Nutzungsdauer beim Sammelposten. Sie wird fest über 60 Monate aufgelöst.
+ * Ein alter Vermerk „nicht sofort abzugsfähig“ wird zu Aufwand, weil dazu keine Anlagenangaben vorliegen.
+ */
+export function migrateV2ToV3(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  const kapitalbedarf = plan.kapitalbedarf;
+  if (isRecord(kapitalbedarf)) {
+    for (const liste of ["gruendungskosten", "anlaufkosten"] as const) {
+      const posten = kapitalbedarf[liste];
+      if (!Array.isArray(posten)) continue;
+      for (const eintrag of posten) {
+        if (!isRecord(eintrag)) continue;
+        delete eintrag.steuerlichSofortAbzugsfaehig;
+        if (eintrag.buchung == null) eintrag.buchung = { art: "aufwand" };
+      }
+    }
+    if (Array.isArray(kapitalbedarf.investitionen)) {
+      for (const eintrag of kapitalbedarf.investitionen) {
+        if (!isRecord(eintrag) || eintrag.afaMethode !== "sammelposten") continue;
+        delete eintrag.nutzungsdauerMonate;
+      }
+    }
+  }
+
+  const finanzierung = plan.finanzierung;
+  if (isRecord(finanzierung) && Array.isArray(finanzierung.eigenkapital)) {
+    finanzierung.eigenkapital = finanzierung.eigenkapital.flatMap((eintrag) => {
+      if (!isRecord(eintrag)) return [eintrag];
+      if (eintrag.art === "sacheinlage") return [];
+      delete eintrag.investitionId;
+      return [eintrag];
+    });
+  }
+
+  plan.schemaVersion = 3;
   return plan;
 }
 

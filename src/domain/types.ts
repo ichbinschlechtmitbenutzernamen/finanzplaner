@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 2 as const;
+export const SCHEMA_VERSION = 3 as const;
 
 export const PLAN_HORIZON_MONTHS = 36 as const;
 
@@ -247,7 +247,7 @@ export const AFA_METHODEN = ["linear", "sofort_gwg", "sammelposten"] as const;
 
 export type AfaMethode = (typeof AFA_METHODEN)[number];
 
-export interface Investition {
+interface InvestitionBasis {
   id: Id;
   bezeichnung: string;
   kategorie: InvestitionsKategorie;
@@ -257,29 +257,58 @@ export interface Investition {
   anschaffungsmonat: IsoMonth;
   /** Fehlt der Wert, beginnt die AfA im Anschaffungsmonat. */
   afaStartMonat?: IsoMonth;
-  /**
-   * Bei `linear` und `sammelposten` mindestens 1.
-   * Bei `sofort_gwg` genau 0, weil der Betrag sofort Aufwand wird.
-   */
-  nutzungsdauerMonate: number;
-  afaMethode: AfaMethode;
-  /** Fehlt der Wert, rechnet die AfA später auf 0 Cent Restwert. */
+  /** Fehlt der Wert, rechnet die AfA auf 0 Cent Restwert. Bei GWG nicht vorgesehen. */
   restwertCents?: EuroCents;
   zahlungszielTage: number;
   notizen?: string;
 }
 
-export interface Einmalkosten {
+/**
+ * `linear`: Nutzungsdauer mindestens ein Monat.
+ * `sofort_gwg`: Nutzungsdauer 0, der Betrag wird im AfA-Monat voll abgeschrieben.
+ * `sammelposten`: keine Nutzungsdauer. Aufgelöst wird immer über 60 Monate.
+ */
+export type Investition =
+  | (InvestitionBasis & { afaMethode: "linear"; nutzungsdauerMonate: number })
+  | (InvestitionBasis & { afaMethode: "sofort_gwg"; nutzungsdauerMonate: 0 })
+  | (InvestitionBasis & { afaMethode: "sammelposten" });
+
+interface EinmalkostenBasis {
   id: Id;
   bezeichnung: string;
   nettoCents: EuroCents;
   umsatzsteuerSatz: Satz;
   monat: IsoMonth;
   zahlungszielTage: number;
-  /** false lässt später Raum für Kosten, die nicht sofort Aufwand sind. */
-  steuerlichSofortAbzugsfaehig: boolean;
   notizen?: string;
 }
+
+/**
+ * `aufwand`: sofort Betriebsausgabe im Leistungsmonat.
+ * `anlage`: normale AfA, einschließlich der 250-Euro-Regel, GWG und Sammelposten über 60 Monate.
+ */
+export type Einmalkosten =
+  | (EinmalkostenBasis & { buchung: { art: "aufwand" } })
+  | (EinmalkostenBasis & {
+      buchung: {
+        art: "anlage";
+        afaMethode: "linear";
+        nutzungsdauerMonate: number;
+        afaStartMonat?: IsoMonth;
+        restwertCents?: EuroCents;
+      };
+    })
+  | (EinmalkostenBasis & {
+      buchung: { art: "anlage"; afaMethode: "sofort_gwg"; afaStartMonat?: IsoMonth };
+    })
+  | (EinmalkostenBasis & {
+      buchung: {
+        art: "anlage";
+        afaMethode: "sammelposten";
+        afaStartMonat?: IsoMonth;
+        restwertCents?: EuroCents;
+      };
+    });
 
 export interface Betriebsmittel {
   /** Liquiditätspuffer zu Beginn. Kein Aufwand, nur Kapitalbedarf und Kasse. */
@@ -296,7 +325,7 @@ export interface Kapitalbedarf {
   betriebsmittel: Betriebsmittel;
 }
 
-export const EIGENKAPITAL_ARTEN = ["bareinlage", "sacheinlage", "kapitalruecklage"] as const;
+export const EIGENKAPITAL_ARTEN = ["bareinlage", "kapitalruecklage"] as const;
 
 export type EigenkapitalArt = (typeof EIGENKAPITAL_ARTEN)[number];
 
@@ -308,8 +337,6 @@ export interface EigenkapitalPosten {
   betragCents: EuroCents;
   monat: IsoMonth;
   art: EigenkapitalArt;
-  /** Bei Sacheinlage optional die Investition, die eingebracht wird. */
-  investitionId?: Id;
   notizen?: string;
 }
 

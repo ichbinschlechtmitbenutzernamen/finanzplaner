@@ -351,27 +351,6 @@ function validateKapitalbedarf(plan: Finanzplan, ctx: PlanIssueContext): void {
         issue(ctx, [...path, "afaStartMonat"], "Die AfA kann nicht vor der Anschaffung starten.");
       }
     }
-    if (investition.afaMethode === "linear" && investition.nutzungsdauerMonate < 1) {
-      issue(
-        ctx,
-        [...path, "nutzungsdauerMonate"],
-        "Lineare AfA braucht eine Nutzungsdauer von mindestens einem Monat.",
-      );
-    }
-    if (investition.afaMethode === "sammelposten" && investition.nutzungsdauerMonate < 1) {
-      issue(
-        ctx,
-        [...path, "nutzungsdauerMonate"],
-        "Ein Sammelposten braucht eine Nutzungsdauer von mindestens einem Monat.",
-      );
-    }
-    if (investition.afaMethode === "sofort_gwg" && investition.nutzungsdauerMonate !== 0) {
-      issue(
-        ctx,
-        [...path, "nutzungsdauerMonate"],
-        "Bei Sofortabschreibung als GWG ist die Nutzungsdauer 0.",
-      );
-    }
     if (investition.restwertCents != null && investition.restwertCents > investition.nettoCents) {
       issue(
         ctx,
@@ -399,7 +378,30 @@ function validateKapitalbedarf(plan: Finanzplan, ctx: PlanIssueContext): void {
     ] as const
   ).forEach(([list, posten]) => {
     posten.forEach((item, index) => {
-      inHorizon(plan, item.monat, ["kapitalbedarf", list, index, "monat"], ctx);
+      const path = ["kapitalbedarf", list, index];
+      inHorizon(plan, item.monat, [...path, "monat"], ctx);
+      if (item.buchung.art !== "anlage") return;
+      if (item.buchung.afaStartMonat) {
+        inHorizon(plan, item.buchung.afaStartMonat, [...path, "buchung", "afaStartMonat"], ctx);
+        if (monthIndex(item.monat, item.buchung.afaStartMonat) < 0) {
+          issue(
+            ctx,
+            [...path, "buchung", "afaStartMonat"],
+            "Die AfA kann nicht vor dem Kostenmonat starten.",
+          );
+        }
+      }
+      if (
+        item.buchung.afaMethode !== "sofort_gwg" &&
+        item.buchung.restwertCents != null &&
+        item.buchung.restwertCents > item.nettoCents
+      ) {
+        issue(
+          ctx,
+          [...path, "buchung", "restwertCents"],
+          "Der Restwert kann nicht über den Anschaffungskosten liegen.",
+        );
+      }
     });
   });
 
@@ -417,27 +419,12 @@ function validateKapitalbedarf(plan: Finanzplan, ctx: PlanIssueContext): void {
 function validateFinanzierung(
   plan: Finanzplan,
   personIds: Set<string>,
-  investIds: Set<string>,
   ctx: PlanIssueContext,
 ): void {
   plan.finanzierung.eigenkapital.forEach((posten, index) => {
     const path = ["finanzierung", "eigenkapital", index];
     inHorizon(plan, posten.monat, [...path, "monat"], ctx);
     checkPerson(posten, personIds, [...path, "personId"], ctx);
-    if (posten.investitionId != null && posten.art !== "sacheinlage") {
-      issue(
-        ctx,
-        [...path, "investitionId"],
-        "Eine Investition lässt sich nur einer Sacheinlage zuordnen.",
-      );
-    }
-    if (posten.investitionId != null && !investIds.has(posten.investitionId)) {
-      issue(
-        ctx,
-        [...path, "investitionId"],
-        "Die verknüpfte Investition gibt es im Kapitalbedarf nicht.",
-      );
-    }
   });
 
   plan.finanzierung.darlehen.forEach((darlehen, index) => {
@@ -742,13 +729,12 @@ export function refineFinanzplan(plan: Finanzplan, ctx: PlanIssueContext): void 
   validateZwecke(plan, ctx);
 
   const personIds = new Set(plan.stammdaten.personen.map((person) => person.id));
-  const investIds = new Set(plan.kapitalbedarf.investitionen.map((item) => item.id));
   const umsatzIds = new Map(plan.umsatzplanung.map((item) => [item.id, item]));
   const kostenIds = new Set(plan.laufendeKosten.map((item) => item.id));
   const personalIds = new Set(plan.personal.map((item) => item.id));
 
   validateKapitalbedarf(plan, ctx);
-  validateFinanzierung(plan, personIds, investIds, ctx);
+  validateFinanzierung(plan, personIds, ctx);
   validateBetrieb(plan, personIds, ctx);
   (["best", "real", "worst"] as const).forEach((key) => {
     validateSzenario(plan, key, umsatzIds, kostenIds, personalIds, ctx);

@@ -22,6 +22,17 @@ export {
 } from "./migrate.ts";
 export { zahlungszielMonate, ustZahllastZahlungsmonat } from "./zahlung.ts";
 export {
+  annuitaetCents,
+  berechnePlan,
+  BerechnungError,
+  kreditplan,
+  monatsbetragCents,
+  roundCents,
+  summeCents,
+  verteilteRaten,
+  zinsMonatCents,
+} from "./calc/index.ts";
+export {
   addMonths,
   horizonEnd,
   isIsoMonth,
@@ -53,6 +64,7 @@ export {
   WAEHRUNG,
   ZUSCHUSS_PROGRAMME,
 } from "./types.ts";
+export type { Planberechnung } from "./calc/index.ts";
 export type {
   AfaMethode,
   AngewendeteVorlage,
