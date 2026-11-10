@@ -48,15 +48,15 @@ export default function App() {
 
   return (
     <main>
-      <p className="eyebrow">Schritt 2 · Rechenkern</p>
+      <p className="eyebrow">Schritt 3 · Steuern im Rechenkern</p>
       <h1>Finanzplaner</h1>
       <p className="lead">
         Ein Finanzplan über drei Jahre für Gründerinnen und Gründer, ohne Vorkenntnisse in der
         Finanzplanung. Der Name ist ein Arbeitsname.
       </p>
       <p>
-        Diese Seite zeigt weiterhin nur die Beispieldaten. Die Monatswerte rechnet der Rechenkern,
-        Auswertungen und der Assistent folgen später.
+        Diese Seite zeigt weiterhin nur die Beispieldaten. Der Rechenkern bildet die Monate und die
+        Ertragsteuer, Auswertungen und der Assistent folgen später.
       </p>
 
       <div className="switcher" role="group" aria-label="Beispielplan wählen">

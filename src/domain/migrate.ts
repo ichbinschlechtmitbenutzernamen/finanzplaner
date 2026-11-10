@@ -1,6 +1,6 @@
 import { finanzplanSchema } from "./schema.ts";
-import { createParameterSnapshot } from "./parameter.ts";
-import { SCHEMA_VERSION, type Finanzplan } from "./types.ts";
+import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
+import { ABSCHLUSSZAHLUNG_MONAT_STANDARD, SCHEMA_VERSION, type Finanzplan } from "./types.ts";
 
 /** Version oder JSON-Hülle lässt sich nicht in das aktuelle Schema überführen. */
 export class SchemaMigrationError extends Error {
@@ -19,6 +19,7 @@ export type Migration = (data: Record<string, unknown>) => Record<string, unknow
 export const migrations: Record<number, Migration> = {
   1: migrateV1ToV2,
   2: migrateV2ToV3,
+  3: migrateV3ToV4,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -85,6 +86,37 @@ export function migrateV2ToV3(data: Record<string, unknown>): Record<string, unk
   }
 
   plan.schemaVersion = 3;
+  return plan;
+}
+
+/**
+ * Version 4 ergänzt die Tarifformel, die Soli-Milderung und den Zahlungsmonat
+ * der Steuer des ersten Jahres. Vorhandene Sätze und Freibeträge bleiben.
+ * Fehlende Tarifwerte kommen aus dem Parametersatz de-2026.
+ */
+export function migrateV3ToV4(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  if (!isRecord(plan.steuerplanung)) {
+    plan.steuerplanung = { abschlusszahlungMonat: ABSCHLUSSZAHLUNG_MONAT_STANDARD };
+  }
+  const parameter = plan.parameter;
+  if (isRecord(parameter) && isRecord(parameter.steuer)) {
+    const steuer = parameter.steuer;
+    const vorlage = PARAMETER_DE_2026.steuer;
+    if (steuer.einkommensteuerTarif == null) {
+      steuer.einkommensteuerTarif = structuredClone(vorlage.einkommensteuerTarif);
+    }
+    if (steuer.solidaritaetszuschlagMilderungSatz == null) {
+      steuer.solidaritaetszuschlagMilderungSatz = vorlage.solidaritaetszuschlagMilderungSatz;
+    }
+    if (steuer.gewerbeertragAbrundungCents == null) {
+      steuer.gewerbeertragAbrundungCents = vorlage.gewerbeertragAbrundungCents;
+    }
+    if (steuer.gewerbesteuerAnrechnungFaktor == null) {
+      steuer.gewerbesteuerAnrechnungFaktor = vorlage.gewerbesteuerAnrechnungFaktor;
+    }
+  }
+  plan.schemaVersion = 4;
   return plan;
 }
 

@@ -1,5 +1,15 @@
 export { berechneAnlage } from "./afa.ts";
 export { berechnePlan, BerechnungError, summeCents } from "./berechnen.ts";
+export {
+  STEUERRUECKLAGE_HINWEIS,
+  anrechnung35,
+  berechneErtragsteuer,
+  gewerbesteuer,
+  kirchensteuerSatz,
+  ruecklageJeMonat,
+  viertel,
+} from "./steuer.ts";
+export { einkommensteuerCents, kirchensteuerCents, solidaritaetszuschlagCents } from "./tarif.ts";
 export { darlehenImPlan, kreditplan, summeTilgung } from "./darlehen.ts";
 export { istAktiv, mengeImMonat, monatsbetragCents, wachstumsfaktor } from "./monatswert.ts";
 export { annuitaetCents, roundCents, roundRate, verteilteRaten, zinsMonatCents } from "./round.ts";

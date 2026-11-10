@@ -9,7 +9,10 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 3 as const;
+export const SCHEMA_VERSION = 4 as const;
+
+/** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
+export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
 
 export const PLAN_HORIZON_MONTHS = 36 as const;
 
@@ -580,22 +583,61 @@ export interface UmsatzsteuerEinstellungen {
   dauerfristverlaengerung: boolean;
 }
 
+/**
+ * Tarifformel § 32a Abs. 1 EStG.
+ * Koeffizienten mit Nachkommastellen stehen in Hundertsteln,
+ * damit 914,51 nicht als binäre Kommazahl gespeichert wird. 91451 bedeutet 914,51.
+ * Betragsgrenzen sind volle Euro, wie im Gesetz.
+ */
+export interface EinkommensteuerTarif {
+  quelle: string;
+  /** Obergrenze der ersten Progressionszone, volle Euro. */
+  zone2BisEuro: number;
+  /** Obergrenze der zweiten Progressionszone, volle Euro. */
+  zone3BisEuro: number;
+  /** Obergrenze der Proportionalzone mit dem Spitzensteuersatz, volle Euro. */
+  zone4BisEuro: number;
+  /** z misst den Teil des Einkommens oberhalb dieser Schwelle. */
+  zone3SchwelleEuro: number;
+  /** (faktor / 100 · y + summand) · y */
+  zone2FaktorHundertstel: number;
+  zone2Summand: number;
+  /** (faktor / 100 · z + summand) · z + konstante / 100 */
+  zone3FaktorHundertstel: number;
+  zone3Summand: number;
+  zone3KonstanteHundertstel: number;
+  /** Abzug in der Spitzensteuersatz-Zone, in Hundertstel Euro. */
+  zone4AbzugHundertstel: number;
+  /** Abzug in der Reichensteuersatz-Zone, in Hundertstel Euro. */
+  zone5AbzugHundertstel: number;
+}
+
 export interface Steuerparameter {
   /** 0.19 = 19 %. Orientierung für neue Zeilen, jede Zeile speichert ihren Satz selbst. */
   umsatzsteuerRegelsatz: Satz;
   umsatzsteuerErmaessigt: Satz;
   koerperschaftsteuerSatz: Satz;
   solidaritaetszuschlagSatz: Satz;
-  /** Freigrenze auf die festgesetzte Einkommensteuer, in Cent. */
+  /**
+   * Freigrenze auf die festgesetzte Einkommensteuer bei Einzelveranlagung, in Cent.
+   * Bei Ehegattensplitting gilt das Doppelte. Auf die Körperschaftsteuer gibt es keine Freigrenze.
+   */
   solidaritaetszuschlagFreigrenzeCents: EuroCents;
+  /** Milderungszone § 4 SolZG: höchstens dieser Satz auf den Betrag über der Freigrenze. 0,119 = 11,9 %. */
+  solidaritaetszuschlagMilderungSatz: Satz;
   gewerbesteuerMesszahl: Satz;
   gewerbesteuerFreibetragPersonenCents: EuroCents;
   gewerbesteuerFreibetragKapitalCents: EuroCents;
+  /** § 11 GewStG: Gewerbeertrag wird auf dieses Vielfache nach unten abgerundet. 100 Euro = 10.000 Cent. */
+  gewerbeertragAbrundungCents: EuroCents;
+  /** § 35 EStG: das Wievielfache des Messbetrags auf die Einkommensteuer angerechnet wird. */
+  gewerbesteuerAnrechnungFaktor: number;
   einkommensteuerGrundfreibetragCents: EuroCents;
   kinderfreibetragJeElternteilCents: EuroCents;
   beaFreibetragJeElternteilCents: EuroCents;
   einkommensteuerSpitzensteuersatz: Satz;
   einkommensteuerReichensteuersatz: Satz;
+  einkommensteuerTarif: EinkommensteuerTarif;
   kirchensteuerSatzBayernBadenWuerttemberg: Satz;
   kirchensteuerSatzUebrigeLaender: Satz;
   kleinunternehmerVorjahrCents: EuroCents;
@@ -606,6 +648,18 @@ export interface Steuerparameter {
   sammelpostenMinNettoCents: EuroCents;
   /** Sammelposten bis zu diesem Nettobetrag, einschließlich. */
   sammelpostenMaxNettoCents: EuroCents;
+}
+
+/**
+ * Planungsannahme für den Zahlungszeitpunkt, kein Gesetzessatz.
+ * Die Vorauszahlungsmonate stehen fest und werden hier nicht überschrieben.
+ */
+export interface Steuerplanung {
+  /**
+   * Kalendermonat 1–12, in dem die gesamte Steuer des ersten Kalenderjahres
+   * im zweiten Kalenderjahr gezahlt wird.
+   */
+  abschlusszahlungMonat: number;
 }
 
 export interface Darlehensvorlage {
@@ -708,6 +762,7 @@ export interface Finanzplan {
   personal: Personalstelle[];
   laufendeKosten: Kostenposition[];
   umsatzsteuer: UmsatzsteuerEinstellungen;
+  steuerplanung: Steuerplanung;
   szenarien: Szenarien;
   notizen?: string;
 }

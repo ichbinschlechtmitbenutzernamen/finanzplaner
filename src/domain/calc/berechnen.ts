@@ -16,6 +16,7 @@ import { darlehenImPlan, summiereDarlehen } from "./darlehen.ts";
 import { istAktiv, mengeImMonat, monatsbetragCents } from "./monatswert.ts";
 import { addiere, leereReihe, setzen, summe } from "./reihe.ts";
 import { roundCents, roundRate } from "./round.ts";
+import { berechneErtragsteuer } from "./steuer.ts";
 import { kostenFaktor, personalFaktor, szenarioFaktoren, umsatzFaktor } from "./szenario.ts";
 import type {
   BerechnungHinweis,
@@ -96,6 +97,24 @@ export function berechnePlan(
     umsatzsteuer,
     entnahmen,
   );
+  const steuern = berechneErtragsteuer(
+    plan,
+    monate,
+    uebersicht.betriebsergebnisCents,
+    finanzierung.summeProgressionsvorbehaltCents,
+  );
+  for (let index = 0; index < monate.length; index += 1) {
+    const monat = steuern.monate[index];
+    uebersicht.steuerEinkommenZahlungCents[index] = monat?.einkommensteuerZahlungCents ?? 0;
+    uebersicht.steuerGewerbeZahlungCents[index] = monat?.gewerbesteuerZahlungCents ?? 0;
+    uebersicht.steuerKoerperschaftZahlungCents[index] = monat?.koerperschaftsteuerZahlungCents ?? 0;
+    uebersicht.steuerRuecklageCents[index] = monat?.ruecklageCents ?? 0;
+    uebersicht.zahlungssaldoCents[index] =
+      (uebersicht.zahlungssaldoCents[index] ?? 0) -
+      (uebersicht.steuerEinkommenZahlungCents[index] ?? 0) -
+      (uebersicht.steuerGewerbeZahlungCents[index] ?? 0) -
+      (uebersicht.steuerKoerperschaftZahlungCents[index] ?? 0);
+  }
 
   return {
     planId: plan.id,
@@ -107,7 +126,7 @@ export function berechnePlan(
     szenarioBezeichnung: szenarioName(plan, szenario),
     startMonat,
     monate,
-    hinweise: hinweise(plan, investitionen),
+    hinweise: [...hinweise(plan, investitionen), ...steuern.hinweise],
     umsatz,
     personal,
     kosten,
@@ -115,6 +134,7 @@ export function berechnePlan(
     finanzierung,
     umsatzsteuer,
     entnahmen,
+    steuern,
     uebersicht,
     liquiditaetsreserveCents: plan.kapitalbedarf.betriebsmittel.liquiditaetsreserveCents,
   };
@@ -742,6 +762,10 @@ function baueUebersicht(
     darlehensauszahlungCents: finanzierung.summeDarlehenAuszahlungCents.slice(),
     zuschuesseZahlungCents: finanzierung.summeZuschussCents.slice(),
     entnahmenCents: entnahmen.entnahmeCents.slice(),
+    steuerEinkommenZahlungCents: leereReihe(laenge),
+    steuerGewerbeZahlungCents: leereReihe(laenge),
+    steuerKoerperschaftZahlungCents: leereReihe(laenge),
+    steuerRuecklageCents: leereReihe(laenge),
     zahlungssaldoCents: leereReihe(laenge),
     restschuldCents: finanzierung.summeRestschuldCents.slice(),
     forderungenCents: leereReihe(laenge),

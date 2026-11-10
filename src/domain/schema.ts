@@ -459,20 +459,41 @@ const umsatzsteuerSchema = z.strictObject({
   dauerfristverlaengerung: z.boolean(),
 });
 
+const euroBetragSchema = z.number().int().nonnegative().max(100_000_000);
+
+const einkommensteuerTarifSchema = z.strictObject({
+  quelle: textSchema(500),
+  zone2BisEuro: euroBetragSchema,
+  zone3BisEuro: euroBetragSchema,
+  zone4BisEuro: euroBetragSchema,
+  zone3SchwelleEuro: euroBetragSchema,
+  zone2FaktorHundertstel: euroBetragSchema,
+  zone2Summand: euroBetragSchema,
+  zone3FaktorHundertstel: euroBetragSchema,
+  zone3Summand: euroBetragSchema,
+  zone3KonstanteHundertstel: euroBetragSchema,
+  zone4AbzugHundertstel: euroBetragSchema,
+  zone5AbzugHundertstel: euroBetragSchema,
+});
+
 const steuerparameterSchema = z.strictObject({
   umsatzsteuerRegelsatz: satzSchema,
   umsatzsteuerErmaessigt: satzSchema,
   koerperschaftsteuerSatz: satzSchema,
   solidaritaetszuschlagSatz: satzSchema,
   solidaritaetszuschlagFreigrenzeCents: centsSchema,
+  solidaritaetszuschlagMilderungSatz: satzSchema,
   gewerbesteuerMesszahl: satzSchema,
   gewerbesteuerFreibetragPersonenCents: centsSchema,
   gewerbesteuerFreibetragKapitalCents: centsSchema,
+  gewerbeertragAbrundungCents: centsSchema.positive("Die Abrundung muss größer als 0 sein."),
+  gewerbesteuerAnrechnungFaktor: z.number().positive().max(20),
   einkommensteuerGrundfreibetragCents: centsSchema,
   kinderfreibetragJeElternteilCents: centsSchema,
   beaFreibetragJeElternteilCents: centsSchema,
   einkommensteuerSpitzensteuersatz: satzSchema,
   einkommensteuerReichensteuersatz: satzSchema,
+  einkommensteuerTarif: einkommensteuerTarifSchema,
   kirchensteuerSatzBayernBadenWuerttemberg: satzSchema,
   kirchensteuerSatzUebrigeLaender: satzSchema,
   kleinunternehmerVorjahrCents: centsSchema,
@@ -480,6 +501,10 @@ const steuerparameterSchema = z.strictObject({
   gwgSofortMaxNettoCents: centsSchema,
   sammelpostenMinNettoCents: centsSchema,
   sammelpostenMaxNettoCents: centsSchema,
+});
+
+const steuerplanungSchema = z.strictObject({
+  abschlusszahlungMonat: z.number().int().min(1).max(12),
 });
 
 const darlehensvorlageSchema = z.strictObject({
@@ -576,6 +601,7 @@ export const finanzplanSchema = z
     personal: z.array(personalSchema).max(200),
     laufendeKosten: z.array(kostenpositionSchema).max(200),
     umsatzsteuer: umsatzsteuerSchema,
+    steuerplanung: steuerplanungSchema,
     szenarien: szenarienSchema,
     notizen: optionalTextSchema(5000).optional(),
   })

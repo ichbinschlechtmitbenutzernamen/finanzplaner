@@ -1,6 +1,6 @@
 # Rechenkern
 
-Dieser Text beschreibt, wie aus den Eingaben eines Plans die 36 Monatswerte werden. Er ist für die fachliche Prüfung gedacht. Einkommensteuer, Gewerbesteuer und Körperschaftsteuer rechnet dieser Schritt nicht. Ebenso wenig eine fertige Rentabilitätsvorschau, einen Liquiditätsplan oder einen Break-even. Was hier steht, ist die Grundlage dafür.
+Dieser Text beschreibt, wie aus den Eingaben eines Plans die 36 Monatswerte werden. Er ist für die fachliche Prüfung gedacht. Einkommensteuer, Gewerbesteuer und Körperschaftsteuer stehen in [docs/steuern.md](steuern.md). Eine fertige Rentabilitätsvorschau, ein Liquiditätsplan und ein Break-even sind nicht Teil dieses Texts. Was hier steht, ist die Grundlage dafür.
 
 Der Rechenkern liegt in `src/domain/calc` und kennt weder React noch den Browser. Aufgerufen wird ein Plan und ein Szenario (`base`, `best`, `real` oder `worst`). Zurück kommen Cent-Beträge für jeden der 36 Monate. Die Oberfläche zeigt das noch nicht. Zum Nachrechnen gibt es den Prüfstand für Blitzweg Elektrotechnik, beschrieben am Ende.
 
@@ -137,7 +137,7 @@ Umsatzerlöse
 
 Darunter stehen die erfassten Zahlungen: Kundengeld, Ware, Personal, Kosten, Investitionen, Zinsen, Tilgung, die Umsatzsteuerzahlung, Einlagen, Darlehenszufluss, Zuschüsse und, bei Personenunternehmen, der private Lebensbedarf als Entnahme. Bei GmbH und UG bleibt der Lebensbedarf ein Vergleichswert und wird nicht vom Konto genommen. Das Geschäftsführergehalt ist dort eine Personalstelle.
 
-Der Saldo ist die Summe dieser Zahlungen. Er ist kein Kontostand und kein Liquiditätsplan. Es fehlt der Anfangsbestand, und die Liquiditätsreserve ist bewusst nicht als Einnahme gezählt.
+Der Saldo ist die Summe dieser Zahlungen, abzüglich der Ertragsteuerzahlungen aus [docs/steuern.md](steuern.md). Die empfohlene Steuerrücklage ist kein Zahlungsstrom und fehlt im Saldo. Der Saldo ist kein Kontostand und kein Liquiditätsplan. Es fehlt der Anfangsbestand, und die Liquiditätsreserve ist bewusst nicht als Einnahme gezählt.
 
 ## Prüfstand
 
@@ -153,4 +153,4 @@ Die Fachberatung hat diese Regeln bestätigt: Beträge bis 250 Euro netto sind s
 2. Der Wareneinsatz hat kein eigenes Zahlungsziel und wird im Leistungsmonat gezahlt.
 3. Umsatzabhängige Kosten beziehen sich auf den Nettoumsatz aller Linien nach Szenario. Der Privatanteil kürzt nur den Aufwand und die Vorsteuer, nicht die Auszahlung.
 4. Als Anlage markierte Gründungs- und Anlaufkosten stehen in der Kategorie Sonstiges. Es gibt dafür keine eigene Anlagenkategorie.
-5. Einkommensteuer nach § 32a EStG, Solidaritätszuschlag mit Gleitzone und Kirchensteuer aus dem Bundesland bleiben Schritt 3. Warnungen zur Kleinunternehmergrenze bleiben Schritt 8.
+5. Erledigt in Schritt 3: Einkommensteuer nach § 32a EStG, Solidaritätszuschlag mit Gleitzone, Kirchensteuer aus dem Bundesland, Gewerbesteuer und Körperschaftsteuer. Die Regeln stehen in docs/steuern.md. Warnungen zur Kleinunternehmergrenze bleiben Schritt 8.

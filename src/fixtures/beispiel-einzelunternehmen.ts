@@ -8,7 +8,7 @@ import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 3,
+  schemaVersion: 4,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -331,6 +331,7 @@ export const beispielEinzelunternehmen = {
       betriebsausgabe: true,
     },
   ],
+  steuerplanung: { abschlusszahlungMonat: 9 },
   umsatzsteuer: {
     regime: "regelbesteuerung",
     vorsteuerabzugsberechtigt: true,

@@ -265,7 +265,7 @@ Neue Posten, die es nur im Worst Case gibt, kann ein Szenario nicht anlegen. Daf
 
 - keine fertige GuV, keine Liquidität, kein Break-even, keine Diagrammdaten
 - keine 36 ausgeschriebenen Monatsspalten neben der Regel
-- keine gesetzlichen Steuersätze und keine Sozialversicherungssätze
+- keine Eingabe gesetzlicher Steuersätze und keine Sozialversicherungssätze. Die Steuersätze liegen im Parametersatz
 - keine Benutzerkonten
 - keine Branchen-Benchmarks, nur der Schlüssel, an den eine Vorlage sich später hängen kann
 
@@ -277,11 +277,11 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 3. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu.
+`schemaVersion` steht im Plan und ist derzeit 4. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht.
 
 Ein Plan hat den Status Entwurf oder vollständig. Der Entwurf darf ohne Rechtsform, ohne Person und ohne Startmonat gespeichert werden. Listen dürfen leer sein, Namen dürfen leer sein. Was schon ausgefüllt ist, muss trotzdem formal stimmen, zum Beispiel Ids, Cent-Beträge und die Grenzen einer verknüpften Darlehensvorlage. Erst der vollständige Plan verlangt Startmonat, Rechtsform, mindestens eine passende Person, Ort, Bundesland, Gründungsmonat, einen Zweck und die Summe der Anteile von 100 Prozent.
 
-Der Parametersatz (`parameter`) wird bei der Anlage kopiert und bleibt im Plan, auch wenn sich Gesetz oder Förderkonditionen später ändern. Er enthält die Steuersätze und Freibeträge, die GWG-Grenzen und die Darlehensvorlagen. Die Oberfläche zeigt später Euro. Sätze sind Dezimalzahlen: 0,19 ist 19 Prozent.
+Der Parametersatz (`parameter`) wird bei der Anlage kopiert und bleibt im Plan, auch wenn sich Gesetz oder Förderkonditionen später ändern. Er enthält die Steuersätze, die Tarifformel nach § 32a EStG, die Freibeträge, die GWG-Grenzen und die Darlehensvorlagen. Der Kalendermonat, in dem die Steuer des ersten Jahres im Folgejahr gezahlt wird, steht daneben unter `steuerplanung` und ist kein Gesetzessatz. Standard ist der September. Die Oberfläche zeigt später Euro. Sätze sind Dezimalzahlen: 0,19 ist 19 Prozent.
 
 ## Festgelegte Entscheidungen
 
@@ -301,8 +301,8 @@ Die Fachberatung hat diese Punkte bestätigt. Sie sind so umgesetzt.
 
 ## Offene Fragen an die Fachberatung
 
-1. Die progressive Einkommensteuer-Formel nach § 32a EStG (Zonengrenzen und Koeffizienten für 2026) liegt nicht im Parametersatz. Gespeichert sind Grundfreibetrag 12.348 Euro, Kinderfreibetrag 3.414 Euro und BEA-Freibetrag 1.464 Euro je Elternteil sowie die Sätze 42 und 45 Prozent. Soll die vollständige Tarifformel ergänzt werden?
-2. Beim Solidaritätszuschlag sind 5,5 Prozent und eine Freigrenze von 20.350 Euro auf die festgesetzte Einkommensteuer gespeichert. Die Gleitzone darüber fehlt. Bitte am aktuellen SolZG bestätigen. Die Kirchensteuer steht mit 8 Prozent für Bayern und Baden-Württemberg und 9 Prozent für die übrigen Länder im Parametersatz. Soll der Satz automatisch aus dem Bundesland folgen?
+1. Erledigt: Die Tarifformel § 32a EStG 2026 liegt im Parametersatz. Die Rechnung steht in docs/steuern.md.
+2. Erledigt: Der Solidaritätszuschlag hat die Freigrenze 20.350 Euro und die Gleitzone mit 11,9 Prozent. Beim Splitting gilt die doppelte Freigrenze. Die Kirchensteuer folgt dem Bundesland des Plans, 8 Prozent in Bayern und Baden-Württemberg, sonst 9 Prozent, oder keine, wenn die Person nicht kirchensteuerpflichtig ist.
 3. Erledigt: Beträge bis 250,00 Euro netto sind sofortiger Betriebsaufwand und keine Anlage. Sammelposten werden fest über 60 Monate aufgelöst, ohne eigene Nutzungsdauer. GWG und Sammelposten dürfen sich zwischen 250,01 und 800 Euro weiter überschneiden. Außerhalb der Grenzen gibt es einen Hinweis, keine Sperre.
 4. Der Zahlungsmonat der USt-Zahllast ist der Folgemonat bei monatlicher Voranmeldung und der Monat nach dem Quartalsende bei vierteljährlicher Voranmeldung, jeweils plus ein Monat bei Dauerfrist. Der 10. des Monats bleibt unberücksichtigt. Passt das?
 5. Die Kleinunternehmergrenzen 25.000 und 100.000 Euro netto stehen im Parametersatz und sperren keinen Plan. Soll später eine Warnung kommen, wenn der geplante Umsatz die Grenze überschreitet?
