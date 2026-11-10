@@ -8,7 +8,7 @@ import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 2,
+  schemaVersion: 3,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -101,7 +101,7 @@ export const beispielEinzelunternehmen = {
         umsatzsteuerSatz: 0,
         monat: "2026-04",
         zahlungszielTage: 0,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
       {
         id: "gk-beratung",
@@ -110,7 +110,7 @@ export const beispielEinzelunternehmen = {
         umsatzsteuerSatz: 0.19,
         monat: "2026-04",
         zahlungszielTage: 14,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
     ],
     anlaufkosten: [
@@ -121,7 +121,7 @@ export const beispielEinzelunternehmen = {
         umsatzsteuerSatz: 0.19,
         monat: "2026-04",
         zahlungszielTage: 14,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
       {
         id: "ak-muster",
@@ -130,7 +130,7 @@ export const beispielEinzelunternehmen = {
         umsatzsteuerSatz: 0.19,
         monat: "2026-04",
         zahlungszielTage: 0,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
     ],
     betriebsmittel: {

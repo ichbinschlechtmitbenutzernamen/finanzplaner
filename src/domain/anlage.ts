@@ -1,4 +1,4 @@
-import type { Finanzplan, Id } from "./types.ts";
+import type { Finanzplan, Id, Investition, Steuerparameter } from "./types.ts";
 
 export const ANLAGE_HINWEIS_CODES = ["gwg_betrag_zu_hoch", "sammelposten_ausserhalb"] as const;
 
@@ -17,11 +17,21 @@ export interface AnlageHinweis {
  * ebenfalls möglich wäre. Linear ist immer zulässig und erzeugt keinen Hinweis.
  */
 export function anlageKlassifikationHinweise(plan: Finanzplan): AnlageHinweis[] {
-  const { gwgSofortMaxNettoCents, sammelpostenMinNettoCents, sammelpostenMaxNettoCents } =
-    plan.parameter.steuer;
+  return klassifiziereAnlagen(plan.kapitalbedarf.investitionen, plan.parameter.steuer);
+}
+
+/** Dieselbe Grenzprüfung für Anlagen und für Gründungs- oder Anlaufkosten, die als Anlage markiert sind. */
+export function klassifiziereAnlagen(
+  investitionen: readonly Investition[],
+  steuer: Pick<
+    Steuerparameter,
+    "gwgSofortMaxNettoCents" | "sammelpostenMinNettoCents" | "sammelpostenMaxNettoCents"
+  >,
+): AnlageHinweis[] {
+  const { gwgSofortMaxNettoCents, sammelpostenMinNettoCents, sammelpostenMaxNettoCents } = steuer;
   const hinweise: AnlageHinweis[] = [];
 
-  for (const investition of plan.kapitalbedarf.investitionen) {
+  for (const investition of investitionen) {
     if (
       investition.afaMethode === "sofort_gwg" &&
       investition.nettoCents > gwgSofortMaxNettoCents

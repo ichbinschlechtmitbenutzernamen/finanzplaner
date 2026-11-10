@@ -33,18 +33,18 @@ Szenarien verändern den fertigen Plan nicht durch eine zweite Abschrift. Best C
 
 So ordnen sich die Eingaben später der Ergebnisrechnung zu. Das ist die vorgesehene Lesart, noch keine Rechnung:
 
-| Eingabe                                                                                                         | Später in der GuV                  | Später nur Liquidität und Bestand                 |
-| --------------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------- |
-| Umsatzlinien, netto                                                                                             | Umsatzerlöse                       | Zahlung später, je nach Zahlungsziel              |
-| Wareneinsatz                                                                                                    | Material- und Wareneinsatz         | wie oben                                          |
-| Personal inklusive Geschäftsführergehalt und Arbeitgeberanteil                                                  | Personalaufwand                    | Lohnzahlung im Monat                              |
-| Abschreibung der Investitionen                                                                                  | Abschreibungen                     | die Anschaffung selbst ist Ausgabe, nicht Aufwand |
-| GWG-Sofortabschreibung, sofort abzugsfähige Gründungs- und Anlaufkosten, laufende Kosten abzüglich Privatanteil | sonstige betriebliche Aufwendungen | Zahlung je nach Zahlungsziel                      |
-| steuerpflichtige Zuschüsse                                                                                      | sonstige betriebliche Erträge      | Zufluss                                           |
-| Zinsen                                                                                                          | Zinsaufwand                        | Zinszahlung                                       |
-| Tilgung, Eigenkapital, Liquiditätsreserve                                                                       | nein                               | ja                                                |
-| steuerfreie Zuschüsse, darunter der Gründungszuschuss                                                           | nein                               | ja, Zufluss                                       |
-| privater Lebensbedarf bei Personenunternehmen                                                                   | nein                               | ja, Entnahme                                      |
+| Eingabe                                                                                                 | Später in der GuV                  | Später nur Liquidität und Bestand                 |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------- | ------------------------------------------------- |
+| Umsatzlinien, netto                                                                                     | Umsatzerlöse                       | Zahlung später, je nach Zahlungsziel              |
+| Wareneinsatz                                                                                            | Material- und Wareneinsatz         | wie oben                                          |
+| Personal inklusive Geschäftsführergehalt und Arbeitgeberanteil                                          | Personalaufwand                    | Lohnzahlung im Monat                              |
+| Abschreibung der Investitionen                                                                          | Abschreibungen                     | die Anschaffung selbst ist Ausgabe, nicht Aufwand |
+| GWG-Sofortabschreibung, Gründungs- und Anlaufkosten als Aufwand, laufende Kosten abzüglich Privatanteil | sonstige betriebliche Aufwendungen | Zahlung je nach Zahlungsziel                      |
+| steuerpflichtige Zuschüsse                                                                              | sonstige betriebliche Erträge      | Zufluss                                           |
+| Zinsen                                                                                                  | Zinsaufwand                        | Zinszahlung                                       |
+| Tilgung, Eigenkapital, Liquiditätsreserve                                                               | nein                               | ja                                                |
+| steuerfreie Zuschüsse, darunter der Gründungszuschuss                                                   | nein                               | ja, Zufluss                                       |
+| privater Lebensbedarf bei Personenunternehmen                                                           | nein                               | ja, Entnahme                                      |
 
 ## Stammdaten
 
@@ -81,13 +81,13 @@ Methoden:
 
 - linear: Nutzungsdauer mindestens ein Monat. Die Abschreibung beginnt im Kaufmonat, außer es ist ein späterer AfA-Beginn eingetragen (Maschine steht noch nicht).
 - geringwertiges Wirtschaftsgut, sofort Aufwand: Nutzungsdauer 0. Zulässig bis zur GWG-Obergrenze im Parametersatz, im Stand 2026 sind das 800 Euro netto. Ein höherer Betrag bleibt speicherbar, wird aber markiert.
-- Sammelposten: Nutzungsdauer ist eine Eingabe. Zulässig von 250,01 bis 1.000 Euro netto, ebenfalls laut Parametersatz. Außerhalb dieser Spanne gibt es einen Hinweis, keine Sperre. Im Bereich 250,01 bis 800 Euro sind Sofort-GWG und Sammelposten beide zulässig. Lineare Abschreibung ist immer zulässig und wird nicht bemängelt.
+- Sammelposten: keine Nutzungsdauer. Aufgelöst wird immer über 60 Monate, fünf Jahre nach § 6 Abs. 2a EStG. Zulässig von 250,01 bis 1.000 Euro netto, ebenfalls laut Parametersatz. Außerhalb dieser Spanne gibt es einen Hinweis, keine Sperre. Im Bereich 250,01 bis 800 Euro sind Sofort-GWG und Sammelposten beide zulässig. Lineare Abschreibung ist immer zulässig und wird nicht bemängelt. Ein Betrag bis 250,00 Euro netto wird nicht aktiviert, sondern als sofortiger Betriebsaufwand gebucht.
 
 Ein Restwert ist optional. Fehlt er, schreibt die spätere Rechnung auf null ab. Degressive Abschreibung gibt es im Modell nicht.
 
 ### Gründungskosten und Anlaufkosten
 
-Einmalbeträge mit Monat, Umsatzsteuersatz, Zahlungsziel und dem Vermerk, ob sie sofort Betriebsausgabe sind. Beispiele: Gewerbeanmeldung, Beratung, Startkampagne. Die Liste entscheidet, ob es Gründung oder Anlauf ist.
+Einmalbeträge mit Monat, Umsatzsteuersatz und Zahlungsziel. Beispiele: Gewerbeanmeldung, Beratung, Startkampagne. Die Liste entscheidet, ob es Gründung oder Anlauf ist. Gebucht werden sie als sofortiger Betriebsaufwand im Leistungsmonat, zuzüglich Vorsteuer, soweit sie abziehbar ist. Wer einen Posten ausdrücklich als Anlage markiert, gibt zusätzlich die Abschreibungsmethode an. Dann gilt dieselbe AfA wie bei den Investitionen, beim Sammelposten also 60 Monate. Eine Nutzungsdauer gibt es dort nicht.
 
 ### Betriebsmittel
 
@@ -97,7 +97,7 @@ Ein Betrag für die Liquiditätsreserve zu Beginn. Das ist kein Aufwand, sondern
 
 ### Eigenkapital
 
-Mehrere Posten, je mit Betrag, Monat und Art: Bareinlage, Sacheinlage oder Kapitalrücklage. Eine Sacheinlage kann auf eine Investition zeigen, muss es aber nicht. Der Posten kann einer Person zugeordnet werden. Eine Einlage von außen, ohne Person im Plan, ist ebenfalls möglich.
+Mehrere Posten, je mit Betrag, Monat und Art: Bareinlage oder Kapitalrücklage. Sacheinlagen gibt es im Modell nicht. Der Posten kann einer Person zugeordnet werden. Eine Einlage von außen, ohne Person im Plan, ist ebenfalls möglich.
 
 ### Darlehen und Förderdarlehen
 
@@ -277,7 +277,7 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 2. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt.
+`schemaVersion` steht im Plan und ist derzeit 3. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu.
 
 Ein Plan hat den Status Entwurf oder vollständig. Der Entwurf darf ohne Rechtsform, ohne Person und ohne Startmonat gespeichert werden. Listen dürfen leer sein, Namen dürfen leer sein. Was schon ausgefüllt ist, muss trotzdem formal stimmen, zum Beispiel Ids, Cent-Beträge und die Grenzen einer verknüpften Darlehensvorlage. Erst der vollständige Plan verlangt Startmonat, Rechtsform, mindestens eine passende Person, Ort, Bundesland, Gründungsmonat, einen Zweck und die Summe der Anteile von 100 Prozent.
 
@@ -294,7 +294,8 @@ Die Fachberatung hat diese Punkte bestätigt. Sie sind so umgesetzt.
 - Nettobeträge sind der Normalfall, mit Vorsteuerabzug in der Regelbesteuerung. Die Zahllast ist Umsatzsteuer minus Vorsteuer, der Zahlungsmonat ist modelliert. Kleinunternehmer bleiben möglich.
 - Steuersätze, Freibeträge, GWG-Grenzen und die TAB-Vorlage liegen als Parametersatz im Plan.
 - Ein angefangener Assistent ist als Entwurf speicherbar.
-- Keine degressive Abschreibung. GWG- und Sammelposten-Grenzen werden geprüft und bei Abweichung nur markiert.
+- Keine degressive Abschreibung. GWG- und Sammelposten-Grenzen werden geprüft und bei Abweichung nur markiert. Ein Sammelposten läuft immer über 60 Monate. Beträge bis 250 Euro netto sind sofortiger Betriebsaufwand und keine Anlage.
+- Gründungs- und Anlaufkosten sind Aufwand im Leistungsmonat, es sei denn, sie sind ausdrücklich als Anlage markiert. Sacheinlagen gibt es nicht.
 - Gründungszuschuss, Lebensbedarf je Rechtsform und der Hebesatz als einzige Gewerbesteuer-Eingabe bleiben wie beschrieben.
 - Wareneinsatz nur als Prozent vom Nettoumsatz.
 
@@ -302,7 +303,7 @@ Die Fachberatung hat diese Punkte bestätigt. Sie sind so umgesetzt.
 
 1. Die progressive Einkommensteuer-Formel nach § 32a EStG (Zonengrenzen und Koeffizienten für 2026) liegt nicht im Parametersatz. Gespeichert sind Grundfreibetrag 12.348 Euro, Kinderfreibetrag 3.414 Euro und BEA-Freibetrag 1.464 Euro je Elternteil sowie die Sätze 42 und 45 Prozent. Soll die vollständige Tarifformel ergänzt werden?
 2. Beim Solidaritätszuschlag sind 5,5 Prozent und eine Freigrenze von 20.350 Euro auf die festgesetzte Einkommensteuer gespeichert. Die Gleitzone darüber fehlt. Bitte am aktuellen SolZG bestätigen. Die Kirchensteuer steht mit 8 Prozent für Bayern und Baden-Württemberg und 9 Prozent für die übrigen Länder im Parametersatz. Soll der Satz automatisch aus dem Bundesland folgen?
-3. GWG bis 800 Euro netto und Sammelposten von 250,01 bis 1.000 Euro netto überschneiden sich. Beide sind im Überlapp erlaubt, gewarnt wird nur außerhalb. Beträge bis 250 Euro dürfen als Sofort-GWG erfasst werden. Soll darunter ein eigener Sofortaufwand ohne Anlage werden?
+3. Erledigt: Beträge bis 250,00 Euro netto sind sofortiger Betriebsaufwand und keine Anlage. Sammelposten werden fest über 60 Monate aufgelöst, ohne eigene Nutzungsdauer. GWG und Sammelposten dürfen sich zwischen 250,01 und 800 Euro weiter überschneiden. Außerhalb der Grenzen gibt es einen Hinweis, keine Sperre.
 4. Der Zahlungsmonat der USt-Zahllast ist der Folgemonat bei monatlicher Voranmeldung und der Monat nach dem Quartalsende bei vierteljährlicher Voranmeldung, jeweils plus ein Monat bei Dauerfrist. Der 10. des Monats bleibt unberücksichtigt. Passt das?
 5. Die Kleinunternehmergrenzen 25.000 und 100.000 Euro netto stehen im Parametersatz und sperren keinen Plan. Soll später eine Warnung kommen, wenn der geplante Umsatz die Grenze überschreitet?
 6. Beim Thüringer Mikrodarlehen sind Betrag, Höchstlaufzeit und tilgungsfreie Zeit harte Grenzen der gespeicherten Vorlage. Sollzins, Tilgungsart, volle Auszahlung und fehlende Gebühren sind änderbare Vorgaben des einzelnen Darlehens. Der Effektivzins von 2,43 Prozent ist nicht gespeichert. Reicht der Sollzins für die Zinsrechnung, und braucht es ein Feld für Sondertilgungen?

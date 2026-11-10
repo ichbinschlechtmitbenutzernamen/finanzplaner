@@ -45,7 +45,7 @@ describe("Beispielpläne", () => {
       const imported = importPlanFromJson(json);
       expect(imported).toEqual(plan);
       expect(importPlanFromJson(exportPlanToJson(imported))).toEqual(imported);
-      expect(json).toContain('"schemaVersion": 2');
+      expect(json).toContain('"schemaVersion": 3');
       expect(json.endsWith("\n")).toBe(true);
     }
   });
@@ -169,7 +169,7 @@ describe("Schemaregeln", () => {
       nutzungsdauerMonate: 12,
       afaMethode: "sofort_gwg",
       zahlungszielTage: 0,
-    });
+    } as Finanzplan["kapitalbedarf"]["investitionen"][number]);
     expect(issuesOf(gwg)).toContain("Nutzungsdauer 0");
   });
 
@@ -211,8 +211,9 @@ describe("Schemaregeln", () => {
 
 describe("Migration und Datei-Import", () => {
   it("hebt Version 1 auf den Parametersatz und lehnt Monats-Wareneinsatz ab", () => {
-    expect(SCHEMA_VERSION).toBe(2);
+    expect(SCHEMA_VERSION).toBe(3);
     expect(typeof migrations[1]).toBe("function");
+    expect(typeof migrations[2]).toBe("function");
 
     const current = emptyPlan();
     const v1 = structuredClone(current) as unknown as Record<string, unknown>;
@@ -223,7 +224,7 @@ describe("Migration und Datei-Import", () => {
     delete ust.vorsteuerabzugsberechtigt;
 
     const migrated = migratePlan(v1);
-    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.schemaVersion).toBe(3);
     expect(migrated.status).toBe("vollstaendig");
     expect(migrated.parameter.version).toBe("de-2026");
     expect(migrated.umsatzsteuer.vorsteuerabzugsberechtigt).toBe(true);
@@ -236,6 +237,64 @@ describe("Migration und Datei-Import", () => {
       },
     ];
     expect(() => migratePlan(withMonthlyGoods)).toThrow(SchemaMigrationError);
+  });
+
+  it("streicht Sacheinlagen und die Sammelposten-Nutzungsdauer aus Version 2", () => {
+    const roh = structuredClone(emptyPlan()) as unknown as Record<string, unknown>;
+    roh.schemaVersion = 2;
+    const finanzierung = roh.finanzierung as { eigenkapital: Record<string, unknown>[] };
+    finanzierung.eigenkapital.push(
+      {
+        id: "ek-sache",
+        bezeichnung: "Laptop aus dem Privatvermögen",
+        betragCents: 200_000,
+        monat: "2026-04",
+        art: "sacheinlage",
+        investitionId: "inv-laptop",
+      },
+      {
+        id: "ek-bar",
+        bezeichnung: "Bareinlage",
+        betragCents: 100_000,
+        monat: "2026-04",
+        art: "bareinlage",
+        investitionId: "inv-laptop",
+      },
+    );
+    const kapital = roh.kapitalbedarf as {
+      investitionen: Record<string, unknown>[];
+      gruendungskosten: Record<string, unknown>[];
+    };
+    kapital.investitionen.push({
+      id: "inv-pool",
+      bezeichnung: "Sammelposten",
+      kategorie: "buero_einrichtung",
+      nettoCents: 90_000,
+      umsatzsteuerSatz: 0.19,
+      anschaffungsmonat: "2026-04",
+      nutzungsdauerMonate: 12,
+      afaMethode: "sammelposten",
+      zahlungszielTage: 0,
+    });
+    kapital.gruendungskosten.push({
+      id: "gk-alt",
+      bezeichnung: "Beratung",
+      nettoCents: 20_000,
+      umsatzsteuerSatz: 0.19,
+      monat: "2026-04",
+      zahlungszielTage: 0,
+      steuerlichSofortAbzugsfaehig: false,
+    });
+
+    const migrated = migratePlan(roh);
+    expect(migrated.schemaVersion).toBe(3);
+    expect(migrated.finanzierung.eigenkapital.map((posten) => posten.id)).toEqual(["ek-bar"]);
+    expect(migrated.finanzierung.eigenkapital[0]).not.toHaveProperty("investitionId");
+    expect(migrated.kapitalbedarf.investitionen[0]).not.toHaveProperty("nutzungsdauerMonate");
+    expect(migrated.kapitalbedarf.gruendungskosten[0]?.buchung).toEqual({ art: "aufwand" });
+    expect(migrated.kapitalbedarf.gruendungskosten[0]).not.toHaveProperty(
+      "steuerlichSofortAbzugsfaehig",
+    );
   });
 
   it("führt eine Versionskette aus und lehnt neuere Dateien ab", () => {

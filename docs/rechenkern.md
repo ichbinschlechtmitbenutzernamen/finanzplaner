@@ -59,7 +59,7 @@ Fixe Kosten folgen der Monatswert-Regel. Umsatzabhängige Kosten sind die Quote 
 
 Der Privatanteil ist der Teil, der nicht Betriebsausgabe ist. 0,2 beim Pkw heißt: 20 Prozent bleiben privat, 80 Prozent sind Aufwand. Die Vorsteuer wird nur auf diesen betrieblichen Nettoanteil gerechnet, und nur wenn Vorsteuer abgezogen werden darf. Die Auszahlung ist trotzdem die ganze Bruttorechnung. Ist der Posten gar keine Betriebsausgabe, ist der Aufwand null und es gibt keine Vorsteuer, das Geld geht aber trotzdem vom Konto.
 
-Gründungs- und Anlaufkosten sind einmalig. Stehen sie auf sofort abzugsfähig, sind sie Aufwand im Leistungsmonat. Stehen sie nicht darauf, gibt es in diesem Schritt keinen Aufwand und keine Abschreibung. Die Auszahlung bleibt, und die Vorsteuer auch, falls sie abgezogen werden darf. Ob so ein Posten später als Anlage zu aktivieren ist, ist offen, siehe unten.
+Gründungs- und Anlaufkosten sind einmalig und im Leistungsmonat Betriebsaufwand. Die Vorsteuer entsteht daneben, soweit sie abgezogen werden darf. Wer einen Posten ausdrücklich als Anlage markiert, schreibt ihn wie eine Investition ab: linear über die angegebene Nutzungsdauer, als GWG im AfA-Monat oder als Sammelposten über 60 Monate. Dieselbe 250-Euro-Regel gilt auch dort. Ein alter Vermerk „nicht sofort abzugsfähig“ aus Schema-Version 2 wird beim Einlesen zu Aufwand, weil dazu keine Anlagenangaben gespeichert waren.
 
 ## Investitionen und Abschreibungen
 
@@ -71,11 +71,9 @@ Darüber:
 
 - Linear: jeden Monat derselbe Anteil über die eingetragene Nutzungsdauer. Der erste Monat ist der AfA-Beginn, ersatzweise der Kaufmonat. Ein angefangener Monat zählt voll, es gibt keine Tageszählung. Der letzte Monat nimmt den Cent-Rest.
 - Geringwertiges Wirtschaftsgut: die ganze Bemessung im AfA-Monat. Der Buchwert ist danach null.
-- Sammelposten: dieselbe lineare Verteilung über die eingetragene Nutzungsdauer. Gesetzlich üblich sind 60 Monate. Eine andere Eingabe wird nicht auf 60 Monate umgeschrieben.
+- Sammelposten: dieselbe lineare Verteilung, immer über 60 Monate nach § 6 Abs. 2a EStG. Eine Nutzungsdauer wird dafür nicht erfasst. Steht sie in einem Plan der Schema-Version 2, fällt sie beim Einlesen weg.
 
-Passt die Methode nicht zu den GWG- oder Sammelposten-Grenzen, bleibt das ein Hinweis und keine Sperre. Die Rechnung folgt trotzdem der eingetragenen Methode, außer bei der 250-Euro-Regel oben.
-
-Eine Sacheinlage, die auf eine Investition zeigt, löst keine Auszahlung und keine Vorsteuer aus. Aktiviert wird der eingetragene Nettobetrag. Die Einlage selbst bringt auch kein Geld aufs Konto. Die beiden Beträge werden nicht gegeneinander geprüft.
+Passt die Methode nicht zu den GWG- oder Sammelposten-Grenzen, bleibt das ein Hinweis und keine Sperre. Die Rechnung folgt trotzdem der eingetragenen Methode, außer bei der 250-Euro-Regel oben. Die Fachberatung hat diese Grenze bestätigt.
 
 Ein Waren-Erstbestand ist Vorrat, kein Aufwand und keine AfA. Die Auszahlung liegt im ersten Planmonat. Die Liquiditätsreserve ist nur ein Merkposten im Kapitalbedarf. Sie ist kein eigener Zahlungsstrom, weil das Geld aus Einlagen und Darlehen kommt oder eben noch fehlt. Ob die Finanzierung den Bedarf deckt, prüft ein späterer Schritt.
 
@@ -83,7 +81,7 @@ Am Ende von Monat 36 steht der Restbuchwert. Was danach noch abzuschreiben wäre
 
 ## Finanzierung und Kreditplan
 
-Bareinlagen und Kapitalrücklagen kommen im genannten Monat als Geld. Eine Sacheinlage nicht.
+Bareinlagen und Kapitalrücklagen kommen im genannten Monat als Geld. Sacheinlagen gibt es im Modell nicht. Ein älterer Plan verliert sie beim Einlesen.
 
 Zuschüsse kommen als Geld in den genannten Monaten. Der Gründungszuschuss zahlt in Phase 1 Arbeitslosengeld I plus Pauschale und danach, wenn Phase 2 geplant ist, nur die Pauschale. Steuerfreie Zuschüsse stehen nicht im Betriebsergebnis. Steuerpflichtige schon, als sonstiger Ertrag. Ein Progressionsvorbehalt wird mitgeführt, aber nicht in eine Steuer umgerechnet.
 
@@ -129,7 +127,7 @@ Umsatzerlöse
 − Wareneinsatz
 − Personal
 − laufende Kosten
-− sofort abzugsfähige Gründungs- und Anlaufkosten
+− Gründungs- und Anlaufkosten, soweit sie nicht als Anlage markiert sind
 − Sofortaufwand bis 250 Euro
 − Abschreibungen
 − Zinsen
@@ -145,16 +143,14 @@ Der Saldo ist die Summe dieser Zahlungen. Er ist kein Kontostand und kein Liquid
 
 `npm run export:check` rechnet Blitzweg im Real Case und schreibt `docs/checkpoints/schritt2-blitzweg.xlsx`. Sieben Blätter, 36 Monatsspalten, Beträge in Euro mit zwei Nachkommastellen: Übersicht, Umsatz & Wareneinsatz, Personal, Kosten, Investitionen & Abschreibungen, Finanzierung, Umsatzsteuer. Der Juni-Umsatz muss 7.475,00 Euro sein, die Restschuld im Mai 2029 muss 17.013,94 Euro sein. Weicht das ab, bricht das Skript ab.
 
-## Offene Punkte für die Fachberatung
+## Bestätigt
 
-1. Der Sammelposten wird über die eingetragene Nutzungsdauer abgeschrieben. Gesetzlich sind es fünf Jahre. Soll eine andere Eingabe auf 60 Monate gesetzt oder nur markiert werden?
-2. Bis 250,00 Euro netto wird auch dann sofort als Aufwand gebucht, wenn linear oder Sammelposten gewählt wurde. Lineare AfA bleibt speicherbar und wird nicht gesperrt. Ist die Umbuchung so gewollt?
-3. Der Monatszins ist Nominalzins durch 12 auf die Restschuld zu Monatsbeginn. Eine neue Tranche verzinst sich ab dem Folgemonat. Die Annuität wird einmal gerundet, der letzte Monat gleicht aus. Entspricht das der Bankpraxis, auch beim Thüringer Mikrodarlehen?
-4. Disagio, Gebühren und ein Auszahlungskurs unter 100 Prozent sind Aufwand im Auszahlungsmonat und werden nicht verteilt. Eine Sondertilgung gibt es nicht. Reicht das?
-5. Die Vorsteuer entsteht im Leistungsmonat, auch bei Ist-Versteuerung. Nur die Umsatzsteuer wandert auf den Zahlungseingang. Passt das?
-6. Der Wareneinsatz hat kein eigenes Zahlungsziel und wird im Leistungsmonat gezahlt. Soll er das Zahlungsziel der Umsatzlinie oder ein eigenes Feld bekommen?
-7. Beim Kleinunternehmer werden Aufwand und AfA-Bemessung brutto gerechnet. Die Grenze von 250 Euro wird am Nettobetrag geprüft. Ist das für nicht vorsteuerabzugsberechtigte Betriebe richtig?
-8. Nicht sofort abzugsfähige Gründungs- und Anlaufkosten sind Auszahlung und gegebenenfalls Vorsteuer, aber weder Aufwand noch AfA. Sollen sie später aktiviert werden?
-9. Eine Sacheinlage mit Verweis auf eine Investition erzeugt weder Geldzufluss noch Geldabfluss. Die Beträge werden nicht abgeglichen, der Umsatzsteuersatz der Anlage wirkt nicht. Passt das?
-10. Umsatzabhängige Kosten beziehen sich auf den Nettoumsatz aller Linien nach Szenario. Der Privatanteil kürzt nur den Aufwand und die Vorsteuer, nicht die Auszahlung.
-11. Einkommensteuer nach § 32a EStG, Solidaritätszuschlag mit Gleitzone und Kirchensteuer aus dem Bundesland bleiben Schritt 3. Der Parametersatz wurde dafür nicht erweitert. Warnungen zur Kleinunternehmergrenze bleiben Schritt 8.
+Die Fachberatung hat diese Regeln bestätigt: Beträge bis 250 Euro netto sind sofortiger Betriebsaufwand. Der Monatszins ist Nominalzins durch 12, die Annuität wird einmal gerundet, der letzte Monat gleicht aus. Die Vorsteuer entsteht im Leistungsmonat, die Umsatzsteuer bei Ist-Versteuerung im Zahlungseingang. Beim Kleinunternehmer sind Aufwand und AfA-Bemessung brutto, die 250-Euro-Grenze bleibt am Nettobetrag. Der Sammelposten läuft fest über 60 Monate. Gründungs- und Anlaufkosten sind Aufwand, außer sie sind ausdrücklich als Anlage markiert. Sacheinlagen gibt es nicht.
+
+## Noch offen
+
+1. Disagio, Gebühren und ein Auszahlungskurs unter 100 Prozent sind Aufwand im Auszahlungsmonat und werden nicht verteilt. Eine Sondertilgung gibt es nicht.
+2. Der Wareneinsatz hat kein eigenes Zahlungsziel und wird im Leistungsmonat gezahlt.
+3. Umsatzabhängige Kosten beziehen sich auf den Nettoumsatz aller Linien nach Szenario. Der Privatanteil kürzt nur den Aufwand und die Vorsteuer, nicht die Auszahlung.
+4. Als Anlage markierte Gründungs- und Anlaufkosten stehen in der Kategorie Sonstiges. Es gibt dafür keine eigene Anlagenkategorie.
+5. Einkommensteuer nach § 32a EStG, Solidaritätszuschlag mit Gleitzone und Kirchensteuer aus dem Bundesland bleiben Schritt 3. Warnungen zur Kleinunternehmergrenze bleiben Schritt 8.

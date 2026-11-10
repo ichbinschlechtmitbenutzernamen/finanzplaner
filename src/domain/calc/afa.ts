@@ -6,6 +6,9 @@ import { roundRate, verteilteRaten } from "./round.ts";
 
 export type Anlagenbehandlung = "sofortaufwand" | "abschreibung";
 
+/** § 6 Abs. 2a EStG: ein Sammelposten wird immer über fünf Jahre, also 60 Monate, aufgelöst. */
+export const SAMMELPOSTEN_MONATE = 60;
+
 export interface AnlageKontext {
   monate: readonly IsoMonth[];
   /** false bei Kleinunternehmern und wenn der Vorsteuerabzug ausgeschlossen ist. */
@@ -16,8 +19,6 @@ export interface AnlageKontext {
    * Bis einschließlich 250,00 Euro entsteht sofortiger Betriebsaufwand.
    */
   sofortaufwandUnterCents: number;
-  /** Investitionen, die als Sacheinlage eingebracht werden und deshalb kein Geld kosten. */
-  sacheinlagen: ReadonlySet<string>;
 }
 
 export interface AnlageErgebnis {
@@ -38,8 +39,9 @@ export interface AnlageErgebnis {
 }
 
 /**
- * Lineare AfA und Sammelposten: jeden Monat ein gleicher Anteil ab dem AfA-Beginn,
- * der letzte Monat nimmt den Cent-Rest. Ein angefangener Monat zählt voll, es gibt keine Tagesanteile.
+ * Lineare AfA: jeden Monat ein gleicher Anteil über die Nutzungsdauer ab dem AfA-Beginn.
+ * Sammelposten: dieselbe Verteilung, immer über 60 Monate, unabhängig von einer früheren Eingabe.
+ * Der letzte Monat nimmt den Cent-Rest. Ein angefangener Monat zählt voll, es gibt keine Tagesanteile.
  * GWG: die ganze Bemessungsgrundlage im AfA-Monat.
  * Bis 250 Euro netto: kein Vermögensgegenstand, sondern Betriebsaufwand im Anschaffungsmonat.
  */
@@ -50,13 +52,10 @@ export function berechneAnlage(investition: Investition, kontext: AnlageKontext)
     throw new Error("Die AfA braucht mindestens einen Planmonat.");
   }
   const vorsteuer = roundRate(investition.nettoCents, investition.umsatzsteuerSatz);
-  const sacheinlage = kontext.sacheinlagen.has(investition.id);
   const sofort = investition.nettoCents < kontext.sofortaufwandUnterCents;
-  const aktivierung = sacheinlage
+  const aktivierung = kontext.vorsteuerAbzug
     ? investition.nettoCents
-    : kontext.vorsteuerAbzug
-      ? investition.nettoCents
-      : investition.nettoCents + vorsteuer;
+    : investition.nettoCents + vorsteuer;
   const restwert = sofort ? 0 : (investition.restwertCents ?? 0);
   const bemessung = Math.max(aktivierung - restwert, 0);
 
@@ -68,7 +67,7 @@ export function berechneAnlage(investition: Investition, kontext: AnlageKontext)
   const rechnungBruttoCents = leereReihe(laenge);
 
   const kaufIndex = indexImPlan(start, investition.anschaffungsmonat, laenge);
-  if (!sacheinlage && kaufIndex !== null) {
+  if (kaufIndex !== null) {
     rechnungBruttoCents[kaufIndex] = investition.nettoCents + vorsteuer;
     if (kontext.vorsteuerAbzug) vorsteuerCents[kaufIndex] = vorsteuer;
     const zahlungIndex = indexImPlan(
@@ -99,7 +98,11 @@ export function berechneAnlage(investition: Investition, kontext: AnlageKontext)
 
   const afaStart = investition.afaStartMonat ?? investition.anschaffungsmonat;
   const monateDerAfA =
-    investition.afaMethode === "sofort_gwg" ? 1 : investition.nutzungsdauerMonate;
+    investition.afaMethode === "sofort_gwg"
+      ? 1
+      : investition.afaMethode === "sammelposten"
+        ? SAMMELPOSTEN_MONATE
+        : investition.nutzungsdauerMonate;
   const reihe = afaReihe(bemessung, monateDerAfA);
   for (let schritt = 0; schritt < reihe.length; schritt += 1) {
     const index = indexImPlan(start, addMonths(afaStart, schritt), laenge);

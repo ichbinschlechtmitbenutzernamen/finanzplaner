@@ -1,8 +1,9 @@
-import { anlageKlassifikationHinweise } from "../anlage.ts";
+import { anlageKlassifikationHinweise, klassifiziereAnlagen } from "../anlage.ts";
 import { addMonths, monthIndex } from "../months.ts";
 import type {
   Einmalkosten,
   Finanzplan,
+  Investition,
   IsoMonth,
   Kostenposition,
   SzenarioId,
@@ -343,7 +344,7 @@ function berechneKosten(
     ...plan.kapitalbedarf.anlaufkosten.map((posten) =>
       berechneEinmal(posten, "anlauf", monate, start, steuer),
     ),
-  ];
+  ].filter((posten): posten is EinmalKostenErgebnis => posten !== null);
 
   const block: KostenBlock = {
     positionen,
@@ -423,12 +424,12 @@ function berechneEinmal(
   monate: readonly IsoMonth[],
   start: IsoMonth,
   steuer: Steuerkontext,
-): EinmalKostenErgebnis {
+): EinmalKostenErgebnis | null {
+  if (posten.buchung.art === "anlage") return null;
   const ergebnis: EinmalKostenErgebnis = {
     id: posten.id,
     bezeichnung: posten.bezeichnung,
     herkunft,
-    sofortAbzugsfaehig: posten.steuerlichSofortAbzugsfaehig,
     aufwandCents: leereReihe(monate.length),
     auszahlungCents: leereReihe(monate.length),
     vorsteuerCents: leereReihe(monate.length),
@@ -445,7 +446,7 @@ function berechneEinmal(
   );
   ergebnis.rechnungBruttoCents[index] = teile.rechnung;
   ergebnis.vorsteuerCents[index] = teile.vorsteuer;
-  ergebnis.aufwandCents[index] = posten.steuerlichSofortAbzugsfaehig ? teile.aufwand : 0;
+  ergebnis.aufwandCents[index] = teile.aufwand;
   const zahlung = indexImPlan(
     start,
     addMonths(posten.monat, zahlungszielMonate(posten.zahlungszielTage)),
@@ -460,17 +461,15 @@ function berechneInvestitionen(
   monate: readonly IsoMonth[],
   steuer: Steuerkontext,
 ): InvestitionsBlock {
-  const sacheinlagen = new Set(
-    plan.finanzierung.eigenkapital
-      .filter((posten) => posten.art === "sacheinlage" && posten.investitionId)
-      .map((posten) => posten.investitionId as string),
-  );
-  const anlagen = plan.kapitalbedarf.investitionen.map((investition) =>
+  const anlagen = [
+    ...plan.kapitalbedarf.investitionen,
+    ...plan.kapitalbedarf.gruendungskosten.flatMap(einmalkostenAlsAnlage),
+    ...plan.kapitalbedarf.anlaufkosten.flatMap(einmalkostenAlsAnlage),
+  ].map((investition) =>
     berechneAnlage(investition, {
       monate,
       vorsteuerAbzug: steuer.vorsteuerAbzug,
       sofortaufwandUnterCents: plan.parameter.steuer.sammelpostenMinNettoCents,
-      sacheinlagen,
     }),
   );
   const warenbestand = berechneWarenbestand(plan, monate.length, steuer);
@@ -534,7 +533,7 @@ function berechneFinanzierung(plan: Finanzplan, monate: readonly IsoMonth[]): Fi
     const index = indexImPlan(start, posten.monat, monate.length);
     if (index !== null) {
       betragCents[index] = posten.betragCents;
-      if (posten.art !== "sacheinlage") einzahlungCents[index] = posten.betragCents;
+      einzahlungCents[index] = posten.betragCents;
     }
     return {
       id: posten.id,
@@ -804,15 +803,52 @@ function baueUebersicht(
   return uebersicht;
 }
 
+function einmalkostenAlsAnlage(posten: Einmalkosten): Investition[] {
+  if (posten.buchung.art !== "anlage") return [];
+  const buchung = posten.buchung;
+  const basis = {
+    id: posten.id,
+    bezeichnung: posten.bezeichnung,
+    kategorie: "sonstiges" as const,
+    nettoCents: posten.nettoCents,
+    umsatzsteuerSatz: posten.umsatzsteuerSatz,
+    anschaffungsmonat: posten.monat,
+    zahlungszielTage: posten.zahlungszielTage,
+    notizen: posten.notizen,
+    afaStartMonat: buchung.afaStartMonat,
+  };
+  if (buchung.afaMethode === "linear") {
+    return [
+      {
+        ...basis,
+        afaMethode: "linear",
+        nutzungsdauerMonate: buchung.nutzungsdauerMonate,
+        restwertCents: buchung.restwertCents,
+      },
+    ];
+  }
+  if (buchung.afaMethode === "sofort_gwg") {
+    return [{ ...basis, afaMethode: "sofort_gwg", nutzungsdauerMonate: 0 }];
+  }
+  return [{ ...basis, afaMethode: "sammelposten", restwertCents: buchung.restwertCents }];
+}
+
 function hinweise(plan: Finanzplan, investitionen: InvestitionsBlock): BerechnungHinweis[] {
   const grenze = plan.parameter.steuer.sammelpostenMinNettoCents;
-  const klassifikation: BerechnungHinweis[] = anlageKlassifikationHinweise(plan).map((hinweis) => ({
+  const aktivierteKosten = [
+    ...plan.kapitalbedarf.gruendungskosten.flatMap(einmalkostenAlsAnlage),
+    ...plan.kapitalbedarf.anlaufkosten.flatMap(einmalkostenAlsAnlage),
+  ];
+  const klassifikation: BerechnungHinweis[] = [
+    ...anlageKlassifikationHinweise(plan),
+    ...klassifiziereAnlagen(aktivierteKosten, plan.parameter.steuer),
+  ].map((hinweis) => ({
     code: hinweis.code,
     message: hinweis.message,
     bezugId: hinweis.investitionId,
   }));
   const sofort: BerechnungHinweis[] = [];
-  for (const investition of plan.kapitalbedarf.investitionen) {
+  for (const investition of [...plan.kapitalbedarf.investitionen, ...aktivierteKosten]) {
     if (investition.nettoCents >= grenze) continue;
     const anlage = investitionen.anlagen.find((item) => item.id === investition.id);
     if (anlage?.behandlung !== "sofortaufwand") continue;

@@ -7,7 +7,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielCafe = {
   id: "plan-beispiel-cafe-leseecke",
-  schemaVersion: 2,
+  schemaVersion: 3,
   status: "vollstaendig",
   erstelltAm: "2026-05-10T10:00:00.000Z",
   geaendertAm: "2026-06-01T10:00:00.000Z",
@@ -105,7 +105,7 @@ export const beispielCafe = {
         umsatzsteuerSatz: 0,
         monat: "2026-09",
         zahlungszielTage: 0,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
       {
         id: "gk-beratung",
@@ -114,7 +114,7 @@ export const beispielCafe = {
         umsatzsteuerSatz: 0.19,
         monat: "2026-08",
         zahlungszielTage: 14,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
         notizen: "Liegt vor der Eröffnung, aber im Planhorizont.",
       },
     ],
@@ -126,7 +126,7 @@ export const beispielCafe = {
         umsatzsteuerSatz: 0.19,
         monat: "2026-09",
         zahlungszielTage: 0,
-        steuerlichSofortAbzugsfaehig: true,
+        buchung: { art: "aufwand" },
       },
     ],
     betriebsmittel: {

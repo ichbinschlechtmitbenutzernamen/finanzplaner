@@ -313,7 +313,6 @@ describe("Personal, Kosten und Abschreibung", () => {
       anlage({
         id: "pool",
         nettoCents: 90_000,
-        nutzungsdauerMonate: 60,
         afaMethode: "sammelposten",
         anschaffungsmonat: "2026-02",
       }),
@@ -336,10 +335,66 @@ describe("Personal, Kosten und Abschreibung", () => {
     expect(ergebnis.hinweise.map((hinweis) => hinweis.code)).toContain("gwg_betrag_zu_hoch");
 
     const pool = ergebnis.investitionen.anlagen.find((item) => item.id === "pool");
-    // 900,00 Euro / 60 Monate = 15,00 Euro. Im Februar beginnt es, der Januar ist leer.
+    // Sammelposten fest 60 Monate, § 6 Abs. 2a EStG. 900,00 / 60 = 15,00 Euro.
+    // Im Februar beginnt es, der Januar ist leer.
     expect(pool?.abschreibungCents[0]).toBe(0);
     expect(pool?.abschreibungCents[1]).toBe(1_500);
     expect(pool?.buchwertCents[1]).toBe(88_500);
+  });
+
+  it("löst 1.000 Euro Sammelposten über 60 Monate mit Rest im letzten Monat auf", () => {
+    const basis = plan();
+    basis.kapitalbedarf.investitionen.push(
+      anlage({
+        id: "pool",
+        nettoCents: 100_000,
+        afaMethode: "sammelposten",
+        umsatzsteuerSatz: 0,
+      }),
+    );
+    const pool = berechnePlan(basis).investitionen.anlagen[0];
+    // 100.000 / 60 = 1.666,666… → 1.667 Cent. 59 × 1.667 = 98.353. Der 60. Monat hätte 1.647 Cent.
+    // Im Horizont liegen 36 Monate à 1.667 = 60.012. Buchwert 39.988 Cent.
+    expect(pool?.abschreibungCents[0]).toBe(1_667);
+    expect(pool?.abschreibungCents[35]).toBe(1_667);
+    expect(pool?.buchwertCents[35]).toBe(39_988);
+    expect(summeCents(pool?.abschreibungCents ?? []) + (pool?.buchwertCents[35] ?? 0)).toBe(
+      100_000,
+    );
+  });
+
+  it("bucht Gründungs- und Anlaufkosten als Aufwand, eine Anlage darüber als AfA", () => {
+    const basis = plan();
+    basis.kapitalbedarf.gruendungskosten.push({
+      id: "gk",
+      bezeichnung: "Gewerbeanmeldung",
+      nettoCents: 40_000,
+      umsatzsteuerSatz: 0.19,
+      monat: "2026-01",
+      zahlungszielTage: 0,
+      buchung: { art: "aufwand" },
+    });
+    basis.kapitalbedarf.anlaufkosten.push({
+      id: "ak-maschine",
+      bezeichnung: "Startmaschine",
+      nettoCents: 120_000,
+      umsatzsteuerSatz: 0.19,
+      monat: "2026-01",
+      zahlungszielTage: 0,
+      buchung: { art: "anlage", afaMethode: "linear", nutzungsdauerMonate: 12 },
+    });
+    const ergebnis = berechnePlan(basis);
+    // 400,00 Euro Aufwand, Vorsteuer 76,00 Euro, Zahlung 476,00 Euro.
+    expect(ergebnis.kosten.summeEinmalAufwandCents[0]).toBe(40_000);
+    expect(ergebnis.umsatzsteuer.vorsteuerEinmalCents[0]).toBe(7_600);
+    expect(ergebnis.kosten.summeEinmalAuszahlungCents[0]).toBe(47_600);
+    // 1.200,00 Euro / 12 Monate = 100,00 Euro AfA. Vorsteuer 228,00 Euro bei der Anlage.
+    const maschine = ergebnis.investitionen.anlagen.find((item) => item.id === "ak-maschine");
+    expect(maschine?.abschreibungCents[0]).toBe(10_000);
+    expect(maschine?.buchwertCents[0]).toBe(110_000);
+    expect(maschine?.vorsteuerCents[0]).toBe(22_800);
+    expect(maschine?.auszahlungCents[0]).toBe(142_800);
+    expect(ergebnis.kosten.einmalig.some((posten) => posten.id === "ak-maschine")).toBe(false);
   });
 
   it("aktiviert beim Kleinunternehmer den Bruttobetrag und schreibt davon ab", () => {
@@ -360,25 +415,6 @@ describe("Personal, Kosten und Abschreibung", () => {
     expect(geraet?.abschreibungCents[0]).toBe(11_900);
     expect(geraet?.vorsteuerCents[0]).toBe(0);
     expect(geraet?.auszahlungCents[0]).toBe(119_000);
-  });
-
-  it("unterdrückt die Auszahlung, wenn die Anlage als Sacheinlage kommt", () => {
-    const basis = plan();
-    basis.kapitalbedarf.investitionen.push(
-      anlage({ id: "laptop", nettoCents: 200_000, nutzungsdauerMonate: 36, afaMethode: "linear" }),
-    );
-    basis.finanzierung.eigenkapital.push({
-      id: "sache",
-      bezeichnung: "Laptop aus dem Privatvermögen",
-      betragCents: 200_000,
-      monat: "2026-01",
-      art: "sacheinlage",
-      investitionId: "laptop",
-    });
-    const ergebnis = berechnePlan(basis);
-    expect(ergebnis.investitionen.summeAuszahlungCents[0]).toBe(0);
-    expect(ergebnis.finanzierung.summeEinlagenCents[0]).toBe(0);
-    expect(ergebnis.investitionen.summeAbschreibungCents[0]).toBeGreaterThan(0);
   });
 });
 
@@ -538,16 +574,30 @@ describe("Blitzweg Elektrotechnik", () => {
   });
 });
 
-function anlage(
-  teil: Partial<Investition> &
-    Pick<Investition, "id" | "nettoCents" | "nutzungsdauerMonate" | "afaMethode">,
-): Investition {
-  return {
+function anlage(teil: {
+  id: string;
+  nettoCents: number;
+  afaMethode: Investition["afaMethode"];
+  nutzungsdauerMonate?: number;
+  anschaffungsmonat?: string;
+  afaStartMonat?: string;
+  umsatzsteuerSatz?: number;
+}): Investition {
+  const basis = {
+    id: teil.id,
     bezeichnung: teil.id,
-    kategorie: "maschine_ausstattung",
-    umsatzsteuerSatz: 0.19,
-    anschaffungsmonat: "2026-01",
+    kategorie: "maschine_ausstattung" as const,
+    nettoCents: teil.nettoCents,
+    umsatzsteuerSatz: teil.umsatzsteuerSatz ?? 0.19,
+    anschaffungsmonat: teil.anschaffungsmonat ?? "2026-01",
     zahlungszielTage: 0,
-    ...teil,
+    afaStartMonat: teil.afaStartMonat,
   };
+  if (teil.afaMethode === "linear") {
+    return { ...basis, afaMethode: "linear", nutzungsdauerMonate: teil.nutzungsdauerMonate ?? 1 };
+  }
+  if (teil.afaMethode === "sofort_gwg") {
+    return { ...basis, afaMethode: "sofort_gwg", nutzungsdauerMonate: 0 };
+  }
+  return { ...basis, afaMethode: "sammelposten" };
 }

@@ -76,7 +76,6 @@ export interface EinmalKostenErgebnis {
   id: Id;
   bezeichnung: string;
   herkunft: "gruendung" | "anlauf";
-  sofortAbzugsfaehig: boolean;
   aufwandCents: number[];
   auszahlungCents: number[];
   vorsteuerCents: number[];
@@ -134,7 +133,7 @@ export interface InvestitionsBlock {
 export interface EigenkapitalErgebnis {
   id: Id;
   bezeichnung: string;
-  art: "bareinlage" | "sacheinlage" | "kapitalruecklage";
+  art: "bareinlage" | "kapitalruecklage";
   betragCents: number[];
   /** Nur Bar- und Kapitalrücklage. Eine Sacheinlage bringt kein Geld. */
   einzahlungCents: number[];

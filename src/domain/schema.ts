@@ -2,7 +2,6 @@ import { z } from "zod";
 import { ISO_MONTH_PATTERN } from "./months.ts";
 import { refineFinanzplan } from "./schema-refine.ts";
 import {
-  AFA_METHODEN,
   BUNDESLAENDER,
   DARLEHENSARTEN,
   EIGENKAPITAL_ARTEN,
@@ -186,7 +185,7 @@ const stammdatenSchema = z.strictObject({
   angewendeteVorlage: vorlageSchema.optional(),
 });
 
-const investitionSchema = z.strictObject({
+const investitionFelder = {
   id: idSchema,
   bezeichnung: textSchema(200),
   kategorie: z.enum(INVESTITIONSKATEGORIEN),
@@ -194,23 +193,73 @@ const investitionSchema = z.strictObject({
   umsatzsteuerSatz: satzSchema,
   anschaffungsmonat: isoMonthSchema,
   afaStartMonat: isoMonthSchema.optional(),
-  nutzungsdauerMonate: z.number().int().min(0).max(600),
-  afaMethode: z.enum(AFA_METHODEN),
   restwertCents: centsSchema.optional(),
   zahlungszielTage: tageSchema,
   notizen: optionalTextSchema(2000).optional(),
-});
+};
 
-const einmalkostenSchema = z.strictObject({
+const investitionSchema = z.discriminatedUnion("afaMethode", [
+  z.strictObject({
+    ...investitionFelder,
+    afaMethode: z.literal("linear"),
+    nutzungsdauerMonate: z.number().int().min(1).max(600),
+  }),
+  z.strictObject({
+    ...investitionFelder,
+    afaMethode: z.literal("sofort_gwg"),
+    nutzungsdauerMonate: z.literal(0, {
+      error: "Bei Sofortabschreibung als GWG ist die Nutzungsdauer 0.",
+    }),
+  }),
+  z.strictObject({
+    ...investitionFelder,
+    afaMethode: z.literal("sammelposten"),
+  }),
+]);
+
+const einmalkostenFelder = {
   id: idSchema,
   bezeichnung: textSchema(200),
   nettoCents: positiveCentsSchema,
   umsatzsteuerSatz: satzSchema,
   monat: isoMonthSchema,
   zahlungszielTage: tageSchema,
-  steuerlichSofortAbzugsfaehig: z.boolean(),
   notizen: optionalTextSchema(2000).optional(),
-});
+};
+
+const einmalkostenSchema = z.union([
+  z.strictObject({
+    ...einmalkostenFelder,
+    buchung: z.strictObject({ art: z.literal("aufwand") }),
+  }),
+  z.strictObject({
+    ...einmalkostenFelder,
+    buchung: z.strictObject({
+      art: z.literal("anlage"),
+      afaMethode: z.literal("linear"),
+      nutzungsdauerMonate: z.number().int().min(1).max(600),
+      afaStartMonat: isoMonthSchema.optional(),
+      restwertCents: centsSchema.optional(),
+    }),
+  }),
+  z.strictObject({
+    ...einmalkostenFelder,
+    buchung: z.strictObject({
+      art: z.literal("anlage"),
+      afaMethode: z.literal("sofort_gwg"),
+      afaStartMonat: isoMonthSchema.optional(),
+    }),
+  }),
+  z.strictObject({
+    ...einmalkostenFelder,
+    buchung: z.strictObject({
+      art: z.literal("anlage"),
+      afaMethode: z.literal("sammelposten"),
+      afaStartMonat: isoMonthSchema.optional(),
+      restwertCents: centsSchema.optional(),
+    }),
+  }),
+]);
 
 const betriebsmittelSchema = z.strictObject({
   liquiditaetsreserveCents: centsSchema,
@@ -233,7 +282,6 @@ const eigenkapitalSchema = z.strictObject({
   betragCents: positiveCentsSchema,
   monat: isoMonthSchema,
   art: z.enum(EIGENKAPITAL_ARTEN),
-  investitionId: idSchema.optional(),
   notizen: optionalTextSchema(2000).optional(),
 });
 

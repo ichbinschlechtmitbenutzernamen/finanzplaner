@@ -205,9 +205,8 @@ function kosten(ergebnis: Planberechnung): CheckpointBlatt {
   }
   for (const posten of ergebnis.kosten.einmalig) {
     const herkunft = posten.herkunft === "gruendung" ? "Gründung" : "Anlauf";
-    const zusatz = posten.sofortAbzugsfaehig ? "" : ", nicht sofort abzugsfähig";
     zeilen.push(
-      fluss(`${posten.bezeichnung} (${herkunft}${zusatz}) – Aufwand`, posten.aufwandCents),
+      fluss(`${posten.bezeichnung} (${herkunft}) – Aufwand`, posten.aufwandCents),
       fluss(`${posten.bezeichnung} – Auszahlung`, posten.auszahlungCents),
     );
   }
@@ -223,7 +222,7 @@ function investitionen(ergebnis: Planberechnung): CheckpointBlatt {
   const { zeilen, kopfzeile } = kopf(
     ergebnis,
     "Investitionen und Abschreibungen",
-    "Lineare AfA und Sammelposten monatlich ab AfA-Beginn. GWG im AfA-Monat. Bis 250 Euro netto sofort Aufwand, kein Buchwert.",
+    "Lineare AfA über die Nutzungsdauer, Sammelposten fest über 60 Monate, jeweils ab AfA-Beginn. GWG im AfA-Monat. Bis 250 Euro netto sofort Aufwand, kein Buchwert.",
   );
   for (const anlage of ergebnis.investitionen.anlagen) {
     const art = ANLAGE[anlage.kategorie] ?? anlage.kategorie;
