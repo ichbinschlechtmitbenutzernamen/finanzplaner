@@ -1,4 +1,5 @@
 import type { Finanzplan } from "../domain/types.ts";
+import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 
 /**
  * Durchgängig erfundener Plan.
@@ -7,12 +8,14 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 1,
+  schemaVersion: 2,
+  status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
   waehrung: "EUR",
   startMonat: "2026-04",
   horizontMonate: 36,
+  parameter: PARAMETER_DE_2026,
   stammdaten: {
     planName: "BEISPIEL (fiktiv) – Studio Nordlicht",
     beispiel: true,
@@ -330,6 +333,7 @@ export const beispielEinzelunternehmen = {
   ],
   umsatzsteuer: {
     regime: "regelbesteuerung",
+    vorsteuerabzugsberechtigt: true,
     versteuerungsart: "ist",
     voranmeldungszeitraum: "vierteljaehrlich",
     dauerfristverlaengerung: false,

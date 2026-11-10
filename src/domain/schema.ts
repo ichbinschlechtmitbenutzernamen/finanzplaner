@@ -11,6 +11,7 @@ import {
   PERSON_ROLLEN,
   PERSONAL_ROLLEN,
   PLAN_HORIZON_MONTHS,
+  PLAN_STATUS,
   PLAN_ZWECKE,
   RECHTSFORMEN,
   SCHEMA_VERSION,
@@ -157,10 +158,10 @@ const vorlageSchema = z.strictObject({
 });
 
 const stammdatenSchema = z.strictObject({
-  planName: textSchema(200),
+  planName: optionalTextSchema(200),
   beispiel: z.boolean(),
-  firmenname: textSchema(200),
-  rechtsform: z.enum(RECHTSFORMEN),
+  firmenname: optionalTextSchema(200),
+  rechtsform: z.enum(RECHTSFORMEN).optional(),
   branche: optionalTextSchema(200),
   branchenschluessel: z
     .string()
@@ -174,14 +175,14 @@ const stammdatenSchema = z.strictObject({
     .string()
     .regex(/^\d{5}$/, "Postleitzahl mit 5 Ziffern.")
     .optional(),
-  ort: textSchema(120),
-  bundesland: z.enum(BUNDESLAENDER),
+  ort: optionalTextSchema(120),
+  bundesland: z.enum(BUNDESLAENDER).optional(),
   gewerbesteuerHebesatz: z.number().min(0).max(2000).optional(),
-  gruendungsmonat: isoMonthSchema,
+  gruendungsmonat: isoMonthSchema.optional(),
   handelsregisterGeplant: z.boolean().optional(),
   stammkapitalCents: positiveCentsSchema.optional(),
-  personen: z.array(personSchema).min(1).max(50),
-  zwecke: z.array(z.enum(PLAN_ZWECKE)).min(1).max(PLAN_ZWECKE.length),
+  personen: z.array(personSchema).max(50),
+  zwecke: z.array(z.enum(PLAN_ZWECKE)).max(PLAN_ZWECKE.length),
   angewendeteVorlage: vorlageSchema.optional(),
 });
 
@@ -252,6 +253,9 @@ const darlehenSchema = z.strictObject({
     .min(1)
     .max(36),
   nominalzinsPa: satzSchema,
+  vorlageId: idSchema.optional(),
+  auszahlungAnteil: z.number().min(0).max(1).optional(),
+  gebuehrenCents: centsSchema.optional(),
   laufzeitMonate: z.number().int().min(1).max(600),
   tilgungsfreieMonate: z.number().int().min(0).max(600),
   zinszahlungInTilgungsfreierZeit: z.boolean(),
@@ -306,11 +310,6 @@ const wareneinsatzSchema = z.discriminatedUnion("art", [
   z.strictObject({
     art: z.literal("prozent_vom_umsatz"),
     quote: z.number().min(0).max(5),
-    umsatzsteuerSatz: satzSchema,
-  }),
-  z.strictObject({
-    art: z.literal("monatsbetrag"),
-    betrag: monatswertSchema,
     umsatzsteuerSatz: satzSchema,
   }),
 ]);
@@ -406,9 +405,58 @@ const kostenpositionSchema = z.discriminatedUnion("art", [
 
 const umsatzsteuerSchema = z.strictObject({
   regime: z.enum(UST_REGIME),
+  vorsteuerabzugsberechtigt: z.boolean(),
   versteuerungsart: z.enum(UST_VERSTEUERUNG),
   voranmeldungszeitraum: z.enum(UST_VORANMELDUNG),
   dauerfristverlaengerung: z.boolean(),
+});
+
+const steuerparameterSchema = z.strictObject({
+  umsatzsteuerRegelsatz: satzSchema,
+  umsatzsteuerErmaessigt: satzSchema,
+  koerperschaftsteuerSatz: satzSchema,
+  solidaritaetszuschlagSatz: satzSchema,
+  solidaritaetszuschlagFreigrenzeCents: centsSchema,
+  gewerbesteuerMesszahl: satzSchema,
+  gewerbesteuerFreibetragPersonenCents: centsSchema,
+  gewerbesteuerFreibetragKapitalCents: centsSchema,
+  einkommensteuerGrundfreibetragCents: centsSchema,
+  kinderfreibetragJeElternteilCents: centsSchema,
+  beaFreibetragJeElternteilCents: centsSchema,
+  einkommensteuerSpitzensteuersatz: satzSchema,
+  einkommensteuerReichensteuersatz: satzSchema,
+  kirchensteuerSatzBayernBadenWuerttemberg: satzSchema,
+  kirchensteuerSatzUebrigeLaender: satzSchema,
+  kleinunternehmerVorjahrCents: centsSchema,
+  kleinunternehmerLaufendesJahrCents: centsSchema,
+  gwgSofortMaxNettoCents: centsSchema,
+  sammelpostenMinNettoCents: centsSchema,
+  sammelpostenMaxNettoCents: centsSchema,
+});
+
+const darlehensvorlageSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  anbieter: textSchema(200),
+  betragMinCents: positiveCentsSchema,
+  betragMaxCents: positiveCentsSchema,
+  laufzeitMaxMonate: z.number().int().min(1).max(600),
+  tilgungsfreieMonateMax: z.number().int().min(0).max(600),
+  nominalzinsPa: satzSchema,
+  tilgungsart: z.enum(TILGUNGSARTEN),
+  zinszahlungInTilgungsfreierZeit: z.boolean(),
+  auszahlungAnteil: z.number().min(0).max(1),
+  gebuehrenCents: centsSchema,
+  quelle: textSchema(300),
+  notizen: optionalTextSchema(2000).optional(),
+});
+
+const planparameterSchema = z.strictObject({
+  version: textSchema(40),
+  bezeichnung: textSchema(200),
+  hinweis: optionalTextSchema(2000).optional(),
+  steuer: steuerparameterSchema,
+  darlehensvorlagen: z.array(darlehensvorlageSchema).max(30),
 });
 
 const umsatzAnpassungSchema = z.strictObject({
@@ -466,11 +514,13 @@ export const finanzplanSchema = z
   .strictObject({
     id: idSchema,
     schemaVersion: z.literal(SCHEMA_VERSION),
+    status: z.enum(PLAN_STATUS),
     erstelltAm: z.iso.datetime(),
     geaendertAm: z.iso.datetime(),
     waehrung: z.literal(WAEHRUNG),
-    startMonat: isoMonthSchema,
+    startMonat: isoMonthSchema.optional(),
     horizontMonate: z.literal(PLAN_HORIZON_MONTHS),
+    parameter: planparameterSchema,
     stammdaten: stammdatenSchema,
     kapitalbedarf: kapitalbedarfSchema,
     finanzierung: finanzierungSchema,

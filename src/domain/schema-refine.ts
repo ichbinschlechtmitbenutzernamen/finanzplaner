@@ -37,6 +37,7 @@ function inHorizon(
   path: PropertyKey[],
   ctx: PlanIssueContext,
 ): void {
+  if (!plan.startMonat) return;
   if (!isWithinHorizon(plan.startMonat, month, plan.horizontMonate)) {
     const last = horizonEnd(plan.startMonat, plan.horizontMonate);
     issue(
@@ -67,6 +68,7 @@ function collectIds(plan: Finanzplan): { id: string; path: PropertyKey[] }[] {
   pushAll(plan.kapitalbedarf.gruendungskosten, ["kapitalbedarf", "gruendungskosten"]);
   pushAll(plan.kapitalbedarf.anlaufkosten, ["kapitalbedarf", "anlaufkosten"]);
   pushAll(plan.finanzierung.eigenkapital, ["finanzierung", "eigenkapital"]);
+  pushAll(plan.parameter.darlehensvorlagen, ["parameter", "darlehensvorlagen"]);
   pushAll(plan.finanzierung.darlehen, ["finanzierung", "darlehen"]);
   pushAll(plan.finanzierung.zuschuesse, ["finanzierung", "zuschuesse"]);
   pushAll(plan.umsatzplanung, ["umsatzplanung"]);
@@ -93,6 +95,13 @@ function validateUniqueIds(plan: Finanzplan, ctx: PlanIssueContext): void {
 
 function validateRechtsform(plan: Finanzplan, ctx: PlanIssueContext): void {
   const { rechtsform, personen, stammkapitalCents, gewerbesteuerHebesatz } = plan.stammdaten;
+  personen.forEach((person, index) => {
+    if (new Set(person.rollen).size !== person.rollen.length) {
+      issue(ctx, ["stammdaten", "personen", index, "rollen"], "Jede Rolle nur einmal je Person.");
+    }
+  });
+  if (plan.status !== "vollstaendig" || !rechtsform) return;
+
   const isCorporation = rechtsform === "gmbh" || rechtsform === "ug";
 
   if (isCorporation && stammkapitalCents == null) {
@@ -112,12 +121,6 @@ function validateRechtsform(plan: Finanzplan, ctx: PlanIssueContext): void {
       "Für diese Rechtsform ist der Gewerbesteuer-Hebesatz der Gemeinde nötig.",
     );
   }
-
-  personen.forEach((person, index) => {
-    if (new Set(person.rollen).size !== person.rollen.length) {
-      issue(ctx, ["stammdaten", "personen", index, "rollen"], "Jede Rolle nur einmal je Person.");
-    }
-  });
 
   if (rechtsform === "einzelunternehmen") {
     const person = personen[0];
@@ -197,6 +200,7 @@ function validateRechtsform(plan: Finanzplan, ctx: PlanIssueContext): void {
 }
 
 function validateAnteile(plan: Finanzplan, ctx: PlanIssueContext): void {
+  if (plan.status !== "vollstaendig") return;
   const sum = plan.stammdaten.personen.reduce((total, person) => total + person.anteil, 0);
   if (Math.abs(sum - 1) > 0.0001) {
     issue(
@@ -211,6 +215,46 @@ function validateZwecke(plan: Finanzplan, ctx: PlanIssueContext): void {
   const zwecke = plan.stammdaten.zwecke;
   if (new Set(zwecke).size !== zwecke.length) {
     issue(ctx, ["stammdaten", "zwecke"], "Jeder Zweck darf nur einmal gewählt werden.");
+  }
+}
+
+function validateVollstaendig(plan: Finanzplan, ctx: PlanIssueContext): void {
+  if (plan.status !== "vollstaendig") return;
+  if (!plan.startMonat) {
+    issue(ctx, ["startMonat"], "Ein vollständiger Plan braucht einen Startmonat.");
+  }
+  const stamm = plan.stammdaten;
+  if (!stamm.rechtsform) {
+    issue(ctx, ["stammdaten", "rechtsform"], "Ein vollständiger Plan braucht eine Rechtsform.");
+  }
+  if (stamm.personen.length < 1) {
+    issue(
+      ctx,
+      ["stammdaten", "personen"],
+      "Ein vollständiger Plan braucht mindestens eine Person.",
+    );
+  }
+  if (!stamm.bundesland) {
+    issue(ctx, ["stammdaten", "bundesland"], "Ein vollständiger Plan braucht ein Bundesland.");
+  }
+  if (!stamm.gruendungsmonat) {
+    issue(
+      ctx,
+      ["stammdaten", "gruendungsmonat"],
+      "Ein vollständiger Plan braucht einen Gründungsmonat.",
+    );
+  }
+  if (stamm.planName.trim().length === 0) {
+    issue(ctx, ["stammdaten", "planName"], "Ein vollständiger Plan braucht einen Namen.");
+  }
+  if (stamm.firmenname.trim().length === 0) {
+    issue(ctx, ["stammdaten", "firmenname"], "Ein vollständiger Plan braucht einen Firmennamen.");
+  }
+  if (stamm.ort.trim().length === 0) {
+    issue(ctx, ["stammdaten", "ort"], "Ein vollständiger Plan braucht einen Ort.");
+  }
+  if (stamm.zwecke.length < 1) {
+    issue(ctx, ["stammdaten", "zwecke"], "Ein vollständiger Plan braucht mindestens einen Zweck.");
   }
 }
 
@@ -413,6 +457,39 @@ function validateFinanzierung(
         "Die tilgungsfreie Zeit kann nicht länger sein als die Laufzeit.",
       );
     }
+    if (darlehen.vorlageId != null) {
+      const vorlage = plan.parameter.darlehensvorlagen.find(
+        (item) => item.id === darlehen.vorlageId,
+      );
+      if (!vorlage) {
+        issue(ctx, [...path, "vorlageId"], "Die Darlehensvorlage gibt es im Parametersatz nicht.");
+      } else {
+        if (
+          darlehen.betragCents < vorlage.betragMinCents ||
+          darlehen.betragCents > vorlage.betragMaxCents
+        ) {
+          issue(
+            ctx,
+            [...path, "betragCents"],
+            `Der Betrag liegt außerhalb der Vorlage „${vorlage.bezeichnung}“.`,
+          );
+        }
+        if (darlehen.laufzeitMonate > vorlage.laufzeitMaxMonate) {
+          issue(
+            ctx,
+            [...path, "laufzeitMonate"],
+            `Die Laufzeit überschreitet das Maximum der Vorlage „${vorlage.bezeichnung}“.`,
+          );
+        }
+        if (darlehen.tilgungsfreieMonate > vorlage.tilgungsfreieMonateMax) {
+          issue(
+            ctx,
+            [...path, "tilgungsfreieMonate"],
+            `Die tilgungsfreie Zeit überschreitet das Maximum der Vorlage „${vorlage.bezeichnung}“.`,
+          );
+        }
+      }
+    }
     if (darlehen.personId != null && !personIds.has(darlehen.personId)) {
       issue(ctx, [...path, "personId"], "Die verknüpfte Person gibt es in den Stammdaten nicht.");
     }
@@ -491,15 +568,6 @@ function validateBetrieb(plan: Finanzplan, personIds: Set<string>, ctx: PlanIssu
     } else {
       checkMenge(plan, position.mengeProMonat, [...path, "mengeProMonat"], bounds, ctx);
       checkMonatswert(plan, position.preisNetto, [...path, "preisNetto"], bounds, ctx);
-    }
-    if (position.wareneinsatz.art === "monatsbetrag") {
-      checkMonatswert(
-        plan,
-        position.wareneinsatz.betrag,
-        [...path, "wareneinsatz", "betrag"],
-        bounds,
-        ctx,
-      );
     }
   });
 
@@ -647,8 +715,28 @@ export function refineFinanzplan(plan: Finanzplan, ctx: PlanIssueContext): void 
   if (Date.parse(plan.geaendertAm) < Date.parse(plan.erstelltAm)) {
     issue(ctx, ["geaendertAm"], "Der Änderungszeitpunkt liegt vor der Erstellung.");
   }
+  if (
+    plan.umsatzsteuer.regime === "kleinunternehmer" &&
+    plan.umsatzsteuer.vorsteuerabzugsberechtigt
+  ) {
+    issue(
+      ctx,
+      ["umsatzsteuer", "vorsteuerabzugsberechtigt"],
+      "Kleinunternehmer sind nicht vorsteuerabzugsberechtigt.",
+    );
+  }
+  plan.parameter.darlehensvorlagen.forEach((vorlage, index) => {
+    if (vorlage.betragMinCents > vorlage.betragMaxCents) {
+      issue(
+        ctx,
+        ["parameter", "darlehensvorlagen", index, "betragMaxCents"],
+        "Der Höchstbetrag der Vorlage liegt unter dem Mindestbetrag.",
+      );
+    }
+  });
 
   validateUniqueIds(plan, ctx);
+  validateVollstaendig(plan, ctx);
   validateRechtsform(plan, ctx);
   validateAnteile(plan, ctx);
   validateZwecke(plan, ctx);

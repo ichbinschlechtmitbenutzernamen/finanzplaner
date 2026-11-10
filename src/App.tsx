@@ -1,24 +1,51 @@
-import { beispielEinzelunternehmen } from "./fixtures/beispiel-einzelunternehmen.ts";
+import { useEffect, useState } from "react";
 import { horizonEnd } from "./domain/months.ts";
 import { PLAN_ZWECK_LABEL, RECHTSFORM_LABEL } from "./domain/labels.ts";
 import { SCHEMA_VERSION } from "./domain/types.ts";
+import { beispielplaene, beispielplanById } from "./fixtures/index.ts";
 
-const plan = beispielEinzelunternehmen;
-const lastMonth = horizonEnd(plan.startMonat, plan.horizontMonate);
-
-const blocks = [
-  ["Investitionen", plan.kapitalbedarf.investitionen.length],
-  ["Gründungskosten", plan.kapitalbedarf.gruendungskosten.length],
-  ["Anlaufkosten", plan.kapitalbedarf.anlaufkosten.length],
-  ["Eigenkapitalposten", plan.finanzierung.eigenkapital.length],
-  ["Darlehen", plan.finanzierung.darlehen.length],
-  ["Zuschüsse", plan.finanzierung.zuschuesse.length],
-  ["Umsatzlinien", plan.umsatzplanung.length],
-  ["Personalstellen", plan.personal.length],
-  ["Laufende Kosten", plan.laufendeKosten.length],
-] as const;
+function readHash(): string {
+  const hash = window.location.hash.replace(/^#/, "");
+  return beispielplanById(hash).id;
+}
 
 export default function App() {
+  const [activeId, setActiveId] = useState(readHash);
+
+  useEffect(() => {
+    const onHash = () => setActiveId(readHash());
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
+  }, []);
+
+  useEffect(() => {
+    const current = window.location.hash.replace(/^#/, "");
+    if (current !== activeId) {
+      window.location.hash = activeId;
+    }
+  }, [activeId]);
+
+  const selected = beispielplanById(activeId);
+  const plan = selected.plan;
+  const lastMonth = plan.startMonat ? horizonEnd(plan.startMonat, plan.horizontMonate) : null;
+  const rechtsform = plan.stammdaten.rechtsform;
+
+  const blocks = [
+    ["Investitionen", plan.kapitalbedarf.investitionen.length],
+    ["Gründungskosten", plan.kapitalbedarf.gruendungskosten.length],
+    ["Anlaufkosten", plan.kapitalbedarf.anlaufkosten.length],
+    ["Eigenkapitalposten", plan.finanzierung.eigenkapital.length],
+    ["Darlehen", plan.finanzierung.darlehen.length],
+    ["Zuschüsse", plan.finanzierung.zuschuesse.length],
+    ["Umsatzlinien", plan.umsatzplanung.length],
+    ["Personalstellen", plan.personal.length],
+    ["Laufende Kosten", plan.laufendeKosten.length],
+  ] as const;
+
+  function selectPlan(id: string) {
+    setActiveId(id);
+  }
+
   return (
     <main>
       <p className="eyebrow">Schritt 1 · Grundlage</p>
@@ -28,10 +55,22 @@ export default function App() {
         Finanzplanung. Der Name ist ein Arbeitsname.
       </p>
       <p>
-        Dieser Schritt enthält das Datenmodell und einen fiktiven Beispieldatensatz. Assistent,
-        Berechnung und Auswertungen folgen später. Die Daten bleiben dafür serialisierbar, mit
-        stabilen Ids und einer Schema-Version.
+        Dieser Schritt enthält das Datenmodell und drei fiktive Beispielpläne. Assistent, Berechnung
+        und Auswertungen folgen später.
       </p>
+
+      <div className="switcher" role="group" aria-label="Beispielplan wählen">
+        {beispielplaene.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={item.id === selected.id}
+            onClick={() => selectPlan(item.id)}
+          >
+            {item.label}
+          </button>
+        ))}
+      </div>
 
       <section className="panel" aria-labelledby="beispiel-title">
         <p className="flag">Fiktiver Datensatz, nicht für einen echten Antrag</p>
@@ -49,12 +88,14 @@ export default function App() {
           </div>
           <div>
             <dt>Rechtsform</dt>
-            <dd>{RECHTSFORM_LABEL[plan.stammdaten.rechtsform]}</dd>
+            <dd>{rechtsform ? RECHTSFORM_LABEL[rechtsform] : "noch offen"}</dd>
           </div>
           <div>
             <dt>Horizont</dt>
             <dd>
-              {plan.startMonat} bis {lastMonth} ({plan.horizontMonate} Monate)
+              {plan.startMonat && lastMonth
+                ? `${plan.startMonat} bis ${lastMonth} (${plan.horizontMonate} Monate)`
+                : "Startmonat noch offen"}
             </dd>
           </div>
           <div>
@@ -62,8 +103,17 @@ export default function App() {
             <dd>{plan.stammdaten.zwecke.map((zweck) => PLAN_ZWECK_LABEL[zweck]).join(", ")}</dd>
           </div>
           <div>
+            <dt>Darlehen</dt>
+            <dd>
+              {plan.finanzierung.darlehen.map((darlehen) => darlehen.bezeichnung).join(", ") ||
+                "keine"}
+            </dd>
+          </div>
+          <div>
             <dt>Schema</dt>
-            <dd>Version {SCHEMA_VERSION}</dd>
+            <dd>
+              Version {SCHEMA_VERSION}, Parameter {plan.parameter.version}
+            </dd>
           </div>
         </dl>
         <ul className="counts">

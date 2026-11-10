@@ -2,9 +2,9 @@
 
 Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland einen Finanzplan über 36 Monate selbst erstellen. Der endgültige Name steht noch nicht fest.
 
-Dieser Stand ist **Schritt 1**: Projektgerüst und Datenmodell. Es gibt noch keine Berechnung, keinen Assistenten und keine Auswertungen. Die Seite zeigt nur, dass der fiktive Beispielplan geladen ist.
+Dieser Stand ist **Schritt 1**: Projektgerüst und Datenmodell. Es gibt noch keine Berechnung, keinen Assistenten und keine Auswertungen. Die Seite zeigt drei fiktive Beispielpläne und lässt zwischen ihnen wechseln.
 
-Die fachliche Beschreibung der Eingaben steht in [docs/datenmodell.md](docs/datenmodell.md).
+Die fachliche Beschreibung der Eingaben steht in [docs/datenmodell.md](docs/datenmodell.md). Schema-Version ist 2. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen.
 
 ## Voraussetzungen
 
@@ -39,10 +39,10 @@ npm run build
 ## Aufbau
 
 - `src/domain` – Typen, Zod-Schema, Prüfung, Migration und JSON-Export/Import. Dieser Ordner importiert kein React und kein Node-Modul, damit die spätere Rechnung im Browser laufen kann.
-- `src/fixtures/beispiel-einzelunternehmen.ts` – erfundener Plan einer Einzelunternehmerin. Als Beispiel gekennzeichnet, nicht für einen Antrag verwenden.
-- `src/App.tsx` – Platzhalterseite.
+- `src/fixtures` – drei erfundene Beispielpläne: Grafikstudio, Elektromeister mit Thüringer Mikrodarlehen, Café
+- `src/App.tsx` – Platzhalterseite mit Wechsel zwischen den Beispielen
 - `docs/datenmodell.md` – Überblick für die Fachberatung, inklusive offener Fragen.
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 1. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei ist dann der Inhalt, der im Browser liegt.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 2. Steuersätze, Freibeträge und Fördervorlagen liegen als Parametersatz im Plan. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei ist dann der Inhalt, der im Browser liegt.

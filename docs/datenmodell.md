@@ -2,7 +2,7 @@
 
 Dieser Text erklärt, welche Angaben eine gründende Person macht und wie sie im Plan zusammenhängen. Er ist für die fachliche Prüfung gedacht, nicht als Bedienungsanleitung. Die App rechnet in diesem Schritt noch nichts. Sie merkt sich nur die Eingaben, prüft, ob sie zusammenpassen, und kann sie als JSON-Datei speichern und wieder einlesen.
 
-Ein durchgängig erfundener Fall liegt im Projekt: Lina Bergmann, Einzelunternehmen „Studio Nordlicht“ in Leipzig, Grafik und Web. Der Plan ist als Beispiel markiert. Die Beträge sind nicht als Vorlage für einen Antrag gedacht.
+Ein durchgängig erfundener Fall ist nicht genug, um die Formen zu sehen. Im Projekt liegen drei deutlich gekennzeichnete Beispiele: Lina Bergmann mit dem Grafikstudio „Studio Nordlicht“, der Elektromeister Jonas Heller mit Fahrzeug, Werkzeug und Thüringer Mikrodarlehen, und Mara Sommer mit dem Café Leseecke, Küche, Wareneinsatzquote, Personal und Saison. Die Beträge sind nicht als Vorlage für einen Antrag gedacht.
 
 ## Was angelegt wird
 
@@ -80,8 +80,8 @@ Je Anlage: Bezeichnung, Kategorie, Nettopreis, Umsatzsteuersatz, Kaufmonat, Zahl
 Methoden:
 
 - linear: Nutzungsdauer mindestens ein Monat. Die Abschreibung beginnt im Kaufmonat, außer es ist ein späterer AfA-Beginn eingetragen (Maschine steht noch nicht).
-- geringwertiges Wirtschaftsgut, sofort Aufwand: Nutzungsdauer 0. Eine Betragsgrenze prüft die App nicht, weil der Gesetzgeber sie ändert.
-- Sammelposten: Nutzungsdauer ist eine Eingabe. Fünf Jahre, also 60 Monate, sind üblich, werden aber nicht erzwungen.
+- geringwertiges Wirtschaftsgut, sofort Aufwand: Nutzungsdauer 0. Zulässig bis zur GWG-Obergrenze im Parametersatz, im Stand 2026 sind das 800 Euro netto. Ein höherer Betrag bleibt speicherbar, wird aber markiert.
+- Sammelposten: Nutzungsdauer ist eine Eingabe. Zulässig von 250,01 bis 1.000 Euro netto, ebenfalls laut Parametersatz. Außerhalb dieser Spanne gibt es einen Hinweis, keine Sperre. Im Bereich 250,01 bis 800 Euro sind Sofort-GWG und Sammelposten beide zulässig. Lineare Abschreibung ist immer zulässig und wird nicht bemängelt.
 
 Ein Restwert ist optional. Fehlt er, schreibt die spätere Rechnung auf null ab. Degressive Abschreibung gibt es im Modell nicht.
 
@@ -117,7 +117,9 @@ Laufzeit und tilgungsfreie Zeit zählen ab der ersten Rate. Die erste Rate liegt
 
 Optional: Disagio, ein Hinweis auf Sicherheiten, bei Gesellschafterdarlehen die Person.
 
-Raten sind monatlich. Vierteljährliche Raten gibt es nicht.
+Raten sind monatlich. Vierteljährliche Raten sind nicht vorgesehen. Annuität und Ratentilgung (gleichbleibende Tilgung plus sinkende Zinsen) sind allgemein möglich. Endfällige Darlehen ebenfalls.
+
+Im Parametersatz liegt eine Fördervorlage, die bei der Plananlage eingefroren und danach editierbar ist: das Thüringer Mikrodarlehen der Thüringer Aufbaubank. Gespeicherte Grenzen, gegen die ein verknüpftes Darlehen geprüft wird: 5.000 bis 35.000 Euro, höchstens 84 Monate Laufzeit, höchstens 12 Monate tilgungsfrei. Vorgaben, die in das Darlehen kopiert werden und dort geändert werden können: Sollzins 2,40 Prozent pro Jahr, Ratentilgung, Zinszahlung auch in der tilgungsfreien Zeit, Auszahlung zu 100 Prozent, keine Gebühr. Der Effektivzins ist nicht extra gespeichert. Die spätere Zinsrechnung nutzt den Sollzins des Darlehens.
 
 ### Zuschüsse
 
@@ -137,13 +139,7 @@ Mehrere Umsatzlinien. Zwei Arten:
 
 Je Linie: Umsatzsteuersatz, Zahlungsziel in Tagen, optional ein erster und ein letzter aktiver Monat. Außerhalb dieses Fensters ist die Linie später null.
 
-Der Wareneinsatz ist je Linie:
-
-- keiner
-- ein Prozentsatz vom Nettoumsatz, mit eigenem Vorsteuersatz
-- ein eigener monatlicher Nettobetrag, ebenfalls mit Vorsteuersatz
-
-Eine Quote über 100 Prozent ist zulässig, wenn unter den eigenen Kosten verkauft wird. Stücklisten und Lagerbewegungen je Artikel gibt es nicht.
+Der Wareneinsatz ist je Linie entweder keiner oder ein Prozentsatz vom Nettoumsatz, mit eigenem Vorsteuersatz. Ein eigener monatlicher Wareneinsatzbetrag ist nicht vorgesehen. Eine Quote über 100 Prozent ist zulässig, wenn unter den eigenen Kosten verkauft wird. Stücklisten und Lagerbewegungen je Artikel gibt es nicht.
 
 ## Personal
 
@@ -184,16 +180,26 @@ Für den Gründungszuschuss und die Tragfähigkeit ist dieser Block bei Personen
 
 Optional je Person, für eine spätere grobe Einkommensteuer, nicht für eine Steuererklärung: Kirchensteuer, Ehegattensplitting, Kinderfreibeträge in halben Schritten, weitere Einkünfte außerhalb des Vorhabens. Solidaritätszuschlag wäre daraus abzuleiten und ist keine eigene Eingabe.
 
-## Umsatzsteuer
+## Umsatzsteuer und Zahllast
+
+Standard ist die Regelbesteuerung mit Vorsteuerabzug. Alle Beträge im Plan sind netto. Die Umsatzsteuer steht als Satz daneben.
 
 - Regelbesteuerung oder Kleinunternehmerregelung
+- Vorsteuerabzugsberechtigt ja oder nein. Bei Kleinunternehmern muss das Nein sein. Bei der Regelbesteuerung ist Ja der Normalfall, Nein bleibt für einzelne Fälle möglich.
 - Soll- oder Ist-Versteuerung
 - Voranmeldung monatlich oder vierteljährlich
 - Dauerfristverlängerung ja oder nein
 
-Bei Kleinunternehmern bleibt Soll oder Ist gespeichert, hat aber keine Wirkung. Es wird keine Umsatzsteuer auf die Erlöse gelegt und keine Vorsteuer abgezogen. Die Vorsteuer erhöht dann später die Anschaffungskosten. Deshalb bleiben Nettopreis und Steuersatz auch in diesem Fall getrennte Felder. Die Umsatzgrenzen der Kleinunternehmerregelung prüft die App nicht.
+Die Zahllast eines Monats ist die Umsatzsteuer auf die Leistungen minus die abziehbare Vorsteuer. Bei Kleinunternehmern ist sie null: keine Umsatzsteuer auf die Erlöse, kein Vorsteuerabzug, die Vorsteuer erhöht später die Anschaffungskosten.
 
-Die Erfolgsrechnung folgt dem Leistungsmonat. Die Liquidität verschiebt Ein- und Auszahlungen um das Zahlungsziel. Die Umsatzsteuer folgt Soll (mit der Leistung) oder Ist (mit dem Geld).
+Wann das Geld ans Finanzamt geht, hängt nicht am einzelnen Zahlungsziel der Kundschaft, sondern an der Voranmeldung. Der Entstehungsmonat ist bei Soll der Leistungsmonat und bei Ist der Monat, in dem das Geld nach dem Zahlungsziel eingeht. Gezahlt wird:
+
+- bei monatlicher Voranmeldung im Folgemonat, mit Dauerfristverlängerung einen Monat später
+- bei vierteljährlicher Voranmeldung im Monat nach dem Quartalsende, mit Dauerfristverlängerung einen weiteren Monat später
+
+Der übliche Fälligkeitstag, der 10., bleibt im Monatsraster in diesem Zahlungsmonat. Die Umsatzgrenzen der Kleinunternehmerregelung stehen im Parametersatz und sperren den Plan nicht.
+
+Zahlungsziele von Kunden und Lieferanten werden später auf ganze Monate gelegt: bis 14 Tage bleiben im Leistungsmonat, danach verschiebt jeder weitere angefangene 30-Tage-Block um einen Monat.
 
 ## Monatswerte: Basis, Wachstum, Saison, Ausnahme
 
@@ -206,7 +212,7 @@ Die Regel hat vier Teile. Jeder außer der Basis ist optional.
 3. Saison: zwölf Faktoren für Januar bis Dezember, nicht für „Monat 1 bis 12 des Plans“. 1 ist neutral, 0 ist ein geschlossener Monat. Der Durchschnitt muss nicht 1 sein. Wer den April-Faktor auf 1,2 setzt, hebt jeden April an, auch wenn der Plan im April startet.
 4. Ausnahmen je Monat. Sie ersetzen den fertigen Monatswert. Wachstum und Saison werden in diesem Monat nicht zusätzlich angewendet.
 
-Die vorgesehene Formel, noch nicht programmiert:
+Die bestätigte Formel, die die spätere Rechnung anwendet:
 
 ```text
 Wachstum monatlich aufgezinst:
@@ -271,36 +277,32 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 1. Eine ältere Datei läuft durch eine Migrationskette, bevor sie geprüft wird. Die Kette ist der Haken für spätere Änderungen. In diesem Schritt gibt es noch keine Altversion, der Haken ist aber die einzige Tür: Import liest JSON, migriert, prüft. Export prüft und schreibt JSON. Beides funktioniert im Browser, ohne Server.
+`schemaVersion` steht im Plan und ist derzeit 2. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt.
 
-Ein Plan, der die Prüfung nicht besteht, wird nicht exportiert. Leer dürfen die Listen sein (noch kein Umsatz, noch kein Darlehen). Nicht leer bleiben Rechtsform, mindestens eine Person, Startmonat, Umsatzsteuer-Einstellungen und die drei Szenarien mit Namen. Ein halb ausgefüllter Assistentenschritt ist damit noch kein speicherbarer Plan.
+Ein Plan hat den Status Entwurf oder vollständig. Der Entwurf darf ohne Rechtsform, ohne Person und ohne Startmonat gespeichert werden. Listen dürfen leer sein, Namen dürfen leer sein. Was schon ausgefüllt ist, muss trotzdem formal stimmen, zum Beispiel Ids, Cent-Beträge und die Grenzen einer verknüpften Darlehensvorlage. Erst der vollständige Plan verlangt Startmonat, Rechtsform, mindestens eine passende Person, Ort, Bundesland, Gründungsmonat, einen Zweck und die Summe der Anteile von 100 Prozent.
 
-## Annahmen, die schon im Modell stecken
+Der Parametersatz (`parameter`) wird bei der Anlage kopiert und bleibt im Plan, auch wenn sich Gesetz oder Förderkonditionen später ändern. Er enthält die Steuersätze und Freibeträge, die GWG-Grenzen und die Darlehensvorlagen. Die Oberfläche zeigt später Euro. Sätze sind Dezimalzahlen: 0,19 ist 19 Prozent.
 
-Bitte gegenlesen. Was davon falsch ist, sollte vor der Rechenlogik geändert werden.
+## Festgelegte Entscheidungen
 
-- Der Horizont ist fest 36 Monate. Buchungsmonate (Kauf, Rate, Umsatz, Gehalt, Ausnahme) müssen darin liegen. Der Gründungsmonat darf außerhalb liegen, er ist eine Angabe, kein Buchungssatz.
-- Es gibt keine Anfangsbestände eines schon laufenden Betriebs. Die Kasse entsteht aus den erfassten Einlagen, Darlehen und Zuschüssen.
-- Netto und Umsatzsteuersatz statt Brutto. Die Vorsteuer-Vorfinanzierung ist Liquidität, keine zweite Ausgabe im Kapitalbedarf.
-- Kreditregeln wie im Abschnitt Finanzierung: erste Rate im Folgemonat, Annuität auf die Zeit nach der Freizeit, Zins in der Freizeit nur Zahlung oder Erlass, Tranchen ohne neuen Zeitplan, nur Monatsraten.
-- GuV im Leistungsmonat, Geldfluss um das Zahlungsziel verschoben, Umsatzsteuer nach Soll oder Ist.
-- Saisonfaktoren gelten für Kalendermonate. Eine Monatsausnahme gewinnt gegen Wachstum und Saison.
-- Der Real Case ohne Anpassungen ist die Basis. Spezifische Faktoren ersetzen globale.
-- Geschäftsführergehalt ist Personal. Lebensbedarf ist bei Personenunternehmen Entnahme und bei Kapitalgesellschaften nur der Vergleich mit dem Gehalt.
-- Lohnnebenkosten, Hebesatz und die Phasen des Gründungszuschusses gibt die gründende Person ein. Die App hinterlegt dafür keine aktuellen Gesetzeswerte.
-- Privatanteil ist der nicht abziehbare Teil.
+Die Fachberatung hat diese Punkte bestätigt. Sie sind so umgesetzt.
+
+- Best Case und Worst Case bleiben Faktoren auf der Basis, bei Kosten zusätzlich ein Cent-Zuschlag. Der Real Case ohne Anpassung ist die Basis. Ein liniengenauer Faktor ersetzt den globalen.
+- Monatswert = Basis mal Wachstum mal Saisonfaktor des Kalendermonats. Die Monatsausnahme ersetzt das Ergebnis. Standard ist die monatliche Aufzinsung, der Jahressprung bleibt als Alternative wählbar.
+- Zahlungsziele werden auf ganze Monate gerundet, nicht taggenau.
+- Darlehen laufen monatlich. Annuität und Ratentilgung sind beide vorgesehen. Keine Vierteljahresraten, keine kapitalisierten Zinsen.
+- Nettobeträge sind der Normalfall, mit Vorsteuerabzug in der Regelbesteuerung. Die Zahllast ist Umsatzsteuer minus Vorsteuer, der Zahlungsmonat ist modelliert. Kleinunternehmer bleiben möglich.
+- Steuersätze, Freibeträge, GWG-Grenzen und die TAB-Vorlage liegen als Parametersatz im Plan.
+- Ein angefangener Assistent ist als Entwurf speicherbar.
+- Keine degressive Abschreibung. GWG- und Sammelposten-Grenzen werden geprüft und bei Abweichung nur markiert.
+- Gründungszuschuss, Lebensbedarf je Rechtsform und der Hebesatz als einzige Gewerbesteuer-Eingabe bleiben wie beschrieben.
+- Wareneinsatz nur als Prozent vom Nettoumsatz.
 
 ## Offene Fragen an die Fachberatung
 
-1. Soll der Real Case die Basis bleiben, also dieselben Zahlen ohne eigenen Faktor, und reichen Faktoren plus ein Cent-Zuschlag bei Kosten für Best und Worst? Oder muss ein Fall eigene Posten enthalten können, die in den anderen Fällen fehlen?
-2. Stimmt die Formel „Basis, dann Wachstum, dann Saisonfaktor des Kalendermonats, Monatsausnahme ersetzt alles“? Und ist die monatliche Aufzinsung der Standard, der Jahressprung nur die Alternative?
-3. Reicht es, Zahlungsziele später auf ganze Monate zu legen (bis 14 Tage im selben Monat, danach grob je 30 Tage ein weiterer Monat)? Oder muss die Liquidität taggenau sein?
-4. Trägt die Kreditlogik die Fälle aus der Beratung, insbesondere KfW? Gemeint sind: erste Rate im Monat nach der ersten Auszahlung, Annuität erst nach der tilgungsfreien Zeit, Zins in der Freizeit entweder Zahlung oder Erlass. Kapitalisierte oder nur gestundete Zinsen und Vierteljahresraten kann das Modell nicht.
-5. Sollen Steuersätze und Freibeträge später mit im Plan stehen, damit eine bei der Bank abgegebene Fassung sich nicht ändert, wenn das Recht sich ändert? Oder gilt immer das Recht am Tag der Auswertung?
-6. Sollen gründende Personen Beträge später in Euro brutto sehen, während der Plan netto speichert? In vielen Kapitalbedarfsbögen steht der Bruttobetrag, weil die Vorsteuer bis zur Erstattung fehlt.
-7. Muss ein angefangener Assistent schon gespeichert werden können, bevor Rechtsform, Person und Startmonat feststehen? Dafür bräuchte es ein zweites, lockereres Format neben dem geprüften Plan.
-8. Reichen lineare Abschreibung, Sofortabschreibung als geringwertiges Wirtschaftsgut und Sammelposten mit frei eingegebener Nutzungsdauer? Die gesetzlichen Betragsgrenzen prüfen wir nicht. Degressive Abschreibung fehlt.
-9. Reicht die Abbildung des Gründungszuschusses (ALG I plus Pauschale, optionale zweite Phase nur Pauschale, abweichende Bescheide als freie Monatsliste)? Bitte auch die beiden Schalter prüfen: steuerfrei und trotzdem Progressionsvorbehalt. EXIST läuft über die freie Liste mit eigenem Programmkennzeichen.
-10. Ist die Trennung richtig, dass der Lebensbedarf bei GmbH und UG nicht in die GuV gehört, sondern nur zeigt, ob das Geschäftsführergehalt den Unterhalt trägt? Und dass er bei Einzelunternehmen und Personengesellschaften Entnahme ist, keine Betriebsausgabe?
-11. Genügt der Hebesatz als einzige Gewerbesteuer-Eingabe (460 = 460 Prozent)? Messzahl und Freibetrag wären Gesetz. Die Abgrenzung Freiberuf oder Gewerbe trifft die gründende Person, nicht die App.
-12. Genügen Wareneinsatz als Prozent vom Nettoumsatz oder als Monatsbetrag für die Zielgruppe, einschließlich kleinem Handel? Stücklisten und die Übernahme schon vorhandener Kontostände sind nicht vorgesehen.
+1. Die progressive Einkommensteuer-Formel nach § 32a EStG (Zonengrenzen und Koeffizienten für 2026) liegt nicht im Parametersatz. Gespeichert sind Grundfreibetrag 12.348 Euro, Kinderfreibetrag 3.414 Euro und BEA-Freibetrag 1.464 Euro je Elternteil sowie die Sätze 42 und 45 Prozent. Soll die vollständige Tarifformel ergänzt werden?
+2. Beim Solidaritätszuschlag sind 5,5 Prozent und eine Freigrenze von 20.350 Euro auf die festgesetzte Einkommensteuer gespeichert. Die Gleitzone darüber fehlt. Bitte am aktuellen SolZG bestätigen. Die Kirchensteuer steht mit 8 Prozent für Bayern und Baden-Württemberg und 9 Prozent für die übrigen Länder im Parametersatz. Soll der Satz automatisch aus dem Bundesland folgen?
+3. GWG bis 800 Euro netto und Sammelposten von 250,01 bis 1.000 Euro netto überschneiden sich. Beide sind im Überlapp erlaubt, gewarnt wird nur außerhalb. Beträge bis 250 Euro dürfen als Sofort-GWG erfasst werden. Soll darunter ein eigener Sofortaufwand ohne Anlage werden?
+4. Der Zahlungsmonat der USt-Zahllast ist der Folgemonat bei monatlicher Voranmeldung und der Monat nach dem Quartalsende bei vierteljährlicher Voranmeldung, jeweils plus ein Monat bei Dauerfrist. Der 10. des Monats bleibt unberücksichtigt. Passt das?
+5. Die Kleinunternehmergrenzen 25.000 und 100.000 Euro netto stehen im Parametersatz und sperren keinen Plan. Soll später eine Warnung kommen, wenn der geplante Umsatz die Grenze überschreitet?
+6. Beim Thüringer Mikrodarlehen sind Betrag, Höchstlaufzeit und tilgungsfreie Zeit harte Grenzen der gespeicherten Vorlage. Sollzins, Tilgungsart, volle Auszahlung und fehlende Gebühren sind änderbare Vorgaben des einzelnen Darlehens. Der Effektivzins von 2,43 Prozent ist nicht gespeichert. Reicht der Sollzins für die Zinsrechnung, und braucht es ein Feld für Sondertilgungen?

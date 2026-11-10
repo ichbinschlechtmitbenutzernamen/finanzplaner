@@ -9,11 +9,16 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 1 as const;
+export const SCHEMA_VERSION = 2 as const;
 
 export const PLAN_HORIZON_MONTHS = 36 as const;
 
 export const WAEHRUNG = "EUR" as const;
+
+export const PLAN_STATUS = ["entwurf", "vollstaendig"] as const;
+
+/** Entwurf darf Rechtsform, Personen und Startmonat noch offen lassen. */
+export type PlanStatus = (typeof PLAN_STATUS)[number];
 
 /** Stabile Id innerhalb eines Plans. */
 export type Id = string;
@@ -198,7 +203,8 @@ export interface Stammdaten {
   /** true = erfundener Datensatz, nicht für einen echten Antrag. */
   beispiel: boolean;
   firmenname: string;
-  rechtsform: Rechtsform;
+  /** Im Entwurf optional, im vollständigen Plan Pflicht. */
+  rechtsform?: Rechtsform;
   /** Freitext, z. B. „Grafikdesign und Webgestaltung“. Darf leer sein. */
   branche: string;
   /** Stabiler Schlüssel für spätere Branchenvorlagen, z. B. `grafik-web`. */
@@ -209,14 +215,15 @@ export interface Stammdaten {
   strasse?: string;
   plz?: string;
   ort: string;
-  bundesland: Bundesland;
+  /** Im Entwurf optional. */
+  bundesland?: Bundesland;
   /**
    * Gewerbesteuer-Hebesatz der Gemeinde in Prozent.
    * 460 bedeutet 460 %, nicht 4,60. Bei Freiberuflern nicht nötig.
    */
   gewerbesteuerHebesatz?: number;
   /** Wirtschaftlicher bzw. rechtlicher Start. Darf außerhalb des Horizonts liegen. */
-  gruendungsmonat: IsoMonth;
+  gruendungsmonat?: IsoMonth;
   handelsregisterGeplant?: boolean;
   /** Nur GmbH und UG. Gesellschaftsrechtliche Angabe, nicht die Zahlungsliste. */
   stammkapitalCents?: EuroCents;
@@ -340,6 +347,12 @@ export interface Darlehen {
   auszahlungen: Darlehensauszahlung[];
   /** Nominalzins pro Jahr, 0.045 = 4,5 %. */
   nominalzinsPa: number;
+  /** Verknüpfung mit einer Darlehensvorlage im Parametersatz. Die Konditionen bleiben editierbar. */
+  vorlageId?: Id;
+  /** 1 = Auszahlung zu 100 % des Nennbetrags. Fehlt der Wert, gilt später 1. */
+  auszahlungAnteil?: number;
+  /** Bearbeitungsgebühr oder Bereitstellungsprovision. 0 = keine Gebühr. */
+  gebuehrenCents?: EuroCents;
   /** Gesamte Laufzeit in Monaten, gezählt ab der ersten Rate. */
   laufzeitMonate: number;
   /** Monate ohne Tilgung am Anfang der Laufzeit. */
@@ -401,10 +414,9 @@ export interface Finanzierung {
   zuschuesse: Zuschuss[];
 }
 
+/** Wareneinsatz nur als Anteil am Nettoumsatz der Linie, nicht als eigener Monatsbetrag. */
 export type Wareneinsatz =
-  | { art: "keiner" }
-  | { art: "prozent_vom_umsatz"; quote: number; umsatzsteuerSatz: Satz }
-  | { art: "monatsbetrag"; betrag: MonatswertVorgabe; umsatzsteuerSatz: Satz };
+  { art: "keiner" } | { art: "prozent_vom_umsatz"; quote: number; umsatzsteuerSatz: Satz };
 
 interface UmsatzpositionBase {
   id: Id;
@@ -526,12 +538,78 @@ export type UstVoranmeldung = (typeof UST_VORANMELDUNG)[number];
 export interface UmsatzsteuerEinstellungen {
   regime: UstRegime;
   /**
-   * Soll = mit der Leistung, Ist = mit dem Zahlungseingang.
+   * true = Vorsteuer ist abziehbar. Standard bei der Regelbesteuerung.
+   * Bei Kleinunternehmern immer false. Die Zahllast ist dann null.
+   */
+  vorsteuerabzugsberechtigt: boolean;
+  /**
+   * Soll = Umsatzsteuer entsteht mit der Leistung, Ist = mit dem Zahlungseingang.
    * Bei Kleinunternehmern bleibt das Feld erhalten, wirkt aber nicht.
+   * Die Zahllast eines Monats ist Umsatzsteuer minus abziehbare Vorsteuer.
+   * Ihr Zahlungsmonat folgt aus Voranmeldungszeitraum und Dauerfristverlängerung.
    */
   versteuerungsart: UstVersteuerung;
   voranmeldungszeitraum: UstVoranmeldung;
   dauerfristverlaengerung: boolean;
+}
+
+export interface Steuerparameter {
+  /** 0.19 = 19 %. Orientierung für neue Zeilen, jede Zeile speichert ihren Satz selbst. */
+  umsatzsteuerRegelsatz: Satz;
+  umsatzsteuerErmaessigt: Satz;
+  koerperschaftsteuerSatz: Satz;
+  solidaritaetszuschlagSatz: Satz;
+  /** Freigrenze auf die festgesetzte Einkommensteuer, in Cent. */
+  solidaritaetszuschlagFreigrenzeCents: EuroCents;
+  gewerbesteuerMesszahl: Satz;
+  gewerbesteuerFreibetragPersonenCents: EuroCents;
+  gewerbesteuerFreibetragKapitalCents: EuroCents;
+  einkommensteuerGrundfreibetragCents: EuroCents;
+  kinderfreibetragJeElternteilCents: EuroCents;
+  beaFreibetragJeElternteilCents: EuroCents;
+  einkommensteuerSpitzensteuersatz: Satz;
+  einkommensteuerReichensteuersatz: Satz;
+  kirchensteuerSatzBayernBadenWuerttemberg: Satz;
+  kirchensteuerSatzUebrigeLaender: Satz;
+  kleinunternehmerVorjahrCents: EuroCents;
+  kleinunternehmerLaufendesJahrCents: EuroCents;
+  /** Sofortabschreibung als GWG bis zu diesem Nettobetrag, einschließlich. */
+  gwgSofortMaxNettoCents: EuroCents;
+  /** Sammelposten ab diesem Nettobetrag, einschließlich. */
+  sammelpostenMinNettoCents: EuroCents;
+  /** Sammelposten bis zu diesem Nettobetrag, einschließlich. */
+  sammelpostenMaxNettoCents: EuroCents;
+}
+
+export interface Darlehensvorlage {
+  id: Id;
+  bezeichnung: string;
+  anbieter: string;
+  betragMinCents: EuroCents;
+  betragMaxCents: EuroCents;
+  laufzeitMaxMonate: number;
+  tilgungsfreieMonateMax: number;
+  /** Vorgabe, die in das Darlehen kopiert und dort geändert werden kann. */
+  nominalzinsPa: number;
+  tilgungsart: Tilgungsart;
+  zinszahlungInTilgungsfreierZeit: boolean;
+  /** 1 = 100 % Auszahlung. */
+  auszahlungAnteil: number;
+  gebuehrenCents: EuroCents;
+  quelle: string;
+  notizen?: string;
+}
+
+/**
+ * Mit der Anlage des Plans eingefrorene Sätze, Freibeträge und Fördervorlagen.
+ * Eine spätere Änderung des Rechts ändert abgeschlossene Pläne nicht.
+ */
+export interface Planparameter {
+  version: string;
+  bezeichnung: string;
+  hinweis?: string;
+  steuer: Steuerparameter;
+  darlehensvorlagen: Darlehensvorlage[];
 }
 
 export const SZENARIO_IDS = ["base", "best", "real", "worst"] as const;
@@ -587,12 +665,15 @@ export interface Szenarien {
 export interface Finanzplan {
   id: Id;
   schemaVersion: typeof SCHEMA_VERSION;
+  status: PlanStatus;
   erstelltAm: string;
   geaendertAm: string;
   waehrung: typeof WAEHRUNG;
-  /** Erster der 36 Monate. */
-  startMonat: IsoMonth;
+  /** Erster der 36 Monate. Im Entwurf optional. */
+  startMonat?: IsoMonth;
   horizontMonate: typeof PLAN_HORIZON_MONTHS;
+  /** Sätze und Fördervorlagen, eingefroren bei der Plananlage. */
+  parameter: Planparameter;
   stammdaten: Stammdaten;
   kapitalbedarf: Kapitalbedarf;
   finanzierung: Finanzierung;

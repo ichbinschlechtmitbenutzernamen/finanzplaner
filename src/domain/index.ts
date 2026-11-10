@@ -1,4 +1,14 @@
-export { createEmptyFinanzplan, type EmptyPlanOptions } from "./empty-plan.ts";
+export {
+  createDraftFinanzplan,
+  createEmptyFinanzplan,
+  type EmptyPlanOptions,
+} from "./empty-plan.ts";
+export {
+  anlageKlassifikationHinweise,
+  type AnlageHinweis,
+  type AnlageHinweisCode,
+} from "./anlage.ts";
+export { createParameterSnapshot, PARAMETER_DE_2026, TAB_MIKRODARLEHEN_ID } from "./parameter.ts";
 export { exportPlanToJson, importPlanFromJson } from "./io.ts";
 export { PLAN_ZWECK_LABEL, RECHTSFORM_LABEL } from "./labels.ts";
 export {
@@ -10,6 +20,7 @@ export {
   readSchemaVersion,
   type Migration,
 } from "./migrate.ts";
+export { zahlungszielMonate, ustZahllastZahlungsmonat } from "./zahlung.ts";
 export {
   addMonths,
   horizonEnd,
@@ -29,6 +40,7 @@ export {
   PERSON_ROLLEN,
   PERSONAL_ROLLEN,
   PLAN_HORIZON_MONTHS,
+  PLAN_STATUS,
   PLAN_ZWECKE,
   RECHTSFORMEN,
   SCHEMA_VERSION,
@@ -48,6 +60,7 @@ export type {
   Bundesland,
   Darlehen,
   Darlehensart,
+  Darlehensvorlage,
   EigenkapitalArt,
   EigenkapitalPosten,
   Einmalkosten,
@@ -72,12 +85,15 @@ export type {
   Person,
   PersonRolle,
   PlanZweck,
+  PlanStatus,
+  Planparameter,
   PrivaterLebensbedarf,
   Rechtsform,
   Satz,
   Sonderzahlung,
   Stammdaten,
   Steuerprofil,
+  Steuerparameter,
   Szenarien,
   Szenario,
   SzenarioAnpassung,

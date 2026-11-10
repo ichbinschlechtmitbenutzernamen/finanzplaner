@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { ZodError } from "zod";
+import { beispielCafe } from "../fixtures/beispiel-cafe.ts";
 import { beispielEinzelunternehmen } from "../fixtures/beispiel-einzelunternehmen.ts";
-import { createEmptyFinanzplan } from "./empty-plan.ts";
+import { beispielElektro } from "../fixtures/beispiel-elektro.ts";
+import { createDraftFinanzplan, createEmptyFinanzplan } from "./empty-plan.ts";
 import { exportPlanToJson, importPlanFromJson } from "./io.ts";
 import { SchemaMigrationError, applyMigrations, migratePlan, migrations } from "./migrate.ts";
+import { TAB_MIKRODARLEHEN_ID } from "./parameter.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { SCHEMA_VERSION, type Finanzplan, type Personalstelle } from "./types.ts";
 
@@ -23,25 +26,58 @@ function issuesOf(data: unknown): string {
   return result.error.issues.map((issue) => `${issue.path.join(".")}: ${issue.message}`).join("\n");
 }
 
-describe("Beispielplan Einzelunternehmen", () => {
-  it("ist als Fiktion gekennzeichnet und erfüllt das Schema", () => {
-    expect(beispielEinzelunternehmen.stammdaten.beispiel).toBe(true);
-    expect(beispielEinzelunternehmen.stammdaten.planName.toLowerCase()).toContain("fiktiv");
-    expect(beispielEinzelunternehmen.schemaVersion).toBe(SCHEMA_VERSION);
-    expect(finanzplanSchema.parse(beispielEinzelunternehmen)).toEqual(beispielEinzelunternehmen);
+describe("Beispielpläne", () => {
+  const plaene = [beispielEinzelunternehmen, beispielElektro, beispielCafe];
+
+  it("sind als Fiktion gekennzeichnet und erfüllen das Schema", () => {
+    for (const plan of plaene) {
+      expect(plan.stammdaten.beispiel).toBe(true);
+      expect(plan.stammdaten.planName.toLowerCase()).toContain("fiktiv");
+      expect(plan.schemaVersion).toBe(SCHEMA_VERSION);
+      expect(plan.status).toBe("vollstaendig");
+      expect(finanzplanSchema.parse(plan)).toEqual(plan);
+    }
   });
 
   it("übersteht Export und Import unverändert", () => {
-    const json = exportPlanToJson(beispielEinzelunternehmen);
-    const imported = importPlanFromJson(json);
-    expect(imported).toEqual(beispielEinzelunternehmen);
-    expect(importPlanFromJson(exportPlanToJson(imported))).toEqual(imported);
-    expect(json).toContain('"schemaVersion": 1');
-    expect(json.endsWith("\n")).toBe(true);
+    for (const plan of plaene) {
+      const json = exportPlanToJson(plan);
+      const imported = importPlanFromJson(json);
+      expect(imported).toEqual(plan);
+      expect(importPlanFromJson(exportPlanToJson(imported))).toEqual(imported);
+      expect(json).toContain('"schemaVersion": 2');
+      expect(json.endsWith("\n")).toBe(true);
+    }
+  });
+
+  it("bildet Annuität und Ratentilgung ab, das Mikrodarlehen als Vorlage", () => {
+    expect(beispielEinzelunternehmen.finanzierung.darlehen[0]?.tilgungsart).toBe("annuitaet");
+    expect(beispielCafe.finanzierung.darlehen[0]?.tilgungsart).toBe("annuitaet");
+    const mikro = beispielElektro.finanzierung.darlehen[0];
+    expect(mikro?.tilgungsart).toBe("ratentilgung");
+    expect(mikro?.vorlageId).toBe(TAB_MIKRODARLEHEN_ID);
+    expect(mikro?.nominalzinsPa).toBe(0.024);
+    expect(mikro?.zinszahlungInTilgungsfreierZeit).toBe(true);
+    expect(beispielElektro.personal[0]?.eintritt).toBe("2027-06");
+    expect(beispielCafe.umsatzplanung[0]?.wareneinsatz).toEqual({
+      art: "prozent_vom_umsatz",
+      quote: 0.32,
+      umsatzsteuerSatz: 0.07,
+    });
   });
 });
 
 describe("Leerer Plan und weitere Rechtsformen", () => {
+  it("speichert einen Entwurf ohne Rechtsform, Person und Startmonat", () => {
+    const plan = createDraftFinanzplan({ id: "plan-entwurf", now: FIXED_NOW });
+    expect(plan.status).toBe("entwurf");
+    expect(plan.startMonat).toBeUndefined();
+    expect(plan.stammdaten.rechtsform).toBeUndefined();
+    expect(plan.stammdaten.personen).toEqual([]);
+    expect(finanzplanSchema.parse(plan)).toEqual(plan);
+    expect(importPlanFromJson(exportPlanToJson(plan))).toEqual(plan);
+  });
+
   it("legt einen gültigen Einzelunternehmen-Start an und rundet ihn über JSON", () => {
     const plan = emptyPlan();
     expect(finanzplanSchema.parse(plan)).toEqual(plan);
@@ -174,9 +210,32 @@ describe("Schemaregeln", () => {
 });
 
 describe("Migration und Datei-Import", () => {
-  it("hat in Schritt 1 noch keine Altversion", () => {
-    expect(SCHEMA_VERSION).toBe(1);
-    expect(migrations).toEqual({});
+  it("hebt Version 1 auf den Parametersatz und lehnt Monats-Wareneinsatz ab", () => {
+    expect(SCHEMA_VERSION).toBe(2);
+    expect(typeof migrations[1]).toBe("function");
+
+    const current = emptyPlan();
+    const v1 = structuredClone(current) as unknown as Record<string, unknown>;
+    v1.schemaVersion = 1;
+    delete v1.status;
+    delete v1.parameter;
+    const ust = v1.umsatzsteuer as Record<string, unknown>;
+    delete ust.vorsteuerabzugsberechtigt;
+
+    const migrated = migratePlan(v1);
+    expect(migrated.schemaVersion).toBe(2);
+    expect(migrated.status).toBe("vollstaendig");
+    expect(migrated.parameter.version).toBe("de-2026");
+    expect(migrated.umsatzsteuer.vorsteuerabzugsberechtigt).toBe(true);
+    expect(migrated.parameter.darlehensvorlagen[0]?.id).toBe(TAB_MIKRODARLEHEN_ID);
+
+    const withMonthlyGoods = structuredClone(v1);
+    withMonthlyGoods.umsatzplanung = [
+      {
+        wareneinsatz: { art: "monatsbetrag", betrag: { basisCents: 100 }, umsatzsteuerSatz: 0.19 },
+      },
+    ];
+    expect(() => migratePlan(withMonthlyGoods)).toThrow(SchemaMigrationError);
   });
 
   it("führt eine Versionskette aus und lehnt neuere Dateien ab", () => {

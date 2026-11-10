@@ -1,3 +1,4 @@
+import { createParameterSnapshot } from "./parameter.ts";
 import { toIsoMonth } from "./months.ts";
 import {
   PLAN_HORIZON_MONTHS,
@@ -5,12 +6,73 @@ import {
   WAEHRUNG,
   type Finanzplan,
   type IsoMonth,
+  type UmsatzsteuerEinstellungen,
 } from "./types.ts";
 
 export interface EmptyPlanOptions {
   id?: string;
   now?: Date;
   startMonat?: IsoMonth;
+}
+
+const standardUmsatzsteuer: UmsatzsteuerEinstellungen = {
+  regime: "regelbesteuerung",
+  vorsteuerabzugsberechtigt: true,
+  versteuerungsart: "soll",
+  voranmeldungszeitraum: "vierteljaehrlich",
+  dauerfristverlaengerung: false,
+};
+
+function shell(
+  options: EmptyPlanOptions,
+  stamp: string,
+): Pick<
+  Finanzplan,
+  | "id"
+  | "schemaVersion"
+  | "erstelltAm"
+  | "geaendertAm"
+  | "waehrung"
+  | "horizontMonate"
+  | "parameter"
+  | "kapitalbedarf"
+  | "finanzierung"
+  | "umsatzplanung"
+  | "personal"
+  | "laufendeKosten"
+  | "umsatzsteuer"
+  | "szenarien"
+> {
+  return {
+    id: options.id ?? crypto.randomUUID(),
+    schemaVersion: SCHEMA_VERSION,
+    erstelltAm: stamp,
+    geaendertAm: stamp,
+    waehrung: WAEHRUNG,
+    horizontMonate: PLAN_HORIZON_MONTHS,
+    parameter: createParameterSnapshot(),
+    kapitalbedarf: {
+      investitionen: [],
+      gruendungskosten: [],
+      anlaufkosten: [],
+      betriebsmittel: { liquiditaetsreserveCents: 0 },
+    },
+    finanzierung: {
+      eigenkapital: [],
+      darlehen: [],
+      zuschuesse: [],
+    },
+    umsatzplanung: [],
+    personal: [],
+    laufendeKosten: [],
+    umsatzsteuer: { ...standardUmsatzsteuer },
+    szenarien: {
+      aktiv: "base",
+      best: { bezeichnung: "Best Case", anpassungen: [] },
+      real: { bezeichnung: "Real Case", anpassungen: [] },
+      worst: { bezeichnung: "Worst Case", anpassungen: [] },
+    },
+  };
 }
 
 /**
@@ -24,13 +86,9 @@ export function createEmptyFinanzplan(options: EmptyPlanOptions = {}): Finanzpla
   const stamp = now.toISOString();
 
   return {
-    id: options.id ?? crypto.randomUUID(),
-    schemaVersion: SCHEMA_VERSION,
-    erstelltAm: stamp,
-    geaendertAm: stamp,
-    waehrung: WAEHRUNG,
+    ...shell(options, stamp),
+    status: "vollstaendig",
     startMonat,
-    horizontMonate: PLAN_HORIZON_MONTHS,
     stammdaten: {
       planName: "Neuer Finanzplan",
       beispiel: false,
@@ -52,31 +110,25 @@ export function createEmptyFinanzplan(options: EmptyPlanOptions = {}): Finanzpla
       ],
       zwecke: ["eigene_planung"],
     },
-    kapitalbedarf: {
-      investitionen: [],
-      gruendungskosten: [],
-      anlaufkosten: [],
-      betriebsmittel: { liquiditaetsreserveCents: 0 },
-    },
-    finanzierung: {
-      eigenkapital: [],
-      darlehen: [],
-      zuschuesse: [],
-    },
-    umsatzplanung: [],
-    personal: [],
-    laufendeKosten: [],
-    umsatzsteuer: {
-      regime: "regelbesteuerung",
-      versteuerungsart: "soll",
-      voranmeldungszeitraum: "vierteljaehrlich",
-      dauerfristverlaengerung: false,
-    },
-    szenarien: {
-      aktiv: "base",
-      best: { bezeichnung: "Best Case", anpassungen: [] },
-      real: { bezeichnung: "Real Case", anpassungen: [] },
-      worst: { bezeichnung: "Worst Case", anpassungen: [] },
+  };
+}
+
+/** Speicherbarer Assistentenstand, bevor Rechtsform, Person und Startmonat feststehen. */
+export function createDraftFinanzplan(options: EmptyPlanOptions = {}): Finanzplan {
+  const now = options.now ?? new Date();
+  const stamp = now.toISOString();
+  return {
+    ...shell(options, stamp),
+    status: "entwurf",
+    stammdaten: {
+      planName: "",
+      beispiel: false,
+      firmenname: "",
+      branche: "",
+      taetigkeitsbeschreibung: "",
+      ort: "",
+      personen: [],
+      zwecke: [],
     },
   };
 }

@@ -1,4 +1,5 @@
 import { finanzplanSchema } from "./schema.ts";
+import { createParameterSnapshot } from "./parameter.ts";
 import { SCHEMA_VERSION, type Finanzplan } from "./types.ts";
 
 /** Version oder JSON-Hülle lässt sich nicht in das aktuelle Schema überführen. */
@@ -14,11 +15,37 @@ export type Migration = (data: Record<string, unknown>) => Record<string, unknow
 /**
  * Migrationen von einer gespeicherten Version auf die nächste.
  * Der Schlüssel ist die Ausgangsversion. Die Funktion setzt `schemaVersion` um eins hoch.
- *
- * So kommt eine spätere Version 2 dazu:
- * `1: (data) => ({ ...data, schemaVersion: 2 })`
  */
-export const migrations: Record<number, Migration> = {};
+export const migrations: Record<number, Migration> = {
+  1: migrateV1ToV2,
+};
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+/** Version 1 hatte weder Status noch Parametersatz und kannte Wareneinsatz als Monatsbetrag. */
+export function migrateV1ToV2(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  const lines = plan.umsatzplanung;
+  if (Array.isArray(lines)) {
+    for (const line of lines) {
+      if (!isRecord(line) || !isRecord(line.wareneinsatz)) continue;
+      if (line.wareneinsatz.art === "monatsbetrag") {
+        throw new SchemaMigrationError(
+          "Wareneinsatz als Monatsbetrag wird nicht mehr unterstützt. Bitte den Posten als Prozent vom Nettoumsatz neu erfassen.",
+        );
+      }
+    }
+  }
+  if (isRecord(plan.umsatzsteuer) && plan.umsatzsteuer.vorsteuerabzugsberechtigt == null) {
+    plan.umsatzsteuer.vorsteuerabzugsberechtigt = plan.umsatzsteuer.regime !== "kleinunternehmer";
+  }
+  if (plan.status == null) plan.status = "vollstaendig";
+  if (plan.parameter == null) plan.parameter = createParameterSnapshot();
+  plan.schemaVersion = 2;
+  return plan;
+}
 
 export function readSchemaVersion(data: unknown): number {
   if (typeof data !== "object" || data === null || Array.isArray(data)) {
@@ -36,8 +63,7 @@ export function readSchemaVersion(data: unknown): number {
 
 /**
  * Führt die Versionskette aus, ohne den Inhalt fachlich zu prüfen.
- * `steps` ist austauschbar, damit der Mechanismus getestet werden kann,
- * solange es noch keine echte Altversion gibt.
+ * `steps` ist austauschbar, damit die Kette unabhängig von den echten Migrationen geprüft werden kann.
  */
 export function applyMigrations(
   data: unknown,
