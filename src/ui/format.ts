@@ -31,6 +31,20 @@ export function formatEuro(cents: number): string {
   return EURO.format(betrag / 100);
 }
 
+/** Kürzere Achsenbeschriftung. Der Tooltip bleibt bei vollen Cent. */
+export function formatEuroAchse(cents: number): string {
+  if (!Number.isFinite(cents)) return "";
+  const euro = cents / 100;
+  const abs = Math.abs(euro);
+  if (abs >= 1_000_000) {
+    return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 1 }).format(euro / 1_000_000)} Mio. €`;
+  }
+  if (abs >= 10_000) {
+    return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(euro / 1_000)} Tsd. €`;
+  }
+  return `${new Intl.NumberFormat("de-DE", { maximumFractionDigits: 0 }).format(euro)} €`;
+}
+
 /** Zahl für das Eingabefeld, ohne Währungszeichen. */
 export function formatEingabeEuro(cents: number): string {
   return ZAHL.format(cents / 100);

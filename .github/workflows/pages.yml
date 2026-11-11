@@ -1,10 +1,12 @@
 name: Seiten
 
+# Die Umgebung github-pages erlaubt nur den Branch main.
+# Veröffentlicht wird deshalb genau main, nicht ein Feature-Branch.
+
 on:
   push:
     branches:
       - main
-      - "cursor/**"
   workflow_dispatch:
 
 permissions:
