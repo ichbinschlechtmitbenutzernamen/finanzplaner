@@ -232,6 +232,18 @@ Beispiel, nur zur Prüfung der Formel: Basis 1.000 Euro im April, 12 Prozent Jah
 
 Dieselbe Regel gilt für Mengen, Preise, Gehälter, fixe Kosten und den Lebensbedarf. Einmalbeträge (Kauf, Einlage, einzelne Zuschussmonate) haben keinen Wachstumsbaustein, sondern einen konkreten Monat.
 
+## Tabellenbearbeitung
+
+Die Tabelle zeigt 36 Monate und je Planjahr eine Summenspalte. Eine Zelle ändert die gespeicherte Regel nicht durch eine zweite Monatsliste, sondern über die Bausteine, die es schon gibt.
+
+- Eine einzelne Zelle, „nach rechts fortschreiben“ und das Einfügen aus Excel schreiben `monatsOverride`. Die Überschreibung ersetzt Basis, Wachstum und Saison in genau diesem Monat. Eine geleerte Zelle nimmt die Überschreibung zurück, die Regel gilt wieder.
+- Wachstum ab einem Monat setzt dort eine neue Basis und ein neues `wachstum`. Monate davor werden als Überschreibung eingefroren, damit sie stehen bleiben. Eine bisherige Saison entfällt ab dieser Änderung, damit die Rate exakt gilt. „Je Monat“ rechnet die Rate in die Jahresrate um: `(1 + Monatsrate)` hoch 12, minus 1, Modus `compound_monthly`. „Je Jahr“ speichert die Rate als `yearly_step`, der Wert springt alle zwölf Monate.
+- `wachstum.eingabe` merkt sich die eingegebene Rate und ob sie je Monat oder je Jahr galt. Die Rechnung liest das Feld nicht. Sie verwendet `jahresrate` und `modus`.
+- Saisonfaktoren ersetzen `saison.faktoren` für Januar bis Dezember und löschen die Überschreibungen der Zeile, damit die Formel wieder für alle Monate gilt.
+- Einmalbeträge (Investition, Gründung, Anlauf, Einlage, Darlehensauszahlung, freie Zuschussmonate, Betriebsmittel) ändern den Betrag im bereits erfassten Monat. Der Monat wandert dadurch nicht.
+
+Schema-Version ist 7. Version 6 wird beim Einlesen nur angehoben. Regeln und Überschreibungen bleiben unverändert. Das neue Feld ist optional.
+
 ## Rechtsformen
 
 | Rechtsform        | Personen im Plan                                                                    | Was die spätere Steuerlogik unterscheiden muss                                | Was dafür schon erfasst wird                      |
@@ -266,7 +278,7 @@ Neue Posten, die es nur im Worst Case gibt, kann ein Szenario nicht anlegen. Daf
 ## Was bewusst nicht im Plan steht
 
 - keine gespeicherte GuV, keine gespeicherte Liquidität, kein gespeicherter Break-even. Die Berichte werden bei Bedarf gerechnet und nicht in den Plan geschrieben
-- keine 36 ausgeschriebenen Monatsspalten neben der Regel
+- keine zweite, vollständig ausgeschriebene 36-Monats-Liste neben der Regel. Die Tabelle schreibt Überschreibungen, Wachstum und Saison in dieselben Felder
 - keine Eingabe gesetzlicher Steuersätze und keine Sozialversicherungssätze. Die Steuersätze liegen im Parametersatz
 - keine Benutzerkonten
 - keine Branchen-Benchmarks, nur der Schlüssel, an den eine Vorlage sich später hängen kann
@@ -279,7 +291,7 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 6. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt. Version 5 ergänzt den manuellen Betriebsmittelbedarf. Fehlt er, wird er 0.
+`schemaVersion` steht im Plan und ist derzeit 7. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt. Version 5 ergänzt den manuellen Betriebsmittelbedarf. Fehlt er, wird er 0. Version 6 wird auf 7 angehoben. Dabei kommt kein Pflichtfeld dazu. Optional kann ein Wachstum seit Version 7 die eingegebene Rate unter `eingabe` merken.
 
 Ein Plan hat den Status Entwurf oder vollständig. Der Entwurf darf ohne Rechtsform, ohne Person und ohne Startmonat gespeichert werden. Listen dürfen leer sein, Namen dürfen leer sein. Was schon ausgefüllt ist, muss trotzdem formal stimmen, zum Beispiel Ids, Cent-Beträge und die Grenzen einer verknüpften Darlehensvorlage. Erst der vollständige Plan verlangt Startmonat, Rechtsform, mindestens eine passende Person, Ort, Bundesland, Gründungsmonat, einen Zweck und die Summe der Anteile von 100 Prozent.
 

@@ -46,7 +46,7 @@ describe("Beispielpläne", () => {
       const imported = importPlanFromJson(json);
       expect(imported).toEqual(plan);
       expect(importPlanFromJson(exportPlanToJson(imported))).toEqual(imported);
-      expect(json).toContain('"schemaVersion": 6');
+      expect(json).toContain('"schemaVersion": 7');
       expect(json.endsWith("\n")).toBe(true);
     }
   });
@@ -212,12 +212,13 @@ describe("Schemaregeln", () => {
 
 describe("Migration und Datei-Import", () => {
   it("hebt Version 1 auf den Parametersatz und lehnt Monats-Wareneinsatz ab", () => {
-    expect(SCHEMA_VERSION).toBe(6);
+    expect(SCHEMA_VERSION).toBe(7);
     expect(typeof migrations[1]).toBe("function");
     expect(typeof migrations[2]).toBe("function");
     expect(typeof migrations[3]).toBe("function");
     expect(typeof migrations[4]).toBe("function");
     expect(typeof migrations[5]).toBe("function");
+    expect(typeof migrations[6]).toBe("function");
 
     const current = emptyPlan();
     const v1 = structuredClone(current) as unknown as Record<string, unknown>;
@@ -231,7 +232,7 @@ describe("Migration und Datei-Import", () => {
     delete betriebsmittel.betriebsmittelbedarfCents;
 
     const migrated = migratePlan(v1);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(7);
     expect(migrated.kapitalbedarf.betriebsmittel.betriebsmittelbedarfCents).toBe(0);
     expect(migrated.steuerplanung.abschlusszahlungMonat).toBe(9);
     expect(migrated.parameter.steuer.einkommensteuerTarif.zone2BisEuro).toBe(17_799);
@@ -297,7 +298,7 @@ describe("Migration und Datei-Import", () => {
     });
 
     const migrated = migratePlan(roh);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(7);
     expect(migrated.finanzierung.eigenkapital.map((posten) => posten.id)).toEqual(["ek-bar"]);
     expect(migrated.finanzierung.eigenkapital[0]).not.toHaveProperty("investitionId");
     expect(migrated.kapitalbedarf.investitionen[0]).not.toHaveProperty("nutzungsdauerMonate");
@@ -319,7 +320,7 @@ describe("Migration und Datei-Import", () => {
     steuer.einkommensteuerGrundfreibetragCents = 1_200_000;
 
     const migrated = migratePlan(roh);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(7);
     expect(migrated.steuerplanung.abschlusszahlungMonat).toBe(9);
     expect(migrated.parameter.steuer.einkommensteuerGrundfreibetragCents).toBe(1_200_000);
     expect(migrated.parameter.steuer.einkommensteuerTarif.zone2FaktorHundertstel).toBe(91_451);
@@ -334,7 +335,7 @@ describe("Migration und Datei-Import", () => {
     delete (ohne.kapitalbedarf as { betriebsmittel: Record<string, unknown> }).betriebsmittel
       .betriebsmittelbedarfCents;
     const migriert = migratePlan(ohne);
-    expect(migriert.schemaVersion).toBe(6);
+    expect(migriert.schemaVersion).toBe(7);
     expect(migriert.kapitalbedarf.betriebsmittel.betriebsmittelbedarfCents).toBe(0);
 
     const mit = structuredClone(emptyPlan()) as unknown as Record<string, unknown>;
@@ -366,9 +367,31 @@ describe("Migration und Datei-Import", () => {
       },
     });
     const migrated = migratePlan(roh);
-    expect(migrated.schemaVersion).toBe(6);
+    expect(migrated.schemaVersion).toBe(7);
     expect(migrated.finanzierung.zuschuesse[0]).not.toHaveProperty("progressionsvorbehalt");
     expect(migrated.finanzierung.zuschuesse[0]?.steuerfrei).toBe(true);
+  });
+
+  it("hebt Version 6 an, ohne Regeln oder Überschreibungen zu verändern", () => {
+    const aktuell = emptyPlan();
+    aktuell.umsatzplanung.push({
+      id: "rev-test",
+      bezeichnung: "Beratung",
+      art: "monatsumsatz",
+      monatsumsatz: {
+        basisCents: 100_000,
+        wachstum: { jahresrate: 0.05, modus: "compound_monthly" },
+        monatsOverride: [{ monat: "2026-06", wertCents: 80_000 }],
+      },
+      umsatzsteuerSatz: 0.19,
+      zahlungszielTage: 0,
+      wareneinsatz: { art: "keiner" },
+    });
+    const roh = structuredClone(aktuell) as unknown as Record<string, unknown>;
+    roh.schemaVersion = 6;
+    const migrated = migratePlan(roh);
+    expect(migrated.schemaVersion).toBe(7);
+    expect(migrated.umsatzplanung).toEqual(aktuell.umsatzplanung);
   });
 
   it("führt eine Versionskette aus und lehnt neuere Dateien ab", () => {

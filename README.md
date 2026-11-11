@@ -2,9 +2,9 @@
 
 Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland einen Finanzplan über 36 Monate selbst erstellen. Der endgültige Name steht noch nicht fest.
 
-Dieser Stand ist **Schritt 4**: Aus dem Rechenergebnis werden Berichte als Datenstrukturen. Die Seite zeigt weiterhin die fiktiven Beispielpläne und lässt zwischen ihnen wechseln. Tabelle, Diagramm, PDF und der Assistent in der Oberfläche fehlen noch.
+Dieser Stand ist **Schritt 5**: Die Seite zeigt den Plan als Tabelle. Eingaben lassen sich in den Monaten ändern, die Berichte rechnen sofort neu. Diagramm, PDF und der Assistent fehlen noch.
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md). Schema-Version ist 6. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen.
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md). Schema-Version ist 7. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen.
 
 ## Voraussetzungen
 
@@ -22,6 +22,10 @@ npm run dev
 
 Der Entwicklungsserver läuft danach auf [http://localhost:5173](http://localhost:5173).
 
+Oben lassen sich die Beispiele Blitzweg, Café Leseecke, Hafenlicht GmbH und das Grafikstudio laden. Änderungen bleiben im Browser (`localStorage`) und ersetzen den Beispielplan so lange, bis „Beispiel zurücksetzen“ gewählt wird.
+
+Die Reiter Eingaben, Rentabilitätsvorschau, Liquiditätsplan, Kapitalbedarf und Finanzierung, Investitionen und Darlehen sowie Privatbedarf und Tragfähigkeit nutzen dieselbe Monatstabelle. Nur die Eingaben sind bearbeitbar. Pfeile bewegen die Auswahl, Enter öffnet die Zelle, Tab springt weiter, Strg+Z und Strg+Y machen rückgängig und wiederholen. In der Eingabeleiste lässt sich ein Wert nach rechts fortschreiben, eine Rate je Monat oder je Jahr anwenden und Saisonfaktoren für die Kalendermonate setzen. Kopierte Excel-Zellen (tab-getrennt) werden mit Strg+V eingefügt.
+
 ## Prüfen
 
 ```bash
@@ -31,19 +35,20 @@ npm run build
 npm run export:check
 ```
 
-`npm test` prüft das Schema, die Beispielpläne und den Rechenkern gegen von Hand gerechnete Cent-Beträge.
+`npm test` prüft das Schema, die Beispielpläne, den Rechenkern, die Berichte, die Eingabehilfen und die Tabelle.
 
 `npm run export:check` rechnet den fiktiven Elektromeister Blitzweg und schreibt [docs/checkpoints/schritt2-blitzweg.xlsx](docs/checkpoints/schritt2-blitzweg.xlsx). Dieselbe Prüfung schreibt [docs/checkpoints/schritt3-steuern.xlsx](docs/checkpoints/schritt3-steuern.xlsx) mit dem Steuerweg für Blitzweg, das Café Leseecke und die Hafenlicht GmbH und [docs/checkpoints/schritt4-berichte.xlsx](docs/checkpoints/schritt4-berichte.xlsx) mit den Berichten dieser drei Beispiele. `npm run export:berichte` schreibt nur den Berichtsprüfstand.
 
 `npm run lint` ist ESLint und die Formatprüfung mit Prettier. `npm run format` schreibt die Formatierung neu.
 
-`npm run build` erzeugt die statische Seite in `dist/`. `npm run preview` zeigt diese Fassung lokal.
+`npm run build` erzeugt die statische Seite in `dist/`. `npm run preview` zeigt diese Fassung lokal. Für GitHub Pages setzt der Workflow `VITE_BASE`.
 
 ## Aufbau
 
-- `src/domain` – Typen, Zod-Schema, Prüfung, Migration, JSON-Export/Import, der Rechenkern in `src/domain/calc` und die Berichte in `src/domain/reports`. Dieser Ordner importiert kein React und kein Node-Modul, damit die Rechnung im Browser laufen kann.
+- `src/domain` – Typen, Zod-Schema, Prüfung, Migration, JSON-Export/Import, der Rechenkern in `src/domain/calc`, die Berichte in `src/domain/reports` und die Eingabehilfen in `src/domain/eingabe`. Dieser Ordner importiert kein React und kein Node-Modul, damit die Rechnung im Browser laufen kann.
 - `src/fixtures` – vier erfundene Beispielpläne: Grafikstudio, Elektromeister mit Thüringer Mikrodarlehen, Café, Hafenlicht GmbH
-- `src/App.tsx` – Platzhalterseite mit Wechsel zwischen den Beispielen
+- `src/ui` – Tabelle, Reiter, Rückgängig und die Eingabeleiste
+- `src/App.tsx` – lädt die Beispiele und merkt sich Änderungen im Browser
 - `docs/datenmodell.md` – Überblick über die Eingaben für die Fachberatung
 - `docs/rechenkern.md` – Rechenregeln für die Fachberatung
 - `docs/steuern.md` – Einkommensteuer, Gewerbesteuer, Körperschaftsteuer
@@ -54,4 +59,4 @@ npm run export:check
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 6. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei ist dann der Inhalt, der im Browser liegt.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 7. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.

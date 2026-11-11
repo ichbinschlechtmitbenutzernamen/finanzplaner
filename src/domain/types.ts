@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 6 as const;
+export const SCHEMA_VERSION = 7 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -97,10 +97,27 @@ export const WACHSTUMSMODI = ["compound_monthly", "yearly_step"] as const;
  */
 export type Wachstumsmodus = (typeof WACHSTUMSMODI)[number];
 
+export const WACHSTUMSBEZUEGE = ["monat", "jahr"] as const;
+
+/** Ob die in der Tabelle eingegebene Rate je Monat oder je Jahr gemeint war. */
+export type Wachstumsbezug = (typeof WACHSTUMSBEZUEGE)[number];
+
+/**
+ * Notiz der Tabellenhilfe. Die Rechnung liest sie nicht.
+ * Eine Monatsrate wird vorher in `jahresrate` umgerechnet.
+ */
+export interface WachstumEingabe {
+  /** 0.02 = 2 %. */
+  rate: number;
+  bezug: Wachstumsbezug;
+}
+
 export interface Wachstum {
   /** 0.05 = 5 % pro Jahr. Negativ = Rückgang. Muss größer als -1 sein. */
   jahresrate: number;
   modus: Wachstumsmodus;
+  /** Optional. Merkt sich die Eingabe aus der Tabelle. */
+  eingabe?: WachstumEingabe;
 }
 
 /** Index 0 = Januar … Index 11 = Dezember. 1 = neutral, 0 = kein Umsatz in dem Kalendermonat. */
