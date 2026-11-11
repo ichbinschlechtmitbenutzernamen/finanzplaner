@@ -9,9 +9,12 @@
   --accent-soft: #e6f0ed;
   --warn: #7a3e0b;
   --warn-bg: #f8ecdf;
+  --neg: #9f1d1d;
+  --jahr: #e7f0ec;
+  --summe: #f3eee4;
   font-family: "Segoe UI", "Source Sans 3", sans-serif;
-  font-size: 18px;
-  line-height: 1.5;
+  font-size: 16px;
+  line-height: 1.45;
   color: var(--ink);
   background: var(--bg);
 }
@@ -24,54 +27,92 @@ body {
   margin: 0;
 }
 
-main {
-  max-width: 44rem;
-  margin: 0 auto;
-  padding: 3rem 1.25rem 4rem;
+button,
+input,
+select {
+  font: inherit;
+  color: inherit;
+}
+
+.app {
+  padding: 1rem 1rem 2rem;
+}
+
+.kopfzeile {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-end;
 }
 
 .eyebrow {
-  margin: 0 0 0.5rem;
+  margin: 0 0 0.25rem;
   color: var(--accent);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 h1 {
-  margin: 0 0 1rem;
-  font-size: 2.5rem;
+  margin: 0;
+  font-size: 1.8rem;
   font-weight: 650;
   letter-spacing: -0.03em;
-  line-height: 1.1;
+  line-height: 1.15;
 }
 
-h2 {
-  margin: 0 0 1rem;
-  font-size: 1.25rem;
-  font-weight: 650;
+.meta {
+  margin: 0.35rem 0 0;
+  color: var(--muted);
 }
 
-.lead {
-  font-size: 1.15rem;
+.werkzeuge {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
 }
 
-p {
-  margin: 0 0 1rem;
+.werkzeuge-reihe,
+.switcher,
+.reiter,
+.hilfe-zeile,
+.wachstum-form,
+.saison-form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: end;
 }
 
-.panel {
-  margin-top: 2rem;
-  padding: 1.25rem 1.25rem 0.5rem;
-  background: var(--paper);
+.switcher button,
+.werkzeuge-reihe button,
+.hilfe button,
+.reiter button {
   border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  cursor: pointer;
+}
+
+.switcher button[aria-pressed="true"],
+.reiter button[aria-selected="true"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #f4f1ea;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
 }
 
 .flag {
   display: inline-block;
-  margin: 0 0 0.75rem;
+  margin: 0.8rem 0 0;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
   background: var(--warn-bg);
@@ -80,84 +121,205 @@ p {
   font-weight: 650;
 }
 
-dl {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
+.reiter {
+  margin: 0.9rem 0 0.6rem;
 }
 
-dl > div {
-  display: grid;
-  grid-template-columns: 8.5rem 1fr;
-  gap: 0.25rem 1rem;
-  align-items: baseline;
+.kennzahlen,
+.hinweis,
+.hilfe-text {
+  margin: 0 0 0.6rem;
+  color: var(--muted);
+  font-size: 0.92rem;
 }
 
-dt {
+.fehler {
+  margin: 0 0 0.6rem;
+  color: var(--neg);
+  font-weight: 650;
+}
+
+.hilfe {
+  margin-bottom: 0.6rem;
+  padding: 0.7rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.hilfe label,
+.wachstum-form label,
+.saison-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  font-size: 0.75rem;
   color: var(--muted);
 }
 
-dd {
-  margin: 0;
+.hilfe input,
+.hilfe select {
+  width: 4.5rem;
+  padding: 0.25rem 0.35rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
 }
 
-.counts {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 0.5rem;
-  margin: 1.25rem 0 0.75rem;
-  padding: 0;
-  list-style: none;
+.wachstum-form input {
+  width: 5rem;
 }
 
-.counts li {
-  display: flex;
-  justify-content: space-between;
-  gap: 0.5rem;
-  padding: 0.55rem 0.7rem;
-  background: var(--accent-soft);
-  border-radius: 8px;
-  font-size: 0.9rem;
+.saison-titel {
+  align-self: center;
+  font-weight: 650;
+  color: var(--ink);
 }
 
-.counts strong {
+.tabelle-scroll {
+  max-height: calc(100vh - 16rem);
+  min-height: 24rem;
+  overflow: auto;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+  outline: none;
+}
+
+.tabelle-scroll:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.tabelle {
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 0.78rem;
   font-variant-numeric: tabular-nums;
 }
 
-.switcher {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  margin-top: 1.5rem;
-}
-
-.switcher button {
-  border: 1px solid var(--line);
+.tabelle th,
+.tabelle td {
+  width: 6.7rem;
+  min-width: 6.7rem;
+  max-width: 6.7rem;
+  height: 36px;
+  padding: 0 0.4rem;
+  border-right: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
   background: var(--paper);
-  color: var(--ink);
-  border-radius: 999px;
-  padding: 0.4rem 0.85rem;
-  font: inherit;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-align: right;
+  vertical-align: middle;
+}
+
+.tabelle .spalte-name {
+  width: 16rem;
+  min-width: 16rem;
+  max-width: 16rem;
+  text-align: left;
+  font-weight: 550;
+}
+
+.tabelle thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #f7f3ec;
+  font-weight: 650;
+  text-align: center;
+}
+
+.tabelle .klebt {
+  position: sticky;
+  left: 0;
+  z-index: 1;
+}
+
+.tabelle thead .klebt {
+  z-index: 3;
+  text-align: left;
+}
+
+.tabelle .spalte-jahr {
+  background: var(--jahr);
+}
+
+.jahr-schalter {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  padding: 0.2rem;
   cursor: pointer;
+  font-size: 0.72rem;
+  line-height: 1.2;
 }
 
-.switcher button[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #f4f1ea;
+.kopf th,
+.kopf td {
+  background: var(--accent-soft);
+  font-weight: 650;
 }
 
-@media (max-width: 640px) {
-  main {
-    padding-top: 2rem;
+.fett th,
+.fett td,
+.zahl.fett {
+  font-weight: 750;
+}
+
+.zeile.summe .spalte-name,
+.zeile.ergebnis .spalte-name,
+.zeile.summe td,
+.zeile.ergebnis td {
+  background: var(--summe);
+}
+
+.nachricht .spalte-name {
+  color: var(--muted);
+  font-weight: 450;
+}
+
+.zahl.neg {
+  color: var(--neg);
+}
+
+.zahl.aktiv {
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+
+.zahl.kann {
+  cursor: cell;
+}
+
+.zellen-eingabe {
+  width: 100%;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  text-align: right;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+}
+
+.platzhalter td {
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+@media (max-width: 720px) {
+  .werkzeuge {
+    align-items: flex-start;
   }
 
   h1 {
-    font-size: 2rem;
+    font-size: 1.45rem;
   }
 
-  dl > div,
-  .counts {
-    grid-template-columns: 1fr;
+  .tabelle .spalte-name {
+    width: 11rem;
+    min-width: 11rem;
+    max-width: 11rem;
   }
 }

@@ -19,6 +19,7 @@ import {
   UST_REGIME,
   UST_VERSTEUERUNG,
   UST_VORANMELDUNG,
+  WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
   ZUSCHUSS_PROGRAMME,
@@ -82,9 +83,15 @@ const monatFaktorenSchema = z.tuple([
   faktorSchema,
 ]);
 
+const wachstumEingabeSchema = z.strictObject({
+  rate: z.number().gt(-1, "Die Rate muss größer als -100 % sein.").max(10),
+  bezug: z.enum(WACHSTUMSBEZUEGE),
+});
+
 const wachstumSchema = z.strictObject({
   jahresrate: z.number().gt(-1, "Die Jahresrate muss größer als -100 % sein.").max(10),
   modus: z.enum(WACHSTUMSMODI),
+  eingabe: wachstumEingabeSchema.optional(),
 });
 
 const saisonSchema = z.strictObject({

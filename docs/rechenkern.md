@@ -25,7 +25,7 @@ Jahressprung:         Faktor = (1 + Jahresrate) hoch (ganze Jahre, abgerundet)
 Monatswert = Basis × Wachstumsfaktor × Saisonfaktor des Kalendermonats
 ```
 
-Der Saisonfaktor hängt am Kalendermonat, Januar ist der erste der zwölf Faktoren, nicht der erste Planmonat. Fehlt der Bezugsmonat, ist es der Planstart. Eine Ausnahme ersetzt Basis, Wachstum und Saison für genau diesen Monat. Der Szenariofaktor kommt danach trotzdem noch.
+Der Saisonfaktor hängt am Kalendermonat, Januar ist der erste der zwölf Faktoren, nicht der erste Planmonat. Fehlt der Bezugsmonat, ist es der Planstart. Eine Ausnahme ersetzt Basis, Wachstum und Saison für genau diesen Monat. Der Szenariofaktor kommt danach trotzdem noch. `wachstum.eingabe` ist nur die Notiz der Tabelle, ob die Rate je Monat oder je Jahr eingegeben wurde. In den Faktor geht sie nicht ein.
 
 Beim Jahressprung bleibt der Faktor zwölf Monate gleich und springt am Jahrestag des Bezugsmonats. Vor dem Bezugsmonat gilt der vorherige Schritt. Mengen, also Stück, Stunden oder Projekte, werden nicht auf ganze Einheiten gerundet. Bei Menge mal Preis wird erst das Produkt auf Cent gerundet.
 

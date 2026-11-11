@@ -11,10 +11,10 @@ export interface Beispielplan {
 }
 
 export const beispielplaene: readonly Beispielplan[] = [
+  { id: "elektro", label: "Blitzweg", plan: beispielElektro },
+  { id: "cafe", label: "Café Leseecke", plan: beispielCafe },
+  { id: "gmbh", label: "Hafenlicht GmbH", plan: beispielGmbh },
   { id: "nordlicht", label: "Grafikstudio", plan: beispielEinzelunternehmen },
-  { id: "elektro", label: "Elektromeister", plan: beispielElektro },
-  { id: "cafe", label: "Café", plan: beispielCafe },
-  { id: "gmbh", label: "GmbH", plan: beispielGmbh },
 ];
 
 export function beispielplanById(id: string): Beispielplan {
