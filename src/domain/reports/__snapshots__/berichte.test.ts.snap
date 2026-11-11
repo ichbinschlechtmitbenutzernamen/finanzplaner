@@ -165,7 +165,7 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
     "summeFinanzierung": 4000000,
   },
   "kennzahlen": {
-    "breakEven": "2029-02",
+    "breakEven": "2026-06",
     "eigenkapitalquote": 0.375,
     "kapitaldienst": [
       {
@@ -184,7 +184,7 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
         "quote": -3.983826369476836,
       },
     ],
-    "planmonat": 33,
+    "planmonat": 1,
     "rohertragsquote": [
       0.7799998450596705,
       0.7799998754420434,

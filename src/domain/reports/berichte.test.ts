@@ -40,17 +40,21 @@ describe("Steuerverteilung und Break-even", () => {
     expect(verteilt).toEqual([50, 50, 5, 5]);
   });
 
-  it("nennt den ersten Monat, ab dem das Ergebnis positiv bleibt", () => {
+  it("nennt den ersten Monat mit positivem Ergebnis nach Steuern", () => {
     const monate = ["2026-01", "2026-02", "2026-03", "2026-04"];
     expect(breakEvenMonat([100, -1, 50, 20], monate)).toEqual({
+      erreicht: true,
+      planmonat: 1,
+      monat: "2026-01",
+    });
+    expect(breakEvenMonat([-5, 0, 20, -1], monate)).toEqual({
       erreicht: true,
       planmonat: 3,
       monat: "2026-03",
     });
-    expect(breakEvenMonat([100, 100, 100], monate).planmonat).toBe(1);
-    expect(breakEvenMonat([100, 0, 100], monate).planmonat).toBe(3);
-    expect(breakEvenMonat([100, -1], monate).erreicht).toBe(false);
-    expect(breakEvenMonat([-1, -1], monate).erreicht).toBe(false);
+    expect(breakEvenMonat([100, 100, 100, 100], monate).planmonat).toBe(1);
+    expect(breakEvenMonat([0, 0, 0, 0], monate).erreicht).toBe(false);
+    expect(breakEvenMonat([-1, -1, -1, -1], monate).erreicht).toBe(false);
   });
 });
 
@@ -206,6 +210,11 @@ describe("Berichte der Beispielpläne", () => {
     const bericht = berichte.get("Blitzweg");
     if (!bericht) throw new Error("Blitzweg fehlt");
     expect(bericht.planjahre[0]).toMatchObject({ vonMonat: "2026-06", bisMonat: "2027-05" });
+    expect(bericht.kennzahlen.breakEven).toMatchObject({
+      erreicht: true,
+      planmonat: 1,
+      monat: "2026-06",
+    });
     expect(bericht.planjahre[1]).toMatchObject({ vonMonat: "2027-06", bisMonat: "2028-05" });
     expect(bericht.rentabilitaet.privatentnahmenAusgewiesen).toBe(true);
     expect(findeZeile(bericht.rentabilitaet.zeilen, "privatentnahmen").summeCents).toBe(
@@ -218,6 +227,30 @@ describe("Berichte der Beispielpläne", () => {
     expect(person?.gewinnNachSteuern.monateCents).toEqual(
       findeZeile(bericht.rentabilitaet.zeilen, "ergebnis-nach-steuern").monateCents,
     );
+  });
+
+  it("zeigt bei der Hafenlicht GmbH kein Darlehen und nicht die Restschuld von Blitzweg", () => {
+    const bericht = berichte.get("Hafenlicht GmbH");
+    const blitzweg = berichte.get("Blitzweg");
+    if (!bericht || !blitzweg) throw new Error("Beispiel fehlt");
+    expect(beispielGmbh.finanzierung.darlehen).toEqual([]);
+    expect(bericht.darlehen.darlehen).toEqual([]);
+    expect(bericht.darlehen.summeRestschuld.monateCents.every((wert) => wert === 0)).toBe(true);
+    expect(bericht.darlehen.summeRestschuld.horizontWertCents).toBe(0);
+    expect(bericht.darlehen.summeZins.summeCents).toBe(0);
+    expect(bericht.darlehen.summeTilgung.summeCents).toBe(0);
+    expect(
+      bericht.kapital.finanzierung.find((posten) => posten.id === "darlehen")?.betragCents,
+    ).toBe(0);
+    expect(
+      bericht.kennzahlen.kapitaldienstfaehigkeit.every(
+        (jahr) => jahr.kapitaldienstCents === 0 && jahr.quote == null,
+      ),
+    ).toBe(true);
+    expect(JSON.stringify(bericht.darlehen)).not.toContain("Mikrodarlehen");
+    expect(bericht.darlehen.summeRestschuld.horizontWertCents).not.toBe(1_701_394);
+    expect(blitzweg.darlehen.darlehen[0]?.bezeichnung).toBe("Thüringer Mikrodarlehen");
+    expect(blitzweg.darlehen.summeRestschuld.horizontWertCents).toBe(1_701_394);
   });
 
   it("lässt die Tragfähigkeit bei der GmbH aus", () => {
@@ -234,12 +267,22 @@ describe("Berichte der Beispielpläne", () => {
       true,
     );
     expect(bericht.planjahre[0]).toMatchObject({ vonMonat: "2026-01", bisMonat: "2026-12" });
+    expect(bericht.kennzahlen.breakEven).toMatchObject({
+      erreicht: true,
+      planmonat: 1,
+      monat: "2026-01",
+    });
   });
 
   it("führt den Waren-Erstbestand des Cafés im Kapitalbedarf", () => {
     const bericht = berichte.get("Café Leseecke");
     if (!bericht) throw new Error("Café fehlt");
     expect(bericht.planjahre[0]).toMatchObject({ vonMonat: "2026-08", bisMonat: "2027-07" });
+    expect(bericht.kennzahlen.breakEven).toMatchObject({
+      erreicht: true,
+      planmonat: 2,
+      monat: "2026-09",
+    });
     expect(
       bericht.kapital.bedarf.find((posten) => posten.id === "waren-erstbestand")?.betragCents,
     ).toBe(250_000);

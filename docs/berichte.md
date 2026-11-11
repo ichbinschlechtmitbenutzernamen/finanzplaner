@@ -129,7 +129,7 @@ Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindes
 
 ## Kennzahlen
 
-**Break-even-Monat.** Der erste Planmonat, in dem das Ergebnis nach Steuern positiv ist und jeder folgende Planmonat ebenfalls positiv bleibt. Null oder ein negativer Monat beendet die Reihe. Ein früherer positiver Monat zählt nicht, wenn danach wieder ein Monat ohne positives Ergebnis kommt. Ist der letzte Planmonat nicht positiv, ist der Break-even im Horizont nicht erreicht. Maßgeblich ist das Ergebnis nach der verteilten Steuer, nicht das Ergebnis vor Steuern und nicht der Kontostand.
+**Break-even-Monat.** Der erste Planmonat mit positivem Monatsergebnis. Positiv heißt: Ergebnis nach Steuern größer als 0. Null gilt nicht als positiv. Ein später wieder negativer Monat verschiebt den Break-even nicht. Gibt es im Horizont keinen positiven Monat, ist der Break-even nicht erreicht. Maßgeblich ist das Ergebnis nach der verteilten Steuer, nicht das Ergebnis vor Steuern und nicht der Kontostand.
 
 **Rohertragsquote.** Rohertrag geteilt durch Umsatz, je Planjahr und für den ganzen Horizont. Ohne Umsatz gibt es keine Quote.
 
@@ -148,4 +148,4 @@ Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindes
 - Lebenshaltung und Vorsorge waren schon je Person im Plan. Dafür gibt es keine neue Migration.
 - Der Waren-Erstbestand ist eine eigene Zeile im Kapitalbedarf.
 - Raumkosten sind nur Miete und Nebenkosten.
-- Der Break-even verlangt eine bis zum Horizont durchgehende Reihe positiver Monate.
+- Der Break-even ist der erste Planmonat mit Ergebnis nach Steuern größer als 0.

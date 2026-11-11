@@ -6,12 +6,11 @@ import type { IsoMonth, Rechtsform } from "../types.ts";
 export const RAUMKOSTEN_KATEGORIEN = ["miete", "nebenkosten"] as const;
 
 /**
- * Erster Planmonat, ab dem das Ergebnis nach Steuern positiv bleibt.
- * Ein früherer positiver Monat zählt nicht, sobald danach wieder ein Monat
- * ohne positives Ergebnis kommt. Null gilt nicht als positiv.
+ * Erster Planmonat mit positivem Monatsergebnis nach Steuern.
+ * Null gilt nicht als positiv. Spätere negative Monate verschieben den Monat nicht.
  */
 export const BREAK_EVEN_DEFINITION =
-  "Break-even-Monat ist der erste Planmonat, in dem das Ergebnis nach Steuern positiv ist und jeder folgende Planmonat ebenfalls positiv bleibt. Null oder ein negativer Monat beendet die Reihe. Ein früherer positiver Monat zählt nicht, wenn danach wieder ein Monat ohne positives Ergebnis kommt. Ist der letzte Planmonat nicht positiv, ist der Break-even im Horizont nicht erreicht.";
+  "Break-even-Monat ist der erste Planmonat mit positivem Monatsergebnis, also Ergebnis nach Steuern größer als 0. Null gilt nicht als positiv. Ob spätere Monate wieder negativ werden, ändert den Break-even nicht. Gibt es im Horizont keinen positiven Monat, ist der Break-even nicht erreicht.";
 
 export interface Planjahr {
   /** 1 = Monate 1–12 ab Gründungsmonat, nicht das Kalenderjahr. */
@@ -202,15 +201,9 @@ export function breakEvenMonat(
   ergebnisNachSteuern: readonly number[],
   monate: readonly IsoMonth[],
 ): { erreicht: boolean; planmonat: number | null; monat: IsoMonth | null } {
-  let letzterOhnePositivesErgebnis = -1;
-  for (let index = 0; index < ergebnisNachSteuern.length; index += 1) {
-    if ((ergebnisNachSteuern[index] ?? 0) <= 0) letzterOhnePositivesErgebnis = index;
-  }
-  const start = letzterOhnePositivesErgebnis + 1;
-  if (start >= ergebnisNachSteuern.length) {
-    return { erreicht: false, planmonat: null, monat: null };
-  }
-  return { erreicht: true, planmonat: start + 1, monat: monate[start] ?? null };
+  const index = ergebnisNachSteuern.findIndex((wert) => wert > 0);
+  if (index < 0) return { erreicht: false, planmonat: null, monat: null };
+  return { erreicht: true, planmonat: index + 1, monat: monate[index] ?? null };
 }
 
 export function quote(zaehler: number, nenner: number): number | null {

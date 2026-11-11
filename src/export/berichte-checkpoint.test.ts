@@ -32,6 +32,11 @@ describe("Prüfstand Berichte", () => {
     expect(zelle(blaetter, "Café Kapital", "Summe Kapitalbedarf")?.at(-1)).toBe(102_610);
     const tragfaehigkeit = blaetter.find((blatt) => blatt.name === "Hafenlicht Tragfähigkeit");
     expect(tragfaehigkeit?.zeilen.some((zeile) => zeile[0] === "Nicht anwendbar")).toBe(true);
+    const hafenlichtDarlehen = blaetter.find((blatt) => blatt.name === "Hafenlicht Darlehen");
+    const darlehenText = JSON.stringify(hafenlichtDarlehen?.zeilen);
+    expect(darlehenText).toContain("Keine Darlehen im Plan.");
+    expect(darlehenText).not.toContain("Mikrodarlehen");
+    expect(darlehenText).not.toContain("17013.94");
     const monate = blaetter.find((blatt) => blatt.name === "Blitzweg GuV Monate");
     expect(monate?.zeilen[monate.kopfzeile]?.[1]).toBe("Jun 2026");
     expect(monate?.planjahrSpalten).toEqual([13, 26, 39]);
