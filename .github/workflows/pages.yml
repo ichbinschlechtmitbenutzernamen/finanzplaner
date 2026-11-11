@@ -1,10 +1,9 @@
 name: Seiten
 
+# Vorübergehend nur manuell. Die Vorschau dieses Stands baut
+# .github/workflows/pages-preview.yml, solange der Überblick-Branch nicht in main ist.
+
 on:
-  push:
-    branches:
-      - main
-      - "cursor/**"
   workflow_dispatch:
 
 permissions:
