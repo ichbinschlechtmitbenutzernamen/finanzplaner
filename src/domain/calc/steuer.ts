@@ -226,15 +226,17 @@ function personenDesJahres(
   const personen = plan.stammdaten.personen.filter((person) => person.anteil > 0);
   if (personen.length === 0) return [];
   const anteile = personen.map((person) => person.anteil);
-  const gewinnAnteile = verteile(gewinnCents, anteile);
+  const gewinnAnteile = verteileNachAnteilen(gewinnCents, anteile);
   // Messbetrag und Gewerbesteuer sind volle Euro. Verteilt wird der Eurobetrag,
   // damit die Summe der Anteile dem festgesetzten Betrag entspricht.
-  const messAnteile = verteile(Math.floor(gesellschaft.messbetragCents / 100), anteile).map(
-    (euro) => euro * 100,
-  );
-  const gewstAnteile = verteile(Math.floor(gesellschaft.gewerbesteuerCents / 100), anteile).map(
-    (euro) => euro * 100,
-  );
+  const messAnteile = verteileNachAnteilen(
+    Math.floor(gesellschaft.messbetragCents / 100),
+    anteile,
+  ).map((euro) => euro * 100);
+  const gewstAnteile = verteileNachAnteilen(
+    Math.floor(gesellschaft.gewerbesteuerCents / 100),
+    anteile,
+  ).map((euro) => euro * 100);
   return personen.map((person, index) =>
     personJahr(
       person,
@@ -596,7 +598,11 @@ function gruppiereJahre(monate: readonly IsoMonth[]): { jahr: number; indizes: n
   return [...gruppen.entries()].map(([jahr, indizes]) => ({ jahr, indizes }));
 }
 
-function verteile(gesamt: number, anteile: readonly number[]): number[] {
+/**
+ * Verteilt einen Cent-Betrag nach Anteilen. Die letzte Position erhält den Rest,
+ * damit die Summe exakt dem Ausgangsbetrag entspricht.
+ */
+export function verteileNachAnteilen(gesamt: number, anteile: readonly number[]): number[] {
   if (anteile.length === 0) return [];
   const summeAnteile = anteile.reduce((total, anteil) => total + anteil, 0);
   if (gesamt === 0 || summeAnteile === 0) return anteile.map(() => 0);

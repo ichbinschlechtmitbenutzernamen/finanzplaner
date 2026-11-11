@@ -1,6 +1,6 @@
 # Rechenkern
 
-Dieser Text beschreibt, wie aus den Eingaben eines Plans die 36 Monatswerte werden. Er ist für die fachliche Prüfung gedacht. Einkommensteuer, Gewerbesteuer und Körperschaftsteuer stehen in [docs/steuern.md](steuern.md). Eine fertige Rentabilitätsvorschau, ein Liquiditätsplan und ein Break-even sind nicht Teil dieses Texts. Was hier steht, ist die Grundlage dafür.
+Dieser Text beschreibt, wie aus den Eingaben eines Plans die 36 Monatswerte werden. Er ist für die fachliche Prüfung gedacht. Einkommensteuer, Gewerbesteuer und Körperschaftsteuer stehen in [docs/steuern.md](steuern.md). Die Rentabilitätsvorschau, der Liquiditätsplan und die Kennzahlen stehen in [docs/berichte.md](berichte.md). Was hier steht, ist die Grundlage dafür. Der Saldo dieses Rechenkerns ist noch kein Kontostand: der Liquiditätsplan setzt den Anfangsbestand auf 0 und summiert die Salden.
 
 Der Rechenkern liegt in `src/domain/calc` und kennt weder React noch den Browser. Aufgerufen wird ein Plan und ein Szenario (`base`, `best`, `real` oder `worst`). Zurück kommen Cent-Beträge für jeden der 36 Monate. Die Oberfläche zeigt das noch nicht. Zum Nachrechnen gibt es den Prüfstand für Blitzweg Elektrotechnik, beschrieben am Ende.
 

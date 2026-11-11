@@ -8,7 +8,7 @@ import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 5,
+  schemaVersion: 6,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -134,6 +134,7 @@ export const beispielEinzelunternehmen = {
       },
     ],
     betriebsmittel: {
+      betriebsmittelbedarfCents: 0,
       liquiditaetsreserveCents: 600_000,
       notizen: "Puffer für die ersten Monate, kein Aufwand.",
     },

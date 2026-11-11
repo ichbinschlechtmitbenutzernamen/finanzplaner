@@ -7,7 +7,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielCafe = {
   id: "plan-beispiel-cafe-leseecke",
-  schemaVersion: 5,
+  schemaVersion: 6,
   status: "vollstaendig",
   erstelltAm: "2026-05-10T10:00:00.000Z",
   geaendertAm: "2026-06-01T10:00:00.000Z",
@@ -130,6 +130,7 @@ export const beispielCafe = {
       },
     ],
     betriebsmittel: {
+      betriebsmittelbedarfCents: 0,
       liquiditaetsreserveCents: 1_500_000,
       warenErstbestandNettoCents: 250_000,
       umsatzsteuerSatzWaren: 0.07,

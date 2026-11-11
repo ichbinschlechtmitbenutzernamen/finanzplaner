@@ -8,7 +8,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielElektro = {
   id: "plan-beispiel-blitzweg-elektro",
-  schemaVersion: 5,
+  schemaVersion: 6,
   status: "vollstaendig",
   erstelltAm: "2026-04-02T08:00:00.000Z",
   geaendertAm: "2026-04-20T08:00:00.000Z",
@@ -111,6 +111,7 @@ export const beispielElektro = {
       },
     ],
     betriebsmittel: {
+      betriebsmittelbedarfCents: 0,
       liquiditaetsreserveCents: 800_000,
       notizen: "Puffer für Materialeinkäufe, kein Aufwand.",
     },

@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 5 as const;
+export const SCHEMA_VERSION = 6 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -314,7 +314,12 @@ export type Einmalkosten =
     });
 
 export interface Betriebsmittel {
-  /** Liquiditätspuffer zu Beginn. Kein Aufwand, nur Kapitalbedarf und Kasse. */
+  /**
+   * Betriebsmittelbedarf zu Beginn, nur manuelle Eingabe.
+   * Kein Aufwand und kein Zahlungsstrom. Die Rechnung leitet ihn nicht ab.
+   */
+  betriebsmittelbedarfCents: EuroCents;
+  /** Liquiditätsreserve zu Beginn. Kein Aufwand, nur Kapitalbedarf. */
   liquiditaetsreserveCents: EuroCents;
   warenErstbestandNettoCents?: EuroCents;
   umsatzsteuerSatzWaren?: Satz;

@@ -5,6 +5,7 @@ import type * as ExcelJS from "exceljs";
 import { berechnePlan, summeCents } from "../src/domain/calc/index.ts";
 import { checkpointBlaetter, type CheckpointBlatt } from "../src/export/checkpoint.ts";
 import { steuerCheckpointBlaetter } from "../src/export/steuern-checkpoint.ts";
+import { schreibeBerichteCheckpoint } from "./export-berichte.ts";
 import { beispielCafe } from "../src/fixtures/beispiel-cafe.ts";
 import { beispielElektro } from "../src/fixtures/beispiel-elektro.ts";
 import { beispielGmbh } from "../src/fixtures/beispiel-gmbh.ts";
@@ -59,6 +60,8 @@ await schreibeWorkbook(steuerCheckpointBlaetter(steuern), steuerZiel, steuerArte
   subject: "Prüfstand der Ertragsteuern, fiktive Beispielpläne",
   ersteSpalte: 42,
 });
+
+await schreibeBerichteCheckpoint();
 
 console.log(`Juni-Umsatz ${euro(real.umsatz.summeNettoCents[0] ?? 0)} Euro`);
 console.log(`Restschuld Monat 36 ${euro(real.finanzierung.summeRestschuldCents[35] ?? 0)} Euro`);
