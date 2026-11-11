@@ -5,6 +5,9 @@ name: Seiten Vorschau
 # ohne den Pull Request zu mergen.
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
