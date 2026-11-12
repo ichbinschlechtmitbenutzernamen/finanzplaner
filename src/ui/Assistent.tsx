@@ -62,12 +62,14 @@ export function Assistent({
   onAendern,
   onUeberblick,
   hervorhebung = null,
+  nurLesen = false,
 }: {
   plan: Finanzplan;
   berichte: Berichte | null;
   onAendern: PlanAendern;
   onUeberblick: () => void;
   hervorhebung?: { station: AssistentStation; feld: string } | null;
+  nurLesen?: boolean;
 }) {
   const [meldungen, setMeldungen] = useState<string[]>([]);
   const station = plan.assistent?.station ?? "vorhaben";
@@ -102,6 +104,7 @@ export function Assistent({
               aria-current={eintrag === station ? "step" : undefined}
               data-uebersprungen={uebersprungen ? "true" : undefined}
               className={erledigt ? "erledigt" : undefined}
+              disabled={nurLesen}
               onClick={() => {
                 setMeldungen([]);
                 onAendern((aktuell) => springeZu(aktuell, eintrag));
@@ -114,16 +117,18 @@ export function Assistent({
           );
         })}
       </nav>
-      <Station
-        plan={plan}
-        berichte={berichte}
-        station={station}
-        onAendern={onAendern}
-        onUeberblick={() => {
-          onAendern((aktuell) => geheWeiter(aktuell));
-          onUeberblick();
-        }}
-      />
+      <fieldset className="assistent-felder" disabled={nurLesen}>
+        <Station
+          plan={plan}
+          berichte={berichte}
+          station={station}
+          onAendern={onAendern}
+          onUeberblick={() => {
+            onAendern((aktuell) => geheWeiter(aktuell));
+            onUeberblick();
+          }}
+        />
+      </fieldset>
       {meldungen.length > 0 ? (
         <ul className="fehler" role="alert">
           {meldungen.map((meldung) => (
@@ -136,11 +141,16 @@ export function Assistent({
           <button
             type="button"
             onClick={() => onAendern((aktuell) => geheZurueck(aktuell))}
-            disabled={!vorher}
+            disabled={nurLesen || !vorher}
           >
             Zurück
           </button>
-          <button type="button" className="primaer" onClick={weiter} disabled={!naechste}>
+          <button
+            type="button"
+            className="primaer"
+            onClick={weiter}
+            disabled={nurLesen || !naechste}
+          >
             {naechste ? `Weiter: ${STATION_LABEL[naechste]}` : "Weiter"}
           </button>
         </div>

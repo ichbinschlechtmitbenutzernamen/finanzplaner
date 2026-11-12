@@ -932,3 +932,161 @@ button.primaer {
   gap: 0.7rem;
   margin: 0.7rem 0;
 }
+
+.szenario-hinweis {
+  display: block;
+  margin-bottom: 0.8rem;
+}
+
+.assistent-felder {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  min-inline-size: 0;
+}
+
+.szenarien-aktionen,
+.dialog-felder {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: end;
+  margin: 0.6rem 0;
+}
+
+.szenarien-liste {
+  display: grid;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+  padding: 0;
+  list-style: none;
+}
+
+.szenarien-liste li {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.6rem;
+  padding: 0.75rem 0.9rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.szenarien-liste li.aktiv {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.szenarien-liste form {
+  display: flex;
+  gap: 0.4rem;
+  align-items: end;
+}
+
+.szenarien-liste input,
+.dialog input {
+  padding: 0.3rem 0.45rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.szenario-art {
+  margin: 0.15rem 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.vergleich-scroll {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.vergleich {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.vergleich caption {
+  padding: 0.7rem 0.8rem 0.2rem;
+  text-align: left;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.vergleich th,
+.vergleich td {
+  padding: 0.45rem 0.7rem;
+  border-top: 1px solid var(--line);
+  text-align: right;
+  vertical-align: top;
+}
+
+.vergleich th:first-child,
+.vergleich td:first-child,
+.vergleich tbody th {
+  text-align: left;
+}
+
+.vergleich thead th {
+  font-size: 0.82rem;
+}
+
+.vergleich thead th span {
+  display: block;
+  color: var(--muted);
+  font-weight: 450;
+}
+
+.vergleich th.aktiv,
+.vergleich .aktiv {
+  background: var(--accent-soft);
+}
+
+.zahl-negativ {
+  color: var(--neg);
+}
+
+.dialog-hintergrund {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(28 36 48 / 35%);
+}
+
+.dialog {
+  width: min(40rem, 100%);
+  max-height: calc(100vh - 2rem);
+  overflow: auto;
+  padding: 1rem 1.1rem 1.1rem;
+  background: var(--paper);
+  border-radius: 16px;
+  box-shadow: 0 18px 50px rgb(28 36 48 / 25%);
+}
+
+.dialog h2 {
+  margin: 0 0 0.4rem;
+}
+
+.dialog-felder {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+
+.dialog-felder label,
+.szenarien-liste form label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}

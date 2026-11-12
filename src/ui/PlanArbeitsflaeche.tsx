@@ -2,6 +2,7 @@ import { useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { springeZu } from "../domain/assistent/stationen.ts";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
 import { pruefePlan, type Pruefmeldung, type TabellenAnsicht } from "../domain/checks/index.ts";
+import { aktivesSzenario, planFuerRechnung, schreibeKopie } from "../domain/szenarien/index.ts";
 import { roundCents } from "../domain/calc/round.ts";
 import {
   einfuegenSerie,
@@ -25,6 +26,7 @@ import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
 import { Assistent, Startauswahl, waehleAssistent, waehleTabelle } from "./Assistent.tsx";
 import { Pruefung, zaehlerStufe } from "./Pruefung.tsx";
 import { PruefAnbieter } from "./pruef-marke.tsx";
+import { Szenarien, SzenarioHinweis, SzenarioUmschalter } from "./Szenarien.tsx";
 import { Ueberblick } from "./Ueberblick.tsx";
 import { berichtZeilen, type BerichtReiter } from "./zeilen-bericht.ts";
 import { eingabeZeilen, planMonate } from "./zeilen-eingabe.ts";
@@ -33,6 +35,7 @@ import type { TabellenZeile } from "./zeilen-modell.ts";
 export const REITER = [
   { id: "assistent", label: "Assistent" },
   { id: "ueberblick", label: "Überblick" },
+  { id: "szenarien", label: "Szenarien" },
   { id: "pruefung", label: "Prüfung" },
   { id: "eingaben", label: "Eingaben" },
   { id: "rentabilitaet", label: "Rentabilitätsvorschau" },
@@ -49,7 +52,12 @@ type Sprung =
   | { art: "assistent"; station: AssistentStation; feld: string };
 
 function istTabelle(reiter: ReiterId): reiter is TabellenAnsicht {
-  return reiter !== "assistent" && reiter !== "ueberblick" && reiter !== "pruefung";
+  return (
+    reiter !== "assistent" &&
+    reiter !== "ueberblick" &&
+    reiter !== "pruefung" &&
+    reiter !== "szenarien"
+  );
 }
 
 const DECKUNG: Record<Berichte["kapital"]["deckungArt"], string> = {
@@ -88,20 +96,22 @@ export function PlanArbeitsflaeche({
   const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
   const [meldung, setMeldung] = useState<string | null>(null);
   const plan = verlauf.gegenwart;
-  const monate = useMemo(() => planMonate(plan), [plan]);
+  const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
+  const modus = aktivesSzenario(plan)?.art ?? "basis";
+  const monate = useMemo(() => planMonate(ansicht), [ansicht]);
   const jahre = useMemo(() => planjahreVon(monate), [monate]);
   const spalten = useMemo(
     () => sichtbareSpalten(monate, jahre, eingeklappt),
     [monate, jahre, eingeklappt],
   );
-  const rechnung = useMemo(() => rechne(plan), [plan]);
+  const rechnung = useMemo(() => rechne(ansicht), [ansicht]);
   const meldungen = useMemo(
-    () => (rechnung.berichte ? pruefePlan(plan, rechnung.berichte) : []),
-    [plan, rechnung.berichte],
+    () => (rechnung.berichte ? pruefePlan(ansicht, rechnung.berichte) : []),
+    [ansicht, rechnung.berichte],
   );
   const zeilen = useMemo(
-    () => zeilenFuer(plan, monate, jahre, reiter, rechnung.berichte),
-    [plan, monate, jahre, reiter, rechnung.berichte],
+    () => zeilenFuer(ansicht, monate, jahre, reiter, rechnung.berichte),
+    [ansicht, monate, jahre, reiter, rechnung.berichte],
   );
   const gewaehlt = zeilen[auswahl?.zeile ?? -1] ?? null;
   const monat = monatDerAuswahl(spalten, auswahl);
@@ -128,19 +138,39 @@ export function PlanArbeitsflaeche({
     onSpeichern(plan);
   }, [onSpeichern, plan, verlauf.vergangenheit.length, verlauf.zukunft.length]);
 
-  function aendern(erzeugen: (aktuell: Finanzplan) => Finanzplan) {
+  function uebernehmen(roh: Finanzplan) {
+    const geprueft = finanzplanSchema.safeParse({
+      ...roh,
+      geaendertAm: new Date().toISOString(),
+    });
+    if (!geprueft.success) {
+      setMeldung(geprueft.error.issues[0]?.message ?? "Die Eingabe passt nicht zum Plan.");
+      return;
+    }
+    setMeldung(null);
+    dispatch({ typ: "setzen", wert: geprueft.data });
+  }
+
+  function aendernSzenarien(erzeugen: (aktuell: Finanzplan) => Finanzplan) {
     try {
-      const roh = erzeugen(plan);
-      const geprueft = finanzplanSchema.safeParse({
-        ...roh,
-        geaendertAm: new Date().toISOString(),
-      });
-      if (!geprueft.success) {
-        setMeldung(geprueft.error.issues[0]?.message ?? "Die Eingabe passt nicht zum Plan.");
-        return;
-      }
-      setMeldung(null);
-      dispatch({ typ: "setzen", wert: geprueft.data });
+      uebernehmen(erzeugen(plan));
+    } catch (fehler) {
+      setMeldung(fehler instanceof Error ? fehler.message : "Die Eingabe wurde nicht übernommen.");
+    }
+  }
+
+  function aendernEingabe(erzeugen: (aktuell: Finanzplan) => Finanzplan) {
+    if (modus === "abweichung") {
+      const name = aktivesSzenario(plan)?.name ?? "Diesem Szenario";
+      setMeldung(
+        `„${name}“ ist ein Abweichungs-Szenario. Die Eingaben sind nur lesend. Wählen Sie den Basisplan oder ändern Sie die Hebel auf der Seite Szenarien.`,
+      );
+      return;
+    }
+    try {
+      const ausgang = modus === "kopie" ? ansicht : plan;
+      const roh = erzeugen(ausgang);
+      uebernehmen(modus === "kopie" ? schreibeKopie(plan, roh) : roh);
     } catch (fehler) {
       setMeldung(fehler instanceof Error ? fehler.message : "Die Eingabe wurde nicht übernommen.");
     }
@@ -158,7 +188,7 @@ export function PlanArbeitsflaeche({
           setMeldung("Das ist keine Zahl.");
           return;
         }
-        aendern((aktuell) => setzeSerieZelle(aktuell, zeile.serie!, zielMonat, zahl));
+        aendernEingabe((aktuell) => setzeSerieZelle(aktuell, zeile.serie!, zielMonat, zahl));
         return;
       }
       const cents = leer ? null : parseCentBetrag(text);
@@ -166,7 +196,7 @@ export function PlanArbeitsflaeche({
         setMeldung("Das ist kein Betrag.");
         return;
       }
-      aendern((aktuell) => setzeSerieZelle(aktuell, zeile.serie!, zielMonat, cents));
+      aendernEingabe((aktuell) => setzeSerieZelle(aktuell, zeile.serie!, zielMonat, cents));
       return;
     }
     const einmal = zeile.einmalImMonat?.(zielMonat) ?? zeile.einmal;
@@ -180,7 +210,7 @@ export function PlanArbeitsflaeche({
       setMeldung("Das ist kein Betrag.");
       return;
     }
-    aendern((aktuell) => setzeEinmal(aktuell, einmal, cents));
+    aendernEingabe((aktuell) => setzeEinmal(aktuell, einmal, cents));
   }
 
   function einfuegen(zeilenIndex: number, monatIndex: number, text: string) {
@@ -210,13 +240,13 @@ export function PlanArbeitsflaeche({
       const zahl = tabelle[0]?.[0]?.zahl;
       const einmal = zeile && zielMonat ? (zeile.einmalImMonat?.(zielMonat) ?? zeile.einmal) : null;
       if (einmal && zahl != null && tabelle.length === 1 && (tabelle[0]?.length ?? 0) === 1) {
-        aendern((aktuell) => setzeEinmal(aktuell, einmal, roundCents(zahl * 100)));
+        aendernEingabe((aktuell) => setzeEinmal(aktuell, einmal, roundCents(zahl * 100)));
         return;
       }
       setMeldung("Diese Zeile lässt sich nicht aus Excel füllen.");
       return;
     }
-    aendern((aktuell) => {
+    aendernEingabe((aktuell) => {
       let naechster = aktuell;
       tabelle.forEach((zellen, index) => {
         const ziel = serien[index];
@@ -241,7 +271,7 @@ export function PlanArbeitsflaeche({
   function springe(meldung: Pruefmeldung, wohin: "tabelle" | "assistent") {
     if (wohin === "assistent" && meldung.ziel.assistent) {
       const ziel = meldung.ziel.assistent;
-      aendern((aktuell) => springeZu(aktuell, ziel.station));
+      aendernEingabe((aktuell) => springeZu(aktuell, ziel.station));
       setSprung({ art: "assistent", station: ziel.station, feld: ziel.feld });
       onReiter("assistent");
       return;
@@ -268,22 +298,22 @@ export function PlanArbeitsflaeche({
     onReiter(tabelle.ansicht);
   }
 
-  const rechtsform = plan.stammdaten.rechtsform;
+  const rechtsform = ansicht.stammdaten.rechtsform;
   const letzter = monate.at(-1);
 
   return (
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 8 · Plausibilitätschecks</p>
-          <h1>{plan.stammdaten.firmenname || "Finanzplaner"}</h1>
+          <p className="eyebrow">Schritt 9 · Szenarien</p>
+          <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
-            {plan.stammdaten.planName}
+            {ansicht.stammdaten.planName}
             {rechtsform ? ` · ${RECHTSFORM_LABEL[rechtsform]}` : ""}
-            {plan.startMonat && letzter
-              ? ` · ${formatMonatLang(plan.startMonat)} bis ${formatMonatLang(letzter)}`
+            {ansicht.startMonat && letzter
+              ? ` · ${formatMonatLang(ansicht.startMonat)} bis ${formatMonatLang(letzter)}`
               : ""}
-            {` · ${szenarioName(plan)}`}
+            {` · ${aktivesSzenario(plan)?.name ?? "Basisplan"}`}
           </p>
         </div>
         <div className="werkzeuge">
@@ -302,6 +332,7 @@ export function PlanArbeitsflaeche({
               </button>
             ))}
           </div>
+          <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
           <div className="werkzeuge-reihe">
             <button
               type="button"
@@ -324,7 +355,7 @@ export function PlanArbeitsflaeche({
         </div>
       </header>
 
-      {plan.stammdaten.beispiel ? (
+      {ansicht.stammdaten.beispiel ? (
         <p className="flag">
           Fiktiver Datensatz, nicht für einen echten Antrag. Änderungen bleiben in diesem Browser.
         </p>
@@ -340,8 +371,12 @@ export function PlanArbeitsflaeche({
             aria-selected={reiter === eintrag.id}
             aria-controls="plan-ansicht"
             onClick={() => {
-              if (zeigeStartauswahl(plan) && eintrag.id !== "pruefung") {
-                aendern((aktuell) =>
+              if (
+                zeigeStartauswahl(plan) &&
+                eintrag.id !== "pruefung" &&
+                eintrag.id !== "szenarien"
+              ) {
+                aendernEingabe((aktuell) =>
                   eintrag.id === "assistent" ? waehleAssistent(aktuell) : waehleTabelle(aktuell),
                 );
               }
@@ -363,31 +398,35 @@ export function PlanArbeitsflaeche({
 
       <div role="tabpanel" id="plan-ansicht" aria-labelledby={`reiter-${reiter}`}>
         <PruefAnbieter meldungen={meldungen}>
+          <SzenarioHinweis plan={plan} />
           {zeigeStartauswahl(plan) ? (
             <Startauswahl
               onAssistent={() => {
-                aendern((aktuell) => waehleAssistent(aktuell));
+                aendernEingabe((aktuell) => waehleAssistent(aktuell));
                 onReiter("assistent");
               }}
               onTabelle={() => {
-                aendern((aktuell) => waehleTabelle(aktuell));
+                aendernEingabe((aktuell) => waehleTabelle(aktuell));
                 onReiter("eingaben");
               }}
             />
           ) : reiter === "assistent" ? (
             <Assistent
-              plan={plan}
+              plan={ansicht}
               berichte={rechnung.berichte}
-              onAendern={aendern}
+              onAendern={aendernEingabe}
               onUeberblick={() => onReiter("ueberblick")}
               hervorhebung={sprung?.art === "assistent" ? sprung : null}
+              nurLesen={modus === "abweichung"}
             />
+          ) : reiter === "szenarien" ? (
+            <Szenarien plan={plan} onAendern={aendernSzenarien} />
           ) : reiter === "pruefung" ? (
             <Pruefung
-              plan={plan}
+              plan={ansicht}
               meldungen={meldungen}
               fehler={rechnung.fehler}
-              onAendern={aendern}
+              onAendern={aendernEingabe}
               onSpringen={springe}
             />
           ) : reiter === "ueberblick" ? (
@@ -400,6 +439,7 @@ export function PlanArbeitsflaeche({
           {reiter !== "ueberblick" &&
           reiter !== "assistent" &&
           reiter !== "pruefung" &&
+          reiter !== "szenarien" &&
           !zeigeStartauswahl(plan) &&
           rechnung.berichte ? (
             <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
@@ -407,16 +447,17 @@ export function PlanArbeitsflaeche({
           {zeigeStartauswahl(plan) ||
           reiter === "assistent" ||
           reiter === "ueberblick" ||
-          reiter === "pruefung" ? null : reiter === "eingaben" ? (
+          reiter === "pruefung" ||
+          reiter === "szenarien" ? null : reiter === "eingaben" && modus !== "abweichung" ? (
             <Hilfeleiste
-              plan={plan}
+              plan={ansicht}
               zeile={gewaehlt}
               monat={monat?.monat ?? null}
               monate={monate}
               monatIndex={monat?.monatIndex ?? null}
-              onAendern={aendern}
+              onAendern={aendernEingabe}
             />
-          ) : (
+          ) : reiter === "eingaben" ? null : (
             <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
           )}
           {meldung &&
@@ -438,7 +479,8 @@ export function PlanArbeitsflaeche({
           {zeigeStartauswahl(plan) ||
           reiter === "ueberblick" ||
           reiter === "assistent" ||
-          reiter === "pruefung" ? null : (
+          reiter === "pruefung" ||
+          reiter === "szenarien" ? null : (
             <Tabelle
               zeilen={zeilen}
               spalten={spalten}
@@ -457,7 +499,7 @@ export function PlanArbeitsflaeche({
               onPaste={einfuegen}
               onUndo={() => dispatch({ typ: "zurueck" })}
               onRedo={() => dispatch({ typ: "vor" })}
-              bearbeiten={reiter === "eingaben"}
+              bearbeiten={reiter === "eingaben" && modus !== "abweichung"}
               pruefungen={meldungen}
               ansicht={istTabelle(reiter) ? reiter : "eingaben"}
             />
@@ -468,12 +510,6 @@ export function PlanArbeitsflaeche({
   );
 }
 
-function szenarioName(plan: Finanzplan): string {
-  const aktiv = plan.szenarien.aktiv;
-  if (aktiv === "base") return "Basis";
-  return plan.szenarien[aktiv].bezeichnung;
-}
-
 function zeilenFuer(
   plan: Finanzplan,
   monate: readonly IsoMonth[],
@@ -481,7 +517,13 @@ function zeilenFuer(
   reiter: ReiterId,
   berichte: Berichte | null,
 ): TabellenZeile[] {
-  if (reiter === "ueberblick" || reiter === "assistent" || reiter === "pruefung") return [];
+  if (
+    reiter === "ueberblick" ||
+    reiter === "assistent" ||
+    reiter === "pruefung" ||
+    reiter === "szenarien"
+  )
+    return [];
   if (reiter === "eingaben") return eingabeZeilen(plan, monate, jahre);
   if (!berichte) return [];
   return berichtZeilen(berichte, reiter);
@@ -513,7 +555,8 @@ function KennzahlenZeile({ berichte, reiter }: { berichte: Berichte; reiter: Rei
     reiter === "eingaben" ||
     reiter === "ueberblick" ||
     reiter === "assistent" ||
-    reiter === "pruefung"
+    reiter === "pruefung" ||
+    reiter === "szenarien"
   )
     return null;
   if (reiter === "rentabilitaet") {
