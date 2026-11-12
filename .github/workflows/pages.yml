@@ -1,9 +1,12 @@
 name: Seiten
 
-# Vorübergehend nur manuell. pages-preview.yml veröffentlicht den Prüf-Branch.
-# Nach dem Merge veröffentlicht dieser Workflow wieder main.
+# Die Umgebung github-pages erlaubt nur den Branch main.
+# Veröffentlicht wird deshalb genau main, nicht ein Feature-Branch.
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
