@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 7 as const;
+export const SCHEMA_VERSION = 8 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -763,6 +763,37 @@ export interface Szenarien {
   worst: Szenario;
 }
 
+export const ASSISTENT_STATIONEN = [
+  "vorhaben",
+  "persoenlich",
+  "umsatz",
+  "wareneinsatz",
+  "personal",
+  "kosten",
+  "investitionen",
+  "finanzierung",
+  "zusammenfassung",
+] as const;
+
+/** Stationen des geführten Assistenten, in fester Reihenfolge. */
+export type AssistentStation = (typeof ASSISTENT_STATIONEN)[number];
+
+export const ASSISTENT_WEGE = ["assistent", "tabelle"] as const;
+
+/** Ob ein neuer Plan über den Assistenten oder direkt in der Tabelle beginnt. */
+export type AssistentWeg = (typeof ASSISTENT_WEGE)[number];
+
+/**
+ * Fortschritt des Assistenten. Liegt im Plan, damit Tabelle und Überblick
+ * dieselben Eingaben sehen und ein Wechsel nichts verwirft.
+ * Fehlt `weg`, zeigt ein neuer Plan die Startauswahl.
+ */
+export interface AssistentFortschritt {
+  weg?: AssistentWeg;
+  station: AssistentStation;
+  erledigt: AssistentStation[];
+}
+
 export interface Finanzplan {
   id: Id;
   schemaVersion: typeof SCHEMA_VERSION;
@@ -784,5 +815,7 @@ export interface Finanzplan {
   umsatzsteuer: UmsatzsteuerEinstellungen;
   steuerplanung: Steuerplanung;
   szenarien: Szenarien;
+  /** Optional. Ältere Pläne haben keinen Assistentenstand. */
+  assistent?: AssistentFortschritt;
   notizen?: string;
 }

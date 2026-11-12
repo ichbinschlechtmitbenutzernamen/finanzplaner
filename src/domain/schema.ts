@@ -19,6 +19,8 @@ import {
   UST_REGIME,
   UST_VERSTEUERUNG,
   UST_VORANMELDUNG,
+  ASSISTENT_STATIONEN,
+  ASSISTENT_WEGE,
   WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
@@ -590,6 +592,12 @@ const szenarienSchema = z.strictObject({
   worst: szenarioSchema,
 });
 
+const assistentSchema = z.strictObject({
+  weg: z.enum(ASSISTENT_WEGE).optional(),
+  station: z.enum(ASSISTENT_STATIONEN),
+  erledigt: z.array(z.enum(ASSISTENT_STATIONEN)).max(ASSISTENT_STATIONEN.length),
+});
+
 export const finanzplanSchema = z
   .strictObject({
     id: idSchema,
@@ -610,6 +618,7 @@ export const finanzplanSchema = z
     umsatzsteuer: umsatzsteuerSchema,
     steuerplanung: steuerplanungSchema,
     szenarien: szenarienSchema,
+    assistent: assistentSchema.optional(),
     notizen: optionalTextSchema(5000).optional(),
   })
   .superRefine((plan, ctx) => {

@@ -38,6 +38,7 @@ describe("Tabelle", () => {
         reiter="eingaben"
         onBeispiel={() => undefined}
         onReiter={() => undefined}
+        onNeu={() => undefined}
         onSpeichern={() => undefined}
         onZuruecksetzen={() => undefined}
       />,

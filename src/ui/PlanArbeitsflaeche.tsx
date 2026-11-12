@@ -19,12 +19,15 @@ import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
 import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
+import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
+import { Assistent, Startauswahl, waehleAssistent, waehleTabelle } from "./Assistent.tsx";
 import { Ueberblick } from "./Ueberblick.tsx";
 import { berichtZeilen, type BerichtReiter } from "./zeilen-bericht.ts";
 import { eingabeZeilen, planMonate } from "./zeilen-eingabe.ts";
 import type { TabellenZeile } from "./zeilen-modell.ts";
 
 export const REITER = [
+  { id: "assistent", label: "Assistent" },
   { id: "ueberblick", label: "Überblick" },
   { id: "eingaben", label: "Eingaben" },
   { id: "rentabilitaet", label: "Rentabilitätsvorschau" },
@@ -49,6 +52,7 @@ interface PlanArbeitsflaecheProps {
   reiter: ReiterId;
   onBeispiel: (id: string) => void;
   onReiter: (reiter: ReiterId) => void;
+  onNeu: () => void;
   onSpeichern: (plan: Finanzplan) => void;
   onZuruecksetzen: () => void;
 }
@@ -60,6 +64,7 @@ export function PlanArbeitsflaeche({
   reiter,
   onBeispiel,
   onReiter,
+  onNeu,
   onSpeichern,
   onZuruecksetzen,
 }: PlanArbeitsflaecheProps) {
@@ -204,7 +209,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 6 · Ergebnisse und Diagramme</p>
+          <p className="eyebrow">Schritt 7 · Geführter Assistent</p>
           <h1>{plan.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {plan.stammdaten.planName}
@@ -216,7 +221,10 @@ export function PlanArbeitsflaeche({
           </p>
         </div>
         <div className="werkzeuge">
-          <div className="switcher" role="group" aria-label="Beispielplan wählen">
+          <div className="switcher" role="group" aria-label="Plan wählen">
+            <button type="button" aria-pressed={beispielId === "neu"} onClick={onNeu}>
+              Neuer Plan
+            </button>
             {beispiele.map((beispiel) => (
               <button
                 key={beispiel.id}
@@ -244,7 +252,7 @@ export function PlanArbeitsflaeche({
               Wiederholen
             </button>
             <button type="button" onClick={onZuruecksetzen}>
-              Beispiel zurücksetzen
+              {plan.stammdaten.beispiel ? "Beispiel zurücksetzen" : "Plan zurücksetzen"}
             </button>
           </div>
         </div>
@@ -265,7 +273,14 @@ export function PlanArbeitsflaeche({
             id={`reiter-${eintrag.id}`}
             aria-selected={reiter === eintrag.id}
             aria-controls="plan-ansicht"
-            onClick={() => onReiter(eintrag.id)}
+            onClick={() => {
+              if (zeigeStartauswahl(plan)) {
+                aendern((aktuell) =>
+                  eintrag.id === "assistent" ? waehleAssistent(aktuell) : waehleTabelle(aktuell),
+                );
+              }
+              onReiter(eintrag.id);
+            }}
           >
             {eintrag.label}
           </button>
@@ -273,17 +288,40 @@ export function PlanArbeitsflaeche({
       </div>
 
       <div role="tabpanel" id="plan-ansicht" aria-labelledby={`reiter-${reiter}`}>
-        {reiter === "ueberblick" ? (
+        {zeigeStartauswahl(plan) ? (
+          <Startauswahl
+            onAssistent={() => {
+              aendern((aktuell) => waehleAssistent(aktuell));
+              onReiter("assistent");
+            }}
+            onTabelle={() => {
+              aendern((aktuell) => waehleTabelle(aktuell));
+              onReiter("eingaben");
+            }}
+          />
+        ) : reiter === "assistent" ? (
+          <Assistent
+            plan={plan}
+            berichte={rechnung.berichte}
+            onAendern={aendern}
+            onUeberblick={() => onReiter("ueberblick")}
+          />
+        ) : reiter === "ueberblick" ? (
           rechnung.berichte ? (
             <Ueberblick berichte={rechnung.berichte} />
           ) : (
             <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
           )
         ) : null}
-        {reiter !== "ueberblick" && rechnung.berichte ? (
+        {reiter !== "ueberblick" &&
+        reiter !== "assistent" &&
+        !zeigeStartauswahl(plan) &&
+        rechnung.berichte ? (
           <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
         ) : null}
-        {reiter === "ueberblick" ? null : reiter === "eingaben" ? (
+        {zeigeStartauswahl(plan) ||
+        reiter === "assistent" ||
+        reiter === "ueberblick" ? null : reiter === "eingaben" ? (
           <Hilfeleiste
             plan={plan}
             zeile={gewaehlt}
@@ -295,15 +333,21 @@ export function PlanArbeitsflaeche({
         ) : (
           <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
         )}
-        {meldung && reiter !== "ueberblick" ? (
+        {meldung &&
+        reiter !== "ueberblick" &&
+        reiter !== "assistent" &&
+        !zeigeStartauswahl(plan) ? (
           <p className="fehler" role="alert">
             {meldung}
           </p>
         ) : null}
-        {rechnung.fehler && reiter !== "eingaben" && reiter !== "ueberblick" ? (
+        {rechnung.fehler &&
+        reiter !== "eingaben" &&
+        reiter !== "ueberblick" &&
+        reiter !== "assistent" ? (
           <p className="fehler">{rechnung.fehler}</p>
         ) : null}
-        {reiter === "ueberblick" ? null : (
+        {zeigeStartauswahl(plan) || reiter === "ueberblick" || reiter === "assistent" ? null : (
           <Tabelle
             zeilen={zeilen}
             spalten={spalten}
@@ -343,7 +387,7 @@ function zeilenFuer(
   reiter: ReiterId,
   berichte: Berichte | null,
 ): TabellenZeile[] {
-  if (reiter === "ueberblick") return [];
+  if (reiter === "ueberblick" || reiter === "assistent") return [];
   if (reiter === "eingaben") return eingabeZeilen(plan, monate, jahre);
   if (!berichte) return [];
   return berichtZeilen(berichte, reiter);
@@ -371,7 +415,7 @@ function hinweis(berichte: Berichte | null, reiter: BerichtReiter): string {
 
 function KennzahlenZeile({ berichte, reiter }: { berichte: Berichte; reiter: ReiterId }) {
   const kennzahlen = berichte.kennzahlen;
-  if (reiter === "eingaben" || reiter === "ueberblick") return null;
+  if (reiter === "eingaben" || reiter === "ueberblick" || reiter === "assistent") return null;
   if (reiter === "rentabilitaet") {
     const bruch = kennzahlen.breakEven;
     return (

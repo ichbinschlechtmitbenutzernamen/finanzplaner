@@ -23,6 +23,7 @@ export const migrations: Record<number, Migration> = {
   4: migrateV4ToV5,
   5: migrateV5ToV6,
   6: migrateV6ToV7,
+  7: migrateV7ToV8,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -163,6 +164,16 @@ export function migrateV5ToV6(data: Record<string, unknown>): Record<string, unk
 export function migrateV6ToV7(data: Record<string, unknown>): Record<string, unknown> {
   const plan = structuredClone(data);
   plan.schemaVersion = 7;
+  return plan;
+}
+
+/**
+ * Version 8 merkt sich den Assistentenfortschritt. Ältere Pläne haben das Feld nicht.
+ * Es bleibt weg, damit ein bestehender Plan nicht nachträglich die Startauswahl zeigt.
+ */
+export function migrateV7ToV8(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  plan.schemaVersion = 8;
   return plan;
 }
 

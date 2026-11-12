@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
+import { createDraftFinanzplan } from "./domain/empty-plan.ts";
 import { beispielplaene, beispielplanById } from "./fixtures/index.ts";
 import { PlanArbeitsflaeche, REITER, type ReiterId } from "./ui/PlanArbeitsflaeche.tsx";
 import { ladePlan, loeschePlan, speicherePlan } from "./ui/speicher.ts";
 
 const REITER_IDS = new Set<string>(REITER.map((eintrag) => eintrag.id));
+const NEUER_PLAN = "neu";
 
 interface Route {
   id: string;
@@ -12,16 +14,24 @@ interface Route {
 
 function readRoute(): Route {
   const [id, reiter] = window.location.hash.replace(/^#/, "").split("/");
+  const neu = id === NEUER_PLAN;
   return {
-    id: beispielplanById(id ?? "").id,
-    reiter: REITER_IDS.has(reiter ?? "") ? (reiter as ReiterId) : "ueberblick",
+    id: neu ? NEUER_PLAN : beispielplanById(id ?? "").id,
+    reiter: REITER_IDS.has(reiter ?? "") ? (reiter as ReiterId) : neu ? "assistent" : "ueberblick",
   };
+}
+
+function anfangFuer(id: string) {
+  const gespeichert = ladePlan(id);
+  if (gespeichert) return gespeichert;
+  if (id === NEUER_PLAN) return createDraftFinanzplan({ id: "plan-neu" });
+  return null;
 }
 
 export default function App() {
   const [route, setRoute] = useState(readRoute);
   const [frische, setFrische] = useState(0);
-  const [anfang, setAnfang] = useState(() => ladePlan(route.id));
+  const [anfang, setAnfang] = useState(() => anfangFuer(route.id));
   const beispiel = beispielplanById(route.id);
 
   useEffect(() => {
@@ -29,7 +39,7 @@ export default function App() {
       const naechste = readRoute();
       setRoute((bisher) => {
         if (bisher.id !== naechste.id) {
-          setAnfang(ladePlan(naechste.id));
+          setAnfang(anfangFuer(naechste.id));
           setFrische((wert) => wert + 1);
         }
         return naechste;
@@ -53,21 +63,30 @@ export default function App() {
 
   return (
     <PlanArbeitsflaeche
-      key={`${beispiel.id}-${frische}`}
-      anfangsplan={anfang ?? beispiel.plan}
+      key={`${route.id}-${frische}`}
+      anfangsplan={
+        route.id === NEUER_PLAN
+          ? (anfang ?? createDraftFinanzplan({ id: "plan-neu" }))
+          : (anfang ?? beispiel.plan)
+      }
       beispiele={beispielplaene}
-      beispielId={beispiel.id}
+      beispielId={route.id}
       reiter={route.reiter}
       onBeispiel={(id) => {
         setRoute((bisher) => ({ ...bisher, id }));
-        setAnfang(ladePlan(id));
+        setAnfang(anfangFuer(id));
+        setFrische((wert) => wert + 1);
+      }}
+      onNeu={() => {
+        setRoute({ id: NEUER_PLAN, reiter: "assistent" });
+        setAnfang(anfangFuer(NEUER_PLAN));
         setFrische((wert) => wert + 1);
       }}
       onReiter={(reiter) => setRoute((bisher) => ({ ...bisher, reiter }))}
       onSpeichern={speichern}
       onZuruecksetzen={() => {
         loeschePlan(route.id);
-        setAnfang(null);
+        setAnfang(route.id === NEUER_PLAN ? createDraftFinanzplan({ id: "plan-neu" }) : null);
         setFrische((wert) => wert + 1);
       }}
     />

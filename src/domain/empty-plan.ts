@@ -123,6 +123,7 @@ export function createDraftFinanzplan(options: EmptyPlanOptions = {}): Finanzpla
   return {
     ...shell(options, stamp),
     status: "entwurf",
+    assistent: { station: "vorhaben", erledigt: [] },
     stammdaten: {
       planName: "",
       beispiel: false,
