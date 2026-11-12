@@ -90,7 +90,8 @@ h1 {
 .switcher button,
 .werkzeuge-reihe button,
 .hilfe button,
-.reiter button {
+.reiter button,
+.zeit-schalter button {
   border: 1px solid var(--line);
   background: var(--paper);
   border-radius: 999px;
@@ -99,7 +100,8 @@ h1 {
 }
 
 .switcher button[aria-pressed="true"],
-.reiter button[aria-selected="true"] {
+.reiter button[aria-selected="true"],
+.zeit-schalter button[aria-pressed="true"] {
   background: var(--accent);
   border-color: var(--accent);
   color: #f4f1ea;
@@ -321,5 +323,210 @@ button:disabled {
     width: 11rem;
     min-width: 11rem;
     max-width: 11rem;
+  }
+}
+
+.kpi-raster {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.kpi {
+  min-width: 0;
+  padding: 0.85rem 0.95rem 0.95rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.kpi.breit {
+  grid-column: span 2;
+}
+
+.kpi h3 {
+  margin: 0 0 0.45rem;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 650;
+}
+
+.kpi-wert,
+.kpi-jahre strong,
+.kpi-personen strong {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+.kpi-wert {
+  margin: 0;
+  font-size: 1.35rem;
+  line-height: 1.2;
+}
+
+.kpi-jahre {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.kpi-jahre li,
+.kpi-personen li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+
+.kpi-jahre span,
+.kpi-personen span,
+.kpi-sub,
+.kpi-folge,
+.zeit-hinweis,
+.zeit-label,
+.diagramm-notiz {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.kpi-jahre small {
+  display: block;
+  font-size: 0.72rem;
+}
+
+.kpi-jahre strong,
+.kpi-personen strong {
+  font-size: 1rem;
+}
+
+.kpi-sub,
+.kpi-folge {
+  margin: 0.35rem 0 0;
+}
+
+.kpi .neg {
+  color: var(--neg);
+}
+
+.kpi-status {
+  display: inline-block;
+  margin: 0 0 0.4rem;
+  padding: 0.12rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.kpi-status.ja {
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.kpi-status.nein {
+  background: #f8e4e4;
+  color: var(--neg);
+}
+
+.kpi-status.offen {
+  background: var(--summe);
+  color: var(--muted);
+}
+
+.kpi-personen {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.zeit-schalter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin: 1.2rem 0 0.8rem;
+}
+
+.zeit-hinweis,
+.zeit-label {
+  margin: 0;
+}
+
+.zeit-label {
+  font-weight: 650;
+  color: var(--ink);
+}
+
+.diagramm-karte {
+  margin-bottom: 0.75rem;
+  padding: 0.9rem 0.9rem 0.4rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.diagramm-karte h3 {
+  margin: 0 0 0.2rem;
+  font-size: 1.05rem;
+}
+
+.diagramm-notiz {
+  margin: 0 0 0.35rem;
+}
+
+.diagramm-flaeche,
+.diagramm-fest {
+  width: 100%;
+}
+
+.diagramm-tooltip {
+  min-width: 12rem;
+  padding: 0.45rem 0.6rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  box-shadow: 0 8px 20px rgb(28 36 48 / 8%);
+}
+
+.diagramm-tooltip p {
+  margin: 0 0 0.25rem;
+  font-weight: 700;
+}
+
+.diagramm-tooltip ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.diagramm-tooltip li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.diagramm-tooltip strong {
+  font-weight: 650;
+}
+
+@media (max-width: 1100px) {
+  .kpi-raster {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .kpi-raster,
+  .kpi-jahre {
+    grid-template-columns: 1fr;
+  }
+
+  .kpi.breit {
+    grid-column: auto;
   }
 }

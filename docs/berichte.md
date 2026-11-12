@@ -149,3 +149,19 @@ Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindes
 - Der Waren-Erstbestand ist eine eigene Zeile im Kapitalbedarf.
 - Raumkosten sind nur Miete und Nebenkosten.
 - Der Break-even ist der erste Planmonat mit Ergebnis nach Steuern größer als 0.
+
+## Überblick und Diagramme
+
+Die Seite Überblick liest die Kacheln aus diesen Berichten. Umsatz, Ergebnis nach Steuern, Break-even, tiefster Kontostand, Kontokorrentbedarf, Tragfähigkeit, Eigenkapitalquote und Rohertragsquote werden nicht neu gerechnet.
+
+Die Personalkostenquote ist die Zeile Personal geteilt durch die Zeile Umsatz, je Planjahr und für den Horizont. Ohne Umsatz gibt es keine Quote. Geteilt wird mit derselben Regel wie bei der Rohertragsquote.
+
+Die Diagramme verwenden dieselben Zeilen:
+
+- Umsatz gegen Kosten: Umsatz und die Summe aus Wareneinsatz, Personal, Raumkosten, sonstigen Kosten, Abschreibungen, Zinsen und Steuern
+- Kontostand: Endbestand der Liquidität, mit Nullinie. Der markierte Tiefpunkt im Monatsbild ist der tiefste Kontostand des Berichts
+- kumuliertes Ergebnis: laufende Summe des Ergebnisses nach Steuern
+- Kostenstruktur: dieselben Aufwandszeilen, gestapelt
+- Mittelherkunft und Mittelverwendung: Finanzierung und Kapitalbedarf. Im Monatsbild sind das die Summen im Horizont, im Planjahr die Beträge des jeweiligen Planjahres
+
+Im Planjahr ist der Kontostand der Bestand am Ende des Planjahres, nicht die Summe der Monatswerte. Die Vorbereitung liegt in `src/domain/reports/diagramme.ts` und kennt kein React.

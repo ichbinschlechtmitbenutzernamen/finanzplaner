@@ -1,5 +1,27 @@
 export { erstelleBerichte } from "./berichte.ts";
 export {
+  KOSTEN_ZEILEN,
+  kontostandVerlauf,
+  kostenstruktur,
+  kumuliertesErgebnis,
+  mittelherkunftVerwendung,
+  ueberblickKpis,
+  umsatzGegenKosten,
+} from "./diagramme.ts";
+export type {
+  ErgebnisPunkt,
+  KontostandPunkt,
+  KontostandVerlauf,
+  Kostenanteil,
+  KostenstrukturPunkt,
+  MittelGruppe,
+  MittelSegment,
+  PlanjahrKpi,
+  UeberblickKpis,
+  Vergleichspunkt,
+  Zeitmodus,
+} from "./diagramme.ts";
+export {
   BREAK_EVEN_DEFINITION,
   RAUMKOSTEN_KATEGORIEN,
   breakEvenMonat,

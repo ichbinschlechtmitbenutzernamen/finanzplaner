@@ -1,8 +1,12 @@
 name: Seiten
 
-# Vorübergehend nur manuell. pages-preview.yml veröffentlicht den Überblick-Branch.
+# Die Umgebung github-pages erlaubt nur den Branch main.
+# Veröffentlicht wird deshalb genau main, nicht ein Feature-Branch.
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:

@@ -14,7 +14,7 @@ function readRoute(): Route {
   const [id, reiter] = window.location.hash.replace(/^#/, "").split("/");
   return {
     id: beispielplanById(id ?? "").id,
-    reiter: REITER_IDS.has(reiter ?? "") ? (reiter as ReiterId) : "eingaben",
+    reiter: REITER_IDS.has(reiter ?? "") ? (reiter as ReiterId) : "ueberblick",
   };
 }
 

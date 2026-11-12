@@ -19,11 +19,13 @@ import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
 import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
+import { Ueberblick } from "./Ueberblick.tsx";
 import { berichtZeilen, type BerichtReiter } from "./zeilen-bericht.ts";
 import { eingabeZeilen, planMonate } from "./zeilen-eingabe.ts";
 import type { TabellenZeile } from "./zeilen-modell.ts";
 
 export const REITER = [
+  { id: "ueberblick", label: "Überblick" },
   { id: "eingaben", label: "Eingaben" },
   { id: "rentabilitaet", label: "Rentabilitätsvorschau" },
   { id: "liquiditaet", label: "Liquiditätsplan" },
@@ -202,7 +204,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 5 · Tabellenansicht</p>
+          <p className="eyebrow">Schritt 6 · Ergebnisse und Diagramme</p>
           <h1>{plan.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {plan.stammdaten.planName}
@@ -262,7 +264,7 @@ export function PlanArbeitsflaeche({
             role="tab"
             id={`reiter-${eintrag.id}`}
             aria-selected={reiter === eintrag.id}
-            aria-controls="plan-tabelle"
+            aria-controls="plan-ansicht"
             onClick={() => onReiter(eintrag.id)}
           >
             {eintrag.label}
@@ -270,11 +272,18 @@ export function PlanArbeitsflaeche({
         ))}
       </div>
 
-      <div role="tabpanel" id="plan-tabelle" aria-labelledby={`reiter-${reiter}`}>
-        {rechnung.berichte ? (
+      <div role="tabpanel" id="plan-ansicht" aria-labelledby={`reiter-${reiter}`}>
+        {reiter === "ueberblick" ? (
+          rechnung.berichte ? (
+            <Ueberblick berichte={rechnung.berichte} />
+          ) : (
+            <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
+          )
+        ) : null}
+        {reiter !== "ueberblick" && rechnung.berichte ? (
           <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
         ) : null}
-        {reiter === "eingaben" ? (
+        {reiter === "ueberblick" ? null : reiter === "eingaben" ? (
           <Hilfeleiste
             plan={plan}
             zeile={gewaehlt}
@@ -286,34 +295,36 @@ export function PlanArbeitsflaeche({
         ) : (
           <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
         )}
-        {meldung ? (
+        {meldung && reiter !== "ueberblick" ? (
           <p className="fehler" role="alert">
             {meldung}
           </p>
         ) : null}
-        {rechnung.fehler && reiter !== "eingaben" ? (
+        {rechnung.fehler && reiter !== "eingaben" && reiter !== "ueberblick" ? (
           <p className="fehler">{rechnung.fehler}</p>
         ) : null}
-        <Tabelle
-          zeilen={zeilen}
-          spalten={spalten}
-          auswahl={auswahl}
-          onAuswahl={setAuswahl}
-          eingeklappt={eingeklappt}
-          onUmschalten={(nummer) => {
-            setEingeklappt((bisher) => {
-              const naechste = new Set(bisher);
-              if (naechste.has(nummer)) naechste.delete(nummer);
-              else naechste.add(nummer);
-              return naechste;
-            });
-          }}
-          onCommit={commitZelle}
-          onPaste={einfuegen}
-          onUndo={() => dispatch({ typ: "zurueck" })}
-          onRedo={() => dispatch({ typ: "vor" })}
-          bearbeiten={reiter === "eingaben"}
-        />
+        {reiter === "ueberblick" ? null : (
+          <Tabelle
+            zeilen={zeilen}
+            spalten={spalten}
+            auswahl={auswahl}
+            onAuswahl={setAuswahl}
+            eingeklappt={eingeklappt}
+            onUmschalten={(nummer) => {
+              setEingeklappt((bisher) => {
+                const naechste = new Set(bisher);
+                if (naechste.has(nummer)) naechste.delete(nummer);
+                else naechste.add(nummer);
+                return naechste;
+              });
+            }}
+            onCommit={commitZelle}
+            onPaste={einfuegen}
+            onUndo={() => dispatch({ typ: "zurueck" })}
+            onRedo={() => dispatch({ typ: "vor" })}
+            bearbeiten={reiter === "eingaben"}
+          />
+        )}
       </div>
     </div>
   );
@@ -332,6 +343,7 @@ function zeilenFuer(
   reiter: ReiterId,
   berichte: Berichte | null,
 ): TabellenZeile[] {
+  if (reiter === "ueberblick") return [];
   if (reiter === "eingaben") return eingabeZeilen(plan, monate, jahre);
   if (!berichte) return [];
   return berichtZeilen(berichte, reiter);
@@ -359,7 +371,7 @@ function hinweis(berichte: Berichte | null, reiter: BerichtReiter): string {
 
 function KennzahlenZeile({ berichte, reiter }: { berichte: Berichte; reiter: ReiterId }) {
   const kennzahlen = berichte.kennzahlen;
-  if (reiter === "eingaben") return null;
+  if (reiter === "eingaben" || reiter === "ueberblick") return null;
   if (reiter === "rentabilitaet") {
     const bruch = kennzahlen.breakEven;
     return (
