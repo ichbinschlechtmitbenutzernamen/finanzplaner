@@ -1,4 +1,5 @@
 import { standardSchwellen } from "../domain/checks/schwellen.ts";
+import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026, TAB_MIKRODARLEHEN_ID } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
 import type { Finanzplan } from "../domain/types.ts";
@@ -10,7 +11,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielElektro = {
   id: "plan-beispiel-blitzweg-elektro",
-  schemaVersion: 11,
+  schemaVersion: 12,
   status: "vollstaendig",
   erstelltAm: "2026-04-02T08:00:00.000Z",
   geaendertAm: "2026-04-20T08:00:00.000Z",
@@ -264,6 +265,7 @@ export const beispielElektro = {
   },
   planSzenarien: standardPlanSzenarien(),
   pruefung: { schwellen: standardSchwellen() },
+  pdfExport: standardPdfExport(),
   notizen:
     "Dieser Plan ist vollständig erfunden. Jonas Heller, Samira Kolb und Blitzweg Elektrotechnik gibt es nicht. Der Hebesatz 460 ist ein Beispielwert, keine Auskunft über Erfurt. Keine Verwendung für einen echten Antrag.",
 } satisfies Finanzplan;

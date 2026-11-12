@@ -164,4 +164,4 @@ Die Diagramme verwenden dieselben Zeilen:
 - Kostenstruktur: dieselben Aufwandszeilen, gestapelt
 - Mittelherkunft und Mittelverwendung: Finanzierung und Kapitalbedarf. Im Monatsbild sind das die Summen im Horizont, im Planjahr die Beträge des jeweiligen Planjahres
 
-Im Planjahr ist der Kontostand der Bestand am Ende des Planjahres, nicht die Summe der Monatswerte. Die Vorbereitung liegt in `src/domain/reports/diagramme.ts` und kennt kein React.
+Im Planjahr ist der Kontostand der Bestand am Ende des Planjahres, nicht die Summe der Monatswerte. Die Vorbereitung liegt in `src/domain/reports/diagramme.ts` und kennt kein React. Das PDF liest dieselben Reihen und zeichnet sie als Vektoren. Es rechnet die Kennzahlen nicht neu. Der Aufbau steht in [pdf.md](pdf.md).

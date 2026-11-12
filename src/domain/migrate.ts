@@ -1,4 +1,5 @@
 import { standardSchwellen } from "./checks/schwellen.ts";
+import { standardPdfExport } from "./pdf/kapitel.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
 import { standardPlanSzenarien } from "./szenarien/standard.ts";
@@ -29,6 +30,7 @@ export const migrations: Record<number, Migration> = {
   8: migrateV8ToV9,
   9: migrateV9ToV10,
   10: migrateV10ToV11,
+  11: migrateV11ToV12,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -217,6 +219,20 @@ export function migrateV10ToV11(data: Record<string, unknown>): Record<string, u
     plan.planSzenarien = standardPlanSzenarien();
   }
   plan.schemaVersion = 11;
+  return plan;
+}
+
+/**
+ * Version 12 merkt sich, welche Kapitel der PDF-Export enthalten soll.
+ * Ältere Pläne bekommen alle Kapitel. Eine schon gespeicherte Auswahl bleibt.
+ * Die Beträge des Exports stehen nicht im Plan.
+ */
+export function migrateV11ToV12(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  if (!isRecord(plan.pdfExport)) {
+    plan.pdfExport = standardPdfExport();
+  }
+  plan.schemaVersion = 12;
   return plan;
 }
 

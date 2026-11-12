@@ -2,9 +2,9 @@
 
 Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland einen Finanzplan über 36 Monate selbst erstellen. Der endgültige Name steht noch nicht fest.
 
-Dieser Stand ist **Schritt 9**: Szenarien. Ein Abweichungs-Szenario speichert nur Hebel und zieht mit dem Basisplan mit. Eine Kopie ist frei bearbeitbar und bleibt beim Anlegen stehen. Oben lässt sich das Szenario wählen, die Seite Szenarien vergleicht die Fälle. PDF fehlt noch.
+Dieser Stand ist **Schritt 10**: PDF-Export. Der Button „PDF erstellen“ öffnet einen Dialog. Dort lassen sich die Kapitel an- und abwählen. Das PDF entsteht vollständig im Browser mit `@react-pdf/renderer`, die Plandaten verlassen das Gerät nicht. Die Bibliothek wird erst beim Erstellen geladen. Im Dialog wählt man das Szenario, Standard ist der Basisplan. Nur dieses Szenario bekommt die gewählten Kapitel. Die übrigen Szenarien stehen im Szenarienvergleich. Monatstabellen liegen im Querformat, je Planjahr zwölf Monate und die Jahressumme. Hat das gewählte Szenario Fehler, steht ein Vermerk auf dem Deckblatt, der Export bleibt möglich.
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md). Schema-Version ist 11. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen. Der Assistentenfortschritt liegt optional im Plan. Die Schwellen der Prüfung liegen unter `pruefung`. Die Szenarien liegen unter `planSzenarien`.
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md), der PDF-Aufbau in [docs/pdf.md](docs/pdf.md). Schema-Version ist 12. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen. Der Assistentenfortschritt liegt optional im Plan. Die Schwellen der Prüfung liegen unter `pruefung`. Die Szenarien liegen unter `planSzenarien`. Die Kapitelauswahl liegt unter `pdfExport`.
 
 ## Voraussetzungen
 
@@ -35,7 +35,7 @@ npm run build
 npm run export:check
 ```
 
-`npm test` prüft das Schema, die Beispielpläne, den Rechenkern, die Berichte, die Kennzahlen und Diagrammdaten, die Eingabehilfen, die Tabelle, den Assistenten, die Plausibilitätschecks und die Szenarien.
+`npm test` prüft das Schema, die Beispielpläne, den Rechenkern, die Berichte, die Kennzahlen und Diagrammdaten, die Eingabehilfen, die Tabelle, den Assistenten, die Plausibilitätschecks, die Szenarien und das PDF-Datenmodell. `npm run export:pdf` schreibt die vier Beispiel-PDFs nach `/opt/cursor/artifacts`.
 
 `npm run export:check` rechnet den fiktiven Elektromeister Blitzweg und schreibt [docs/checkpoints/schritt2-blitzweg.xlsx](docs/checkpoints/schritt2-blitzweg.xlsx). Dieselbe Prüfung schreibt [docs/checkpoints/schritt3-steuern.xlsx](docs/checkpoints/schritt3-steuern.xlsx) mit dem Steuerweg für Blitzweg, das Café Leseecke und die Hafenlicht GmbH und [docs/checkpoints/schritt4-berichte.xlsx](docs/checkpoints/schritt4-berichte.xlsx) mit den Berichten dieser drei Beispiele. `npm run export:berichte` schreibt nur den Berichtsprüfstand.
 
@@ -45,10 +45,10 @@ npm run export:check
 
 ## Aufbau
 
-- `src/domain` – Typen, Zod-Schema, Prüfung, Migration, JSON-Export/Import, der Rechenkern in `src/domain/calc`, die Szenarien in `src/domain/szenarien`, die Berichte in `src/domain/reports`, die Plausibilitätschecks in `src/domain/checks`, die Diagrammdaten in `src/domain/reports/diagramme.ts` und die Eingabehilfen in `src/domain/eingabe`. Dieser Ordner importiert kein React und kein Node-Modul, damit die Rechnung im Browser laufen kann. `vergleichFuerExport` liefert die Vergleichszahlen aller Szenarien für einen späteren PDF- oder Excel-Export.
+- `src/domain` – Typen, Zod-Schema, Prüfung, Migration, JSON-Export/Import, der Rechenkern in `src/domain/calc`, die Szenarien in `src/domain/szenarien`, die Berichte in `src/domain/reports`, die Plausibilitätschecks in `src/domain/checks`, die Diagrammdaten in `src/domain/reports/diagramme.ts`, das PDF-Datenmodell in `src/domain/pdf` und die Eingabehilfen in `src/domain/eingabe`. Dieser Ordner importiert kein React und kein Node-Modul, damit die Rechnung im Browser laufen kann. `vergleichFuerExport` und `meldungenFuerExport` liefern die Zahlen und Meldungen, die das PDF übernimmt.
 - `src/fixtures` – vier erfundene Beispielpläne: Grafikstudio, Elektromeister mit Thüringer Mikrodarlehen, Café, Hafenlicht GmbH
 - `src/domain/assistent` – Stationen, Validierung und das Schreiben in den Plan
-- `src/ui` – Assistent, Überblick, Szenarien, Prüfung, Diagramme, Tabelle, Reiter, Rückgängig und die Eingabeleiste
+- `src/ui` – Assistent, Überblick, Szenarien, Prüfung, Diagramme, Tabelle, Reiter, Rückgängig, die Eingabeleiste und der PDF-Dialog. Die PDF-Bibliothek liegt in einem eigenen Bündel und wird erst beim Erstellen geladen.
 - `src/App.tsx` – lädt die Beispiele und einen neuen Plan und merkt sich Änderungen im Browser. Startansicht der Beispiele ist der Überblick
 - `docs/datenmodell.md` – Überblick über die Eingaben für die Fachberatung
 - `docs/rechenkern.md` – Rechenregeln für die Fachberatung
@@ -60,4 +60,4 @@ npm run export:check
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 11. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 12. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Die Kapitelauswahl des PDF steht unter `pdfExport`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.

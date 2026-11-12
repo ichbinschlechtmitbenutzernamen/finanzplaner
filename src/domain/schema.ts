@@ -21,6 +21,7 @@ import {
   UST_VORANMELDUNG,
   ASSISTENT_STATIONEN,
   ASSISTENT_WEGE,
+  PDF_KAPITEL,
   WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
@@ -651,6 +652,20 @@ const pruefungSchema = z.strictObject({
   schwellen: pruefSchwellenSchema,
 });
 
+const pdfExportSchema = z
+  .strictObject({
+    kapitel: z.array(z.enum(PDF_KAPITEL)).max(PDF_KAPITEL.length),
+  })
+  .superRefine((wert, ctx) => {
+    if (new Set(wert.kapitel).size !== wert.kapitel.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Jedes Kapitel darf nur einmal gewählt sein.",
+        path: ["kapitel"],
+      });
+    }
+  });
+
 const assistentSchema = z.strictObject({
   weg: z.enum(ASSISTENT_WEGE).optional(),
   station: z.enum(ASSISTENT_STATIONEN),
@@ -721,6 +736,7 @@ export const finanzplanSchema = z
     planSzenarien: planSzenarienSchema,
     assistent: assistentSchema.optional(),
     pruefung: pruefungSchema,
+    pdfExport: pdfExportSchema,
     notizen: optionalTextSchema(5000).optional(),
   })
   .superRefine((plan, ctx) => {

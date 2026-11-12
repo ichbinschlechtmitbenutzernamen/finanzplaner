@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 11 as const;
+export const SCHEMA_VERSION = 12 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -938,6 +938,33 @@ export interface PruefungEinstellungen {
   schwellen: PruefSchwellen;
 }
 
+/**
+ * Kapitel des PDF-Exports, in der Reihenfolge im Dokument.
+ * Die Tragfähigkeit gilt nur für Einzelunternehmen, Freiberuf und Personengesellschaften.
+ * Gespeichert wird die Auswahl trotzdem, damit sie beim Wechsel der Rechtsform erhalten bleibt.
+ */
+export const PDF_KAPITEL = [
+  "deckblatt",
+  "kennzahlen",
+  "kapital",
+  "investitionen",
+  "umsatz",
+  "rentabilitaet",
+  "liquiditaet",
+  "tragfaehigkeit",
+  "steuern",
+  "diagramme",
+  "pruefung",
+  "vergleich",
+] as const;
+
+export type PdfKapitelId = (typeof PDF_KAPITEL)[number];
+
+/** Welche Kapitel der nächste PDF-Export enthält. Die Zahlen stehen nicht im Plan. */
+export interface PdfExportEinstellungen {
+  kapitel: PdfKapitelId[];
+}
+
 export interface AssistentFortschritt {
   weg?: AssistentWeg;
   station: AssistentStation;
@@ -975,5 +1002,7 @@ export interface Finanzplan {
   assistent?: AssistentFortschritt;
   /** Schwellen der Plausibilitätsprüfung. Ergebnisse stehen nicht im Plan. */
   pruefung: PruefungEinstellungen;
+  /** Kapitelauswahl für den PDF-Export. Beträge werden daraus nicht gespeichert. */
+  pdfExport: PdfExportEinstellungen;
   notizen?: string;
 }

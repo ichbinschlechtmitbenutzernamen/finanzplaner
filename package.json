@@ -11,9 +11,12 @@
     "test": "vitest run",
     "export:check": "tsx scripts/export-check.ts",
     "export:berichte": "tsx scripts/export-berichte.ts",
+    "export:pdf": "tsx --tsconfig tsconfig.scripts.json scripts/export-pdf.ts",
     "format": "prettier --write ."
   },
   "dependencies": {
+    "@fontsource/roboto": "^5.3.0",
+    "@react-pdf/renderer": "^4.9.0",
     "@tanstack/react-virtual": "^3.14.26",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",

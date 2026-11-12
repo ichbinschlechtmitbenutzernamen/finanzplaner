@@ -1090,3 +1090,43 @@ button.primaer {
   font-size: 0.78rem;
   color: var(--muted);
 }
+
+.pdf-szenario {
+  border: 0;
+  margin: 0.8rem 0 0;
+  padding: 0;
+}
+
+.pdf-szenario legend {
+  margin-bottom: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.pdf-szenario label {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0.9rem 0.35rem 0;
+}
+
+.kapitel-liste {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.45rem 1.2rem;
+  margin: 0.9rem 0 1rem;
+}
+
+.kapitel-liste label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--ink);
+}
+
+@media (max-width: 640px) {
+  .kapitel-liste {
+    grid-template-columns: 1fr;
+  }
+}
