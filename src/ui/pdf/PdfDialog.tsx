@@ -2,7 +2,13 @@ import { useEffect, useState } from "react";
 import { PDF_KAPITEL_LABEL, normalisiereKapitel } from "../../domain/pdf/kapitel.ts";
 import { erstellePdfDokument } from "../../domain/pdf/modell.ts";
 import { istPersonenunternehmen } from "../../domain/reports/planjahr.ts";
-import { PDF_KAPITEL, type Finanzplan, type PdfKapitelId } from "../../domain/types.ts";
+import { planFuerSzenario } from "../../domain/szenarien/anwenden.ts";
+import {
+  BASIS_SZENARIO_ID,
+  PDF_KAPITEL,
+  type Finanzplan,
+  type PdfKapitelId,
+} from "../../domain/types.ts";
 
 interface PdfDialogProps {
   plan: Finanzplan;
@@ -13,8 +19,15 @@ interface PdfDialogProps {
 export function PdfDialog({ plan, onSchliessen, onKapitel }: PdfDialogProps) {
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
+  const [szenarioId, setSzenarioId] = useState<string>(BASIS_SZENARIO_ID);
+  const faelle = [
+    { id: BASIS_SZENARIO_ID, name: "Basisplan" },
+    ...plan.planSzenarien.eintraege.map((eintrag) => ({ id: eintrag.id, name: eintrag.name })),
+  ];
+  const gewaehlt = faelle.some((fall) => fall.id === szenarioId) ? szenarioId : BASIS_SZENARIO_ID;
+  const rechtsform = planFuerSzenario(plan, gewaehlt).stammdaten.rechtsform;
   const sichtbar = PDF_KAPITEL.filter(
-    (id) => id !== "tragfaehigkeit" || istPersonenunternehmen(plan.stammdaten.rechtsform),
+    (id) => id !== "tragfaehigkeit" || istPersonenunternehmen(rechtsform),
   );
 
   useEffect(() => {
@@ -37,7 +50,7 @@ export function PdfDialog({ plan, onSchliessen, onKapitel }: PdfDialogProps) {
     setFehler(null);
     await new Promise((resolve) => setTimeout(resolve, 0));
     try {
-      const dokument = erstellePdfDokument(plan, new Date());
+      const dokument = erstellePdfDokument(plan, new Date(), gewaehlt);
       const { erzeugePdf } = await import("./erzeugen.ts");
       const blob = await erzeugePdf(dokument);
       const url = URL.createObjectURL(blob);
@@ -63,10 +76,24 @@ export function PdfDialog({ plan, onSchliessen, onKapitel }: PdfDialogProps) {
       <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="pdf-titel">
         <h2 id="pdf-titel">PDF erstellen</h2>
         <p className="meta">
-          Basisplan und jedes Szenario bekommen die angehakten Kapitel. Dazu kommt der
-          Szenarienvergleich, wenn er an ist. Das PDF entsteht in diesem Browser, die Daten bleiben
-          auf dem Gerät.
+          Das gewählte Szenario bekommt die angehakten Kapitel. Die übrigen Szenarien stehen nur im
+          Szenarienvergleich. Das PDF entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
         </p>
+        <fieldset className="pdf-szenario">
+          <legend>Szenario</legend>
+          {faelle.map((fall) => (
+            <label key={fall.id}>
+              <input
+                type="radio"
+                name="pdf-szenario"
+                checked={gewaehlt === fall.id}
+                disabled={laeuft}
+                onChange={() => setSzenarioId(fall.id)}
+              />
+              {fall.name}
+            </label>
+          ))}
+        </fieldset>
         <div className="kapitel-liste">
           {sichtbar.map((id) => (
             <label key={id}>
@@ -80,7 +107,7 @@ export function PdfDialog({ plan, onSchliessen, onKapitel }: PdfDialogProps) {
             </label>
           ))}
         </div>
-        {istPersonenunternehmen(plan.stammdaten.rechtsform) ? null : (
+        {istPersonenunternehmen(rechtsform) ? null : (
           <p className="hinweis">
             Die Tragfähigkeit mit Lebenshaltung gibt es nur bei Einzelunternehmen, Freiberuf und
             Personengesellschaften. Bei dieser Rechtsform entfällt das Kapitel.

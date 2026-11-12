@@ -10,7 +10,7 @@ Das PDF rechnet nichts selbst. Berichte, Kennzahlen, Diagrammreihen, Prüfungsme
 
 Im Dialog sind die Kapitel an- und abwählbar. Standardmäßig sind alle an. Die Auswahl liegt im Plan unter `pdfExport` und wandert mit Schema-Version 12 mit. Ältere Pläne bekommen alle Kapitel.
 
-Basisplan und jedes Szenario erhalten jeweils die gewählten Kapitel. Der Szenarienvergleich steht einmal am Ende.
+Im Dialog wird das Szenario gewählt. Standard ist der Basisplan. Nur dieses Szenario erhält die gewählten Kapitel. Das Deckblatt nennt es, und der Fehlervermerk gilt für dieses Szenario. Die übrigen Szenarien stehen einmal am Ende im Szenarienvergleich, mit Umsatz und Ergebnis nach Steuern je Planjahr, tiefstem Kontostand und Monat, Kapitalbedarf, Break-even, Tragfähigkeit und der Anzahl von Fehlern, Warnungen und Hinweisen.
 
 - Deckblatt: Vorhaben, Rechtsform, Gründerin oder Gründer beziehungsweise Gesellschafter, Stand und das Datum des PDF
 - Kennzahlen im Überblick

@@ -41,6 +41,15 @@ describe("PDF-Dialog", () => {
       expect((feld as HTMLInputElement).checked).toBe(true);
     }
 
+    expect((screen.getByRole("radio", { name: "Basisplan" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+    expect(screen.getByRole("radio", { name: "Vorsichtig" })).toBeTruthy();
+    await user.click(screen.getByRole("radio", { name: "Optimistisch" }));
+    expect((screen.getByRole("radio", { name: "Optimistisch" }) as HTMLInputElement).checked).toBe(
+      true,
+    );
+
     await user.click(screen.getByRole("checkbox", { name: "Deckblatt" }));
     expect(gespeichert.at(-1)?.pdfExport.kapitel).not.toContain("deckblatt");
     expect(gespeichert.at(-1)?.pdfExport.kapitel).toContain("liquiditaet");

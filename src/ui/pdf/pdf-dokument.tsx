@@ -731,7 +731,13 @@ function Vergleich({ rahmen }: { rahmen: Rahmen }) {
       ...spalten.map((spalte) =>
         vergleichZelle(
           spalte,
-          spalte.tiefsterKontostandCents == null ? "-" : euroZahl(spalte.tiefsterKontostandCents),
+          spalte.tiefsterKontostandCents == null
+            ? "-"
+            : `${euroZahl(spalte.tiefsterKontostandCents)}${
+                spalte.tiefsterKontostandMonat
+                  ? `, ${monatLang(spalte.tiefsterKontostandMonat)}`
+                  : ""
+              }`,
         ),
       ),
     ],

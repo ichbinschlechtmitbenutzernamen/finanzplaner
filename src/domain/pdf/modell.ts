@@ -105,25 +105,38 @@ export interface PdfDokument {
 
 const BASIS_NAME = "Basisplan";
 
-export function erstellePdfDokument(plan: Finanzplan, datum: Date): PdfDokument {
+/**
+ * Baut das PDF für ein Szenario. Ohne Angabe oder bei unbekannter Id ist das der Basisplan.
+ * Nur dieses Szenario bekommt die Kapitel. Die übrigen Fälle stehen im Szenarienvergleich.
+ */
+export function erstellePdfDokument(
+  plan: Finanzplan,
+  datum: Date,
+  szenarioId: string = BASIS_SZENARIO_ID,
+): PdfDokument {
   const vorhaben = vorhabenName(plan.stammdaten.firmenname, plan.stammdaten.planName);
   const gespeichert = normalisiereKapitel(plan.pdfExport.kapitel);
-  const faelle = [
-    { id: BASIS_SZENARIO_ID, name: BASIS_NAME, art: "basis" as const },
-    ...plan.planSzenarien.eintraege.map((eintrag) => ({
-      id: eintrag.id,
-      name: eintrag.name,
-      art: eintrag.art,
-    })),
-  ];
+  const fall = fallFuer(plan, szenarioId);
   return {
     vorhaben,
     dateiname: pdfDateiname(vorhaben, datum),
     erstelltAm: datum.toISOString(),
     kapitelGespeichert: gespeichert,
-    szenarien: faelle.map((fall) => abschnitt(plan, fall)),
+    szenarien: [abschnitt(plan, fall)],
     vergleich: gespeichert.includes("vergleich") ? vergleichFuerExport(plan) : null,
   };
+}
+
+function fallFuer(
+  plan: Finanzplan,
+  szenarioId: string,
+): { id: string; name: string; art: PdfSzenarioAbschnitt["art"] } {
+  if (szenarioId === BASIS_SZENARIO_ID) {
+    return { id: BASIS_SZENARIO_ID, name: BASIS_NAME, art: "basis" };
+  }
+  const eintrag = plan.planSzenarien.eintraege.find((kandidat) => kandidat.id === szenarioId);
+  if (!eintrag) return { id: BASIS_SZENARIO_ID, name: BASIS_NAME, art: "basis" };
+  return { id: eintrag.id, name: eintrag.name, art: eintrag.art };
 }
 
 function abschnitt(

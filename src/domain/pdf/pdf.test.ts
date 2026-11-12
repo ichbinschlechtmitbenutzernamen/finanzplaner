@@ -30,11 +30,12 @@ describe("PDF-Datenmodell", () => {
     for (const { plan } of beispielplaene) {
       const dokument = erstellePdfDokument(plan, DATUM);
       expect(dokument.vergleich).toEqual(vergleichFuerExport(plan));
-      expect(dokument.szenarien.map((abschnitt) => abschnitt.name)).toEqual([
+      expect(dokument.vergleich?.map((spalte) => spalte.name)).toEqual([
         "Basisplan",
         "Vorsichtig",
         "Optimistisch",
       ]);
+      expect(dokument.szenarien.map((abschnitt) => abschnitt.name)).toEqual(["Basisplan"]);
       for (const abschnitt of dokument.szenarien) {
         const effektiv = planFuerSzenario(plan, abschnitt.id);
         const berichte = erstelleBerichte(effektiv, berechnePlan(effektiv));
@@ -97,6 +98,35 @@ describe("PDF-Datenmodell", () => {
     expect(elektro.szenarien[0]?.berichte?.tragfaehigkeit.anwendbar).toBe(true);
   });
 
+  it("führt nur das gewählte Szenario vollständig und die übrigen im Vergleich", () => {
+    const basis = erstellePdfDokument(beispielElektro, DATUM);
+    expect(basis.szenarien).toHaveLength(1);
+    expect(basis.szenarien[0]?.id).toBe("basis");
+    expect(basis.vergleich?.map((spalte) => spalte.name)).toEqual([
+      "Basisplan",
+      "Vorsichtig",
+      "Optimistisch",
+    ]);
+
+    const vorsichtig = erstellePdfDokument(beispielElektro, DATUM, "szenario-vorsichtig");
+    expect(vorsichtig.szenarien.map((abschnitt) => abschnitt.name)).toEqual(["Vorsichtig"]);
+    const effektiv = planFuerSzenario(beispielElektro, "szenario-vorsichtig");
+    const berichte = erstelleBerichte(effektiv, berechnePlan(effektiv));
+    const abschnitt = vorsichtig.szenarien[0];
+    expect(abschnitt?.berichte).toEqual(berichte);
+    expect(abschnitt?.meldungen).toEqual(meldungenFuerExport(effektiv, berichte));
+    const fehler = abschnitt?.meldungen.filter((meldung) => meldung.stufe === "fehler").length ?? 0;
+    if (fehler > 0) expect(abschnitt?.fehlerVermerk).toContain(String(fehler));
+    else expect(abschnitt?.fehlerVermerk).toBeNull();
+    expect(vorsichtig.vergleich).toEqual(vergleichFuerExport(beispielElektro));
+    expect(vorsichtig.vergleich?.every((spalte) => spalte.umsatzPlanjahreCents.length > 0)).toBe(
+      true,
+    );
+
+    const unbekannt = erstellePdfDokument(beispielElektro, DATUM, "gibt-es-nicht");
+    expect(unbekannt.szenarien.map((eintrag) => eintrag.name)).toEqual(["Basisplan"]);
+  });
+
   it("setzt den Fehlervermerk nur bei Fehlern", () => {
     for (const { id, plan } of beispielplaene) {
       const dokument = erstellePdfDokument(plan, DATUM);
@@ -130,7 +160,8 @@ describe("PDF-Datenmodell", () => {
   it("bleibt bei einem Entwurf ohne Startmonat ausführbar", () => {
     const entwurf = createDraftFinanzplan({ id: "entwurf-pdf", now: DATUM });
     const dokument = erstellePdfDokument(entwurf, DATUM);
-    expect(dokument.szenarien).toHaveLength(1 + entwurf.planSzenarien.eintraege.length);
+    expect(dokument.szenarien).toHaveLength(1);
+    expect(dokument.vergleich).toHaveLength(1 + entwurf.planSzenarien.eintraege.length);
     expect(dokument.szenarien[0]?.berichte).toBeNull();
     expect(dokument.szenarien[0]?.fehlerText).toBeTruthy();
     expect(dokument.szenarien[0]?.fehlerVermerk).toBeNull();
