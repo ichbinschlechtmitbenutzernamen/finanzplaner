@@ -1,12 +1,9 @@
 name: Seiten
 
-# Die Umgebung github-pages erlaubt nur den Branch main.
-# Veröffentlicht wird deshalb genau main, nicht ein Feature-Branch.
+# Vorübergehend nur manuell. pages-preview.yml veröffentlicht den Prüf-Branch.
+# Bis der PDF-PR gemergt ist, bleibt die Vorschau auf cursor/pdf-export-dcd7.
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
