@@ -57,6 +57,7 @@ export {
   ABSCHLUSSZAHLUNG_MONAT_STANDARD,
   ASSISTENT_STATIONEN,
   ASSISTENT_WEGE,
+  BASIS_SZENARIO_ID,
   SCHEMA_VERSION,
   SZENARIO_IDS,
   TILGUNGSARTEN,
@@ -75,6 +76,14 @@ export {
   standardSchwellen,
   STANDARD_SCHWELLEN,
 } from "./checks/index.ts";
+export {
+  vergleichFuerExport,
+  planFuerRechnung,
+  planFuerSzenario,
+  wendeHebelAn,
+  standardPlanSzenarien,
+} from "./szenarien/index.ts";
+export type { ExportSzenarioVergleich } from "./szenarien/index.ts";
 export type {
   ExportPruefmeldung,
   Pruefmeldung,
@@ -133,7 +142,14 @@ export type {
   Szenarien,
   Szenario,
   SzenarioAnpassung,
+  SzenarioHebel,
   SzenarioId,
+  PlanSzenarien,
+  PlanSzenario,
+  PlanSzenarioArt,
+  PlanStand,
+  AbweichungsSzenario,
+  KopieSzenario,
   Tilgungsart,
   Umsatzposition,
   UmsatzsteuerEinstellungen,

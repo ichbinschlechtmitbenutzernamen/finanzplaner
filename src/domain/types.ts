@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 10 as const;
+export const SCHEMA_VERSION = 11 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -763,6 +763,82 @@ export interface Szenarien {
   worst: Szenario;
 }
 
+/** Aktive Ansicht ohne Abweichung und ohne Kopie. */
+export const BASIS_SZENARIO_ID = "basis" as const;
+
+export const PLAN_SZENARIO_ARTEN = ["abweichung", "kopie"] as const;
+
+export type PlanSzenarioArt = (typeof PLAN_SZENARIO_ARTEN)[number];
+
+/**
+ * Hebel eines Abweichungs-Szenarios. Der Basisplan bleibt unangetastet.
+ * Faktor 1 und null Punkte bedeuten: keine Abweichung.
+ *
+ * `wareneinsatzPunkte` ist eine Differenz zur Quote des Basisplans, in Dezimalpunkten.
+ * 0,05 hebt 30 % auf 35 %. Eine neue feste Quote wäre beim nächsten Ändern der Basis
+ * stehen geblieben. Zeilen ohne Wareneinsatz bleiben ohne, weil dafür ein Steuersatz fehlt.
+ */
+export interface SzenarioHebel {
+  /** 1 = 100 % des Basisumsatzes. 0,8 = Umsatz −20 %. Wirkt auf alle Umsatzzeilen. */
+  umsatzFaktor: number;
+  /**
+   * Umsatzreihe um so viele Monate nach hinten.
+   * 0 = kein Versatz. Die ersten Monate bleiben ohne Umsatz, was über Monat 36 fällt, entfällt.
+   */
+  umsatzstartMonate: number;
+  /** Addition auf die Wareneinsatzquote. 0 = Quote des Basisplans. */
+  wareneinsatzPunkte: number;
+  /** 1 = 100 % des Bruttos. Der Arbeitgeberanteil folgt, weil er ein Satz auf das Brutto ist. */
+  personalFaktor: number;
+  /** 1 = 100 % der laufenden Kosten. Gründung, Anlauf und Finanzierung bleiben außen vor. */
+  kostenFaktor: number;
+}
+
+/**
+ * Eingaben einer Kopie, eingefroren beim Anlegen.
+ * Die Szenario-Liste des umgebenden Plans steht hier nicht noch einmal.
+ */
+export interface PlanStand {
+  status: PlanStatus;
+  startMonat?: IsoMonth;
+  parameter: Planparameter;
+  stammdaten: Stammdaten;
+  kapitalbedarf: Kapitalbedarf;
+  finanzierung: Finanzierung;
+  umsatzplanung: Umsatzposition[];
+  personal: Personalstelle[];
+  laufendeKosten: Kostenposition[];
+  umsatzsteuer: UmsatzsteuerEinstellungen;
+  steuerplanung: Steuerplanung;
+  /** Älterer Faktorblock. Gehört zur Kopie, damit sie vom Basisplan unabhängig bleibt. */
+  szenarien: Szenarien;
+  assistent?: AssistentFortschritt;
+  pruefung: PruefungEinstellungen;
+  notizen?: string;
+}
+
+export interface AbweichungsSzenario {
+  id: Id;
+  art: "abweichung";
+  name: string;
+  hebel: SzenarioHebel;
+}
+
+export interface KopieSzenario {
+  id: Id;
+  art: "kopie";
+  name: string;
+  stand: PlanStand;
+}
+
+export type PlanSzenario = AbweichungsSzenario | KopieSzenario;
+
+export interface PlanSzenarien {
+  /** `basis` oder die Id eines Eintrags in `eintraege`. */
+  aktivId: string;
+  eintraege: PlanSzenario[];
+}
+
 export const ASSISTENT_STATIONEN = [
   "vorhaben",
   "persoenlich",
@@ -893,6 +969,8 @@ export interface Finanzplan {
   umsatzsteuer: UmsatzsteuerEinstellungen;
   steuerplanung: Steuerplanung;
   szenarien: Szenarien;
+  /** Abweichungen und Kopien. Der Basisplan bleibt daneben vollständig erhalten. */
+  planSzenarien: PlanSzenarien;
   /** Optional. Ältere Pläne haben keinen Assistentenstand. */
   assistent?: AssistentFortschritt;
   /** Schwellen der Plausibilitätsprüfung. Ergebnisse stehen nicht im Plan. */

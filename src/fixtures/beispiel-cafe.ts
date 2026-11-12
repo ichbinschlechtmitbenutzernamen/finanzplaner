@@ -1,5 +1,6 @@
 import { standardSchwellen } from "../domain/checks/schwellen.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
+import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
 import type { Finanzplan } from "../domain/types.ts";
 
 /**
@@ -8,7 +9,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielCafe = {
   id: "plan-beispiel-cafe-leseecke",
-  schemaVersion: 10,
+  schemaVersion: 11,
   status: "vollstaendig",
   erstelltAm: "2026-05-10T10:00:00.000Z",
   geaendertAm: "2026-06-01T10:00:00.000Z",
@@ -297,6 +298,7 @@ export const beispielCafe = {
       anpassungen: [{ id: "szen-worst-global", ziel: "global", umsatzFaktor: 0.65 }],
     },
   },
+  planSzenarien: standardPlanSzenarien(),
   pruefung: { schwellen: standardSchwellen() },
   notizen:
     "Dieser Plan ist vollständig erfunden. Mara Sommer, Lea Krüger, Tim Berger und Café Leseecke gibt es nicht. Der Hebesatz 460 ist ein Beispielwert. Keine Verwendung für einen echten Antrag.",

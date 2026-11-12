@@ -1,14 +1,16 @@
 import { addMonths, horizonEnd, isWithinHorizon, monthIndex } from "./months.ts";
-import type {
-  EigenkapitalPosten,
-  Finanzplan,
-  IsoMonth,
-  MengenVorgabe,
-  MonatswertVorgabe,
-  Person,
-  PersonRolle,
-  Szenario,
-  SzenarioAnpassung,
+import { legeStandAuf } from "./szenarien/anwenden.ts";
+import {
+  BASIS_SZENARIO_ID,
+  type EigenkapitalPosten,
+  type Finanzplan,
+  type IsoMonth,
+  type MengenVorgabe,
+  type MonatswertVorgabe,
+  type Person,
+  type PersonRolle,
+  type Szenario,
+  type SzenarioAnpassung,
 } from "./types.ts";
 
 export interface PlanIssue {
@@ -78,6 +80,7 @@ function collectIds(plan: Finanzplan): { id: string; path: PropertyKey[] }[] {
   (["best", "real", "worst"] as const).forEach((key) => {
     pushAll(plan.szenarien[key].anpassungen, ["szenarien", key, "anpassungen"]);
   });
+  pushAll(plan.planSzenarien.eintraege, ["planSzenarien", "eintraege"]);
 
   return rows;
 }
@@ -698,7 +701,11 @@ function validateAnpassungZiel(
   }
 }
 
-export function refineFinanzplan(plan: Finanzplan, ctx: PlanIssueContext): void {
+export function refineFinanzplan(
+  plan: Finanzplan,
+  ctx: PlanIssueContext,
+  optionen?: { kopienPruefen?: boolean },
+): void {
   if (Date.parse(plan.geaendertAm) < Date.parse(plan.erstelltAm)) {
     issue(ctx, ["geaendertAm"], "Der Änderungszeitpunkt liegt vor der Erstellung.");
   }
@@ -738,5 +745,39 @@ export function refineFinanzplan(plan: Finanzplan, ctx: PlanIssueContext): void 
   validateBetrieb(plan, personIds, ctx);
   (["best", "real", "worst"] as const).forEach((key) => {
     validateSzenario(plan, key, umsatzIds, kostenIds, personalIds, ctx);
+  });
+  validateAktivesSzenario(plan, ctx);
+  if (optionen?.kopienPruefen !== false) validateKopien(plan, ctx);
+}
+
+function validateAktivesSzenario(plan: Finanzplan, ctx: PlanIssueContext): void {
+  const { aktivId, eintraege } = plan.planSzenarien;
+  if (aktivId === BASIS_SZENARIO_ID) return;
+  if (!eintraege.some((eintrag) => eintrag.id === aktivId)) {
+    issue(ctx, ["planSzenarien", "aktivId"], "Das aktive Szenario gibt es in der Liste nicht.");
+  }
+}
+
+/**
+ * Jede Kopie wird wie ein eigener Plan geprüft. Die äußere Liste wird dabei geleert,
+ * damit dieselbe Prüfung nicht in die Kopie hinein wieder anläuft.
+ */
+function validateKopien(plan: Finanzplan, ctx: PlanIssueContext): void {
+  plan.planSzenarien.eintraege.forEach((eintrag, index) => {
+    if (eintrag.art !== "kopie") return;
+    const verschmolzen = legeStandAuf(plan, eintrag.stand);
+    verschmolzen.planSzenarien = { aktivId: BASIS_SZENARIO_ID, eintraege: [] };
+    const issues: PlanIssue[] = [];
+    refineFinanzplan(
+      verschmolzen,
+      { addIssue: (issue) => issues.push(issue) },
+      { kopienPruefen: false },
+    );
+    for (const gefunden of issues) {
+      ctx.addIssue({
+        ...gefunden,
+        path: ["planSzenarien", "eintraege", index, "stand", ...gefunden.path],
+      });
+    }
   });
 }

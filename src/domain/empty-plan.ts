@@ -1,6 +1,7 @@
 import { standardSchwellen } from "./checks/schwellen.ts";
 import { createParameterSnapshot } from "./parameter.ts";
 import { toIsoMonth } from "./months.ts";
+import { standardPlanSzenarien } from "./szenarien/standard.ts";
 import {
   ABSCHLUSSZAHLUNG_MONAT_STANDARD,
   PLAN_HORIZON_MONTHS,
@@ -45,6 +46,7 @@ function shell(
   | "umsatzsteuer"
   | "steuerplanung"
   | "szenarien"
+  | "planSzenarien"
   | "pruefung"
 > {
   return {
@@ -77,6 +79,7 @@ function shell(
       real: { bezeichnung: "Real Case", anpassungen: [] },
       worst: { bezeichnung: "Worst Case", anpassungen: [] },
     },
+    planSzenarien: standardPlanSzenarien(),
     pruefung: { schwellen: standardSchwellen() },
   };
 }

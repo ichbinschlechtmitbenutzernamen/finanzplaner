@@ -242,7 +242,7 @@ Die Tabelle zeigt 36 Monate und je Planjahr eine Summenspalte. Eine Zelle änder
 - Saisonfaktoren ersetzen `saison.faktoren` für Januar bis Dezember und löschen die Überschreibungen der Zeile, damit die Formel wieder für alle Monate gilt.
 - Einmalbeträge (Investition, Gründung, Anlauf, Einlage, Darlehensauszahlung, freie Zuschussmonate, Betriebsmittel) ändern den Betrag im bereits erfassten Monat. Der Monat wandert dadurch nicht.
 
-Schema-Version ist 9. Version 6 wird beim Einlesen auf 7 angehoben. Regeln und Überschreibungen bleiben unverändert. Das Feld `wachstum.eingabe` ist optional. Version 7 wird auf 8 angehoben. Dabei kommt der optionale Assistentenfortschritt dazu. Fehlt er, bleibt er weg, damit ein bestehender Plan nicht die Startauswahl zeigt. Version 8 wird auf 9 angehoben. Einlagen und Darlehen ohne Betrag können am Fortschritt stehen. Sie gehören nicht zur Finanzierung.
+Version 6 wird beim Einlesen auf 7 angehoben. Regeln und Überschreibungen bleiben unverändert. Das Feld `wachstum.eingabe` ist optional. Version 7 wird auf 8 angehoben. Dabei kommt der optionale Assistentenfortschritt dazu. Fehlt er, bleibt er weg, damit ein bestehender Plan nicht die Startauswahl zeigt. Version 8 wird auf 9 angehoben. Einlagen und Darlehen ohne Betrag können am Fortschritt stehen. Sie gehören nicht zur Finanzierung.
 
 ## Rechtsformen
 
@@ -260,11 +260,30 @@ Messzahl, Freibetrag, Körperschaftsteuersatz und Solidaritätszuschlag sind kei
 
 ## Szenarien
 
-Es gibt die Basis und drei Fälle: Best Case, Real Case, Worst Case. Einer davon ist als aktive Ansicht markiert. „Basis“ als aktive Ansicht heißt: die eingegebenen Zahlen ohne Aufschlag.
+Unter `planSzenarien` liegen die Fälle, die die Oberfläche umschaltet. `aktivId` ist `basis` oder die Id eines Eintrags. Der Basisplan selbst wird nie überschrieben.
 
-Der Real Case startet ohne Anpassungen und ist damit gleich der Basis. Best und Worst tragen Faktoren.
+Zwei Arten:
 
-Eine Anpassung ist:
+- **Abweichung.** Gespeichert werden nur Hebel. Ändert sich der Basisplan, rechnet die Abweichung neu. Ist sie aktiv, sind die Eingaben nur lesend.
+- **Kopie.** Beim Anlegen wird der Stand des Basisplans eingefroren: Stammdaten, Umsatz, Personal, Kosten, Investitionen, Finanzierung, Steuern, der ältere Faktorblock, der Assistent und die Prüfschwellen. Spätere Änderungen am Basisplan lassen die Kopie stehen. Ist sie aktiv, schreiben Tabelle und Assistent in diese Kopie.
+
+Hebel gibt es nur bei der Abweichung. Eine Zusatzfinanzierung ist kein Hebel.
+
+- Umsatz in Prozent aller Umsatzzeilen. 100 Prozent ist der Basisplan, 80 Prozent ist ein Fünftel weniger. Bei einem festen Monatsbetrag gilt der Faktor auf Basis und Monatsausnahmen. Bei Menge mal Preis gilt er auf die Menge, der Preis bleibt.
+- Umsatzstart in Monaten. Die fertige Umsatzreihe rutscht nach hinten. Die ersten Monate sind ohne Umsatz. Was über Monat 36 hinausfiele, entfällt. Wachstum, Saison und das Aktiv-Fenster werden in diese Reihe hineingerechnet, damit sie den Versatz nicht noch einmal verschieben. Der Wareneinsatz folgt, weil er ein Prozent des Umsatzes dieses Monats ist. Laufende Kosten, Personal, Investitionen und Finanzierung bleiben liegen.
+- Wareneinsatzquote in Prozentpunkten, nicht als neuer fester Satz. 0 lässt die Quote des Basisplans stehen. −5 senkt eine Quote von 30 Prozent auf 25 Prozent. So zieht der Hebel mit, wenn die Basisquote sich ändert. Eine Zeile ohne Wareneinsatz bleibt ohne, weil dafür ein Steuersatz fehlt. Die Summe wird auf 0 bis 500 Prozent begrenzt.
+- Personalkosten in Prozent. Der Faktor gilt auf das Brutto und auf Sonderzahlungen. Der Arbeitgeberanteil ist ein Satz auf dieses Brutto und folgt deshalb mit, inklusive der Rundung je Monat.
+- Laufende Kosten in Prozent, fix und umsatzabhängig. Gründungskosten, Anlaufkosten und die Finanzierung bleiben außen vor.
+
+Neu angelegte Pläne, die Beispiele und jede Migration von Version 10 bekommen zwei Abweichungen: „Vorsichtig“ (Umsatz 80 Prozent, Umsatzstart drei Monate später) und „Optimistisch“ (Umsatz 120 Prozent). Beide dürfen umbenannt, geändert und gelöscht werden.
+
+`vergleichFuerExport` rechnet Basisplan und alle Szenarien mit demselben Kern, inklusive Steuern, Berichten und Plausibilitätsprüfung, und liefert die Vergleichszahlen für einen späteren Export. Die Zahlen stehen nicht im Plan.
+
+### Ältere Faktoren im Rechenkern
+
+Daneben bleibt `szenarien` mit Best Case, Real Case und Worst Case. Das ist der Faktorblock, den der Rechenkern schon in Schritt 2 gelesen hat. Die Oberfläche von Schritt 9 schaltet ihn nicht um. Die Beispiele stehen auf Real ohne Anpassung und entsprechen damit der Basis.
+
+Eine Anpassung darin ist:
 
 - global: Faktor auf Umsatz, auf laufende Kosten, auf Gehälter, oder eine Kombination
 - eine Umsatzlinie: Mengenfaktor, und bei Menge mal Preis zusätzlich ein Preisfaktor
@@ -273,7 +292,7 @@ Eine Anpassung ist:
 
 Ein liniengenauer Faktor ersetzt den globalen Faktor für diese Linie. Er wird nicht noch einmal mit dem globalen Faktor multipliziert. Je Linie und je Fall nur eine Anpassung, und nur ein globaler Block je Fall.
 
-Neue Posten, die es nur im Worst Case gibt, kann ein Szenario nicht anlegen. Dafür müsste die Linie in der Basis stehen, im Real Case mit Faktor 1, und in den anderen Fällen mit 0 oder einem anderen Faktor.
+Neue Posten, die es nur im Worst Case gibt, kann dieser Faktorblock nicht anlegen. Eine Kopie unter `planSzenarien` kann eigene Posten tragen, weil sie ein vollständiger Stand ist.
 
 ## Was bewusst nicht im Plan steht
 
@@ -291,7 +310,7 @@ Der Plan ist ein JSON-Objekt. Geldbeträge sind ganze Euro-Cent, damit sich Rund
 
 Jede Person, jede Investition, jede Linie und jede Szenario-Anpassung hat eine stabile Id. Querbezüge laufen über diese Ids, nicht über die Position in der Liste. Ids dürfen sich im Plan nicht wiederholen.
 
-`schemaVersion` steht im Plan und ist derzeit 10. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt. Version 5 ergänzt den manuellen Betriebsmittelbedarf. Fehlt er, wird er 0. Version 6 wird auf 7 angehoben. Dabei kommt kein Pflichtfeld dazu. Optional kann ein Wachstum seit Version 7 die eingegebene Rate unter `eingabe` merken. Version 7 wird auf 8 angehoben. Optional merkt sich `assistent`, welche Station offen ist, welche erledigt sind und ob der Weg über den Assistenten oder die Tabelle gewählt wurde. Fehlt das Feld, bleibt es weg. Version 8 wird auf 9 angehoben. Am Fortschritt können Einlagen und Darlehen ohne Betrag stehen. Sie sind nicht Teil der Finanzierung und gehen nicht in die Rechnung ein. Version 9 wird auf 10 angehoben und bekommt die Standard-Schwellen der Plausibilitätsprüfung, falls sie fehlen.
+`schemaVersion` steht im Plan und ist derzeit 11. Version 1 wird beim Einlesen angehoben: Status „vollständig“, Vorsteuerabzug nach dem Umsatzsteuer-Regime, und der Parametersatz von 2026 wird eingesetzt, falls er fehlt. Ein Wareneinsatz als Monatsbetrag aus Version 1 lässt sich nicht automatisch umrechnen und wird abgelehnt. Version 2 verliert beim Einlesen die Sacheinlagen, die Nutzungsdauer an Sammelposten und den alten Schalter „sofort abzugsfähig“. Gründungs- und Anlaufkosten aus Version 2 werden Aufwand. Wer sie als Anlage führen will, markiert das danach neu. Version 3 erhält die Tarifformel, die Soli-Gleitzone und den Zahlungsmonat der Steuer des ersten Jahres. Fehlende Tarifwerte kommen aus dem Parametersatz de-2026, schon gespeicherte Freibeträge bleiben. Der Zahlungsmonat ist der September, wenn er noch nicht im Plan steht. Version 4 verliert den Schalter Progressionsvorbehalt. Version 5 ergänzt den manuellen Betriebsmittelbedarf. Fehlt er, wird er 0. Version 6 wird auf 7 angehoben. Dabei kommt kein Pflichtfeld dazu. Optional kann ein Wachstum seit Version 7 die eingegebene Rate unter `eingabe` merken. Version 7 wird auf 8 angehoben. Optional merkt sich `assistent`, welche Station offen ist, welche erledigt sind und ob der Weg über den Assistenten oder die Tabelle gewählt wurde. Fehlt das Feld, bleibt es weg. Version 8 wird auf 9 angehoben. Am Fortschritt können Einlagen und Darlehen ohne Betrag stehen. Sie sind nicht Teil der Finanzierung und gehen nicht in die Rechnung ein. Version 9 wird auf 10 angehoben und bekommt die Standard-Schwellen der Plausibilitätsprüfung, falls sie fehlen. Version 10 wird auf 11 angehoben. Fehlt `planSzenarien`, werden die Abweichungen Vorsichtig und Optimistisch angelegt. Ein vorhandener Block bleibt, auch wenn die Liste leer ist.
 
 ## Assistent
 
@@ -316,6 +335,7 @@ Die Fachberatung hat diese Punkte bestätigt. Sie sind so umgesetzt.
 - Gründungs- und Anlaufkosten sind Aufwand im Leistungsmonat, es sei denn, sie sind ausdrücklich als Anlage markiert. Sacheinlagen gibt es nicht.
 - Gründungszuschuss, Lebensbedarf je Rechtsform und der Hebesatz als einzige Gewerbesteuer-Eingabe bleiben wie beschrieben.
 - Wareneinsatz nur als Prozent vom Nettoumsatz.
+- Szenarien sind entweder Hebel auf dem Basisplan oder eine eingefrorene Kopie. Der Wareneinsatzhebel addiert Prozentpunkte. Eine Zusatzfinanzierung ist kein Hebel. Vorsichtig und Optimistisch entstehen bei neuen Plänen, Beispielen und bei der Migration.
 
 ## Offene Fragen an die Fachberatung
 

@@ -1,6 +1,7 @@
 import { standardSchwellen } from "./checks/schwellen.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
+import { standardPlanSzenarien } from "./szenarien/standard.ts";
 import { ABSCHLUSSZAHLUNG_MONAT_STANDARD, SCHEMA_VERSION, type Finanzplan } from "./types.ts";
 
 /** Version oder JSON-Hülle lässt sich nicht in das aktuelle Schema überführen. */
@@ -27,6 +28,7 @@ export const migrations: Record<number, Migration> = {
   7: migrateV7ToV8,
   8: migrateV8ToV9,
   9: migrateV9ToV10,
+  10: migrateV10ToV11,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -201,6 +203,20 @@ export function migrateV9ToV10(data: Record<string, unknown>): Record<string, un
     plan.pruefung = { schwellen: standardSchwellen() };
   }
   plan.schemaVersion = 10;
+  return plan;
+}
+
+/**
+ * Version 11 legt die Standard-Szenarien Vorsichtig und Optimistisch an.
+ * Beide sind Abweichungen vom Basisplan. Ein schon vorhandener Block bleibt,
+ * damit ein erneut gelesener Plan keine vom Nutzer gelöschten Szenarien zurückbekommt.
+ */
+export function migrateV10ToV11(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  if (!isRecord(plan.planSzenarien)) {
+    plan.planSzenarien = standardPlanSzenarien();
+  }
+  plan.schemaVersion = 11;
   return plan;
 }
 

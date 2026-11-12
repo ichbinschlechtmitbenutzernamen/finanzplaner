@@ -592,6 +592,14 @@ const szenarienSchema = z.strictObject({
   worst: szenarioSchema,
 });
 
+const hebelSchema = z.strictObject({
+  umsatzFaktor: szenarioFaktorSchema,
+  umsatzstartMonate: z.number().int().min(0).max(PLAN_HORIZON_MONTHS),
+  wareneinsatzPunkte: z.number().min(-5).max(5),
+  personalFaktor: szenarioFaktorSchema,
+  kostenFaktor: szenarioFaktorSchema,
+});
+
 const offeneEinlageSchema = z.strictObject({
   id: idSchema,
   bezeichnung: textSchema(200),
@@ -651,6 +659,45 @@ const assistentSchema = z.strictObject({
   offeneDarlehen: z.array(offenesDarlehenSchema).max(50).optional(),
 });
 
+/** Eingaben einer Kopie. Die Szenario-Liste des umgebenden Plans bleibt draußen. */
+const planstandSchema = z.strictObject({
+  status: z.enum(PLAN_STATUS),
+  startMonat: isoMonthSchema.optional(),
+  parameter: planparameterSchema,
+  stammdaten: stammdatenSchema,
+  kapitalbedarf: kapitalbedarfSchema,
+  finanzierung: finanzierungSchema,
+  umsatzplanung: z.array(umsatzpositionSchema).max(100),
+  personal: z.array(personalSchema).max(200),
+  laufendeKosten: z.array(kostenpositionSchema).max(200),
+  umsatzsteuer: umsatzsteuerSchema,
+  steuerplanung: steuerplanungSchema,
+  szenarien: szenarienSchema,
+  assistent: assistentSchema.optional(),
+  pruefung: pruefungSchema,
+  notizen: optionalTextSchema(5000).optional(),
+});
+
+const planSzenarioSchema = z.discriminatedUnion("art", [
+  z.strictObject({
+    id: idSchema,
+    art: z.literal("abweichung"),
+    name: textSchema(120),
+    hebel: hebelSchema,
+  }),
+  z.strictObject({
+    id: idSchema,
+    art: z.literal("kopie"),
+    name: textSchema(120),
+    stand: planstandSchema,
+  }),
+]);
+
+const planSzenarienSchema = z.strictObject({
+  aktivId: idSchema,
+  eintraege: z.array(planSzenarioSchema).max(30),
+});
+
 export const finanzplanSchema = z
   .strictObject({
     id: idSchema,
@@ -671,6 +718,7 @@ export const finanzplanSchema = z
     umsatzsteuer: umsatzsteuerSchema,
     steuerplanung: steuerplanungSchema,
     szenarien: szenarienSchema,
+    planSzenarien: planSzenarienSchema,
     assistent: assistentSchema.optional(),
     pruefung: pruefungSchema,
     notizen: optionalTextSchema(5000).optional(),
