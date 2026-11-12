@@ -1,3 +1,4 @@
+import { standardSchwellen } from "./checks/schwellen.ts";
 import { createParameterSnapshot } from "./parameter.ts";
 import { toIsoMonth } from "./months.ts";
 import {
@@ -44,6 +45,7 @@ function shell(
   | "umsatzsteuer"
   | "steuerplanung"
   | "szenarien"
+  | "pruefung"
 > {
   return {
     id: options.id ?? crypto.randomUUID(),
@@ -75,6 +77,7 @@ function shell(
       real: { bezeichnung: "Real Case", anpassungen: [] },
       worst: { bezeichnung: "Worst Case", anpassungen: [] },
     },
+    pruefung: { schwellen: standardSchwellen() },
   };
 }
 

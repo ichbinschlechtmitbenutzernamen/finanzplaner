@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 9 as const;
+export const SCHEMA_VERSION = 10 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -825,6 +825,43 @@ export interface OffenesDarlehen {
   notizen?: string;
 }
 
+/**
+ * Schwellen der Plausibilitätsprüfung. Beträge in Cent, Sätze als Dezimalzahl.
+ * Die Meldungen selbst werden nicht gespeichert.
+ */
+export interface PruefSchwellen {
+  /** Endbestand darunter ist ein ungedeckter Kontokorrent. */
+  kontostandMinCents: EuroCents;
+  /** Verfügbares Einkommen im Planjahr 2 darunter ist nicht tragfähig. */
+  verfuegbarPlanjahr2MinCents: EuroCents;
+  /** Lebenshaltung je Monat darunter ist auffällig niedrig. */
+  lebenshaltungMinMonatCents: EuroCents;
+  /** Vorsorge je Monat darunter ist auffällig niedrig. */
+  vorsorgeMinMonatCents: EuroCents;
+  /** Erste Monate von Planjahr 1, die mit dem Rest verglichen werden. */
+  anlaufMonate: number;
+  /** Ab diesem Anteil am späteren Niveau gilt der Start als voll. */
+  anlaufAnteil: number;
+  /** Wachstum von Planjahr 1 auf Planjahr 2 darüber ist sehr hoch. */
+  wachstumMax: number;
+  /** Wareneinsatzquote darüber ist ungewöhnlich hoch. */
+  wareneinsatzHoch: number;
+  /** Wareneinsatzquote darüber wird stärker gemeldet. 1 = 100 %. */
+  wareneinsatzGrenze: number;
+  /** Personalkostenquote darüber ist sehr hoch. */
+  personalquoteMax: number;
+  /** § 19 UStG, Nettoumsatz im Vorjahr. */
+  kleinunternehmerVorjahrCents: EuroCents;
+  /** § 19 UStG, Nettoumsatz im laufenden Kalenderjahr. */
+  kleinunternehmerLaufendCents: EuroCents;
+  /** Eigenkapitalquote darunter ist sehr niedrig. */
+  eigenkapitalquoteMin: number;
+}
+
+export interface PruefungEinstellungen {
+  schwellen: PruefSchwellen;
+}
+
 export interface AssistentFortschritt {
   weg?: AssistentWeg;
   station: AssistentStation;
@@ -858,5 +895,7 @@ export interface Finanzplan {
   szenarien: Szenarien;
   /** Optional. Ältere Pläne haben keinen Assistentenstand. */
   assistent?: AssistentFortschritt;
+  /** Schwellen der Plausibilitätsprüfung. Ergebnisse stehen nicht im Plan. */
+  pruefung: PruefungEinstellungen;
   notizen?: string;
 }

@@ -1,3 +1,4 @@
+import { standardSchwellen } from "./checks/schwellen.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
 import { ABSCHLUSSZAHLUNG_MONAT_STANDARD, SCHEMA_VERSION, type Finanzplan } from "./types.ts";
@@ -25,6 +26,7 @@ export const migrations: Record<number, Migration> = {
   6: migrateV6ToV7,
   7: migrateV7ToV8,
   8: migrateV8ToV9,
+  9: migrateV9ToV10,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -186,6 +188,19 @@ export function migrateV7ToV8(data: Record<string, unknown>): Record<string, unk
 export function migrateV8ToV9(data: Record<string, unknown>): Record<string, unknown> {
   const plan = structuredClone(data);
   plan.schemaVersion = 9;
+  return plan;
+}
+
+/**
+ * Version 10 speichert die Schwellen der Plausibilitätsprüfung.
+ * Ältere Pläne bekommen die Standardwerte. Die Meldungen selbst stehen nicht im Plan.
+ */
+export function migrateV9ToV10(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  if (!isRecord(plan.pruefung)) {
+    plan.pruefung = { schwellen: standardSchwellen() };
+  }
+  plan.schemaVersion = 10;
   return plan;
 }
 

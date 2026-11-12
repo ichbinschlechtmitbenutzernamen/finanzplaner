@@ -69,6 +69,18 @@ export {
 } from "./types.ts";
 export type { Planberechnung } from "./calc/index.ts";
 export { erstelleBerichte } from "./reports/index.ts";
+export {
+  meldungenFuerExport,
+  pruefePlan,
+  standardSchwellen,
+  STANDARD_SCHWELLEN,
+} from "./checks/index.ts";
+export type {
+  ExportPruefmeldung,
+  Pruefmeldung,
+  PruefStufe,
+  PruefKategorie,
+} from "./checks/index.ts";
 export type { Berichte } from "./reports/index.ts";
 export type {
   AfaMethode,
@@ -130,4 +142,6 @@ export type {
   Wachstumsmodus,
   Wareneinsatz,
   Zuschuss,
+  PruefSchwellen,
+  PruefungEinstellungen,
 } from "./types.ts";

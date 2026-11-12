@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ASSISTENT_STATIONEN } from "../domain/types.ts";
 import type { AssistentStation, Finanzplan } from "../domain/types.ts";
 import {
@@ -61,17 +61,26 @@ export function Assistent({
   berichte,
   onAendern,
   onUeberblick,
+  hervorhebung = null,
 }: {
   plan: Finanzplan;
   berichte: Berichte | null;
   onAendern: PlanAendern;
   onUeberblick: () => void;
+  hervorhebung?: { station: AssistentStation; feld: string } | null;
 }) {
   const [meldungen, setMeldungen] = useState<string[]>([]);
   const station = plan.assistent?.station ?? "vorhaben";
   const rechtsform = plan.stammdaten.rechtsform;
   const vorher = vorherigeStation(station, rechtsform);
   const naechste = naechsteStation(station, rechtsform);
+
+  useEffect(() => {
+    if (!hervorhebung || hervorhebung.station !== station) return;
+    document
+      .querySelector(`[data-pruef="${CSS.escape(hervorhebung.feld)}"]`)
+      ?.scrollIntoView({ block: "center" });
+  }, [hervorhebung, station]);
 
   function weiter() {
     const fehler = pruefeStation(station, plan);
