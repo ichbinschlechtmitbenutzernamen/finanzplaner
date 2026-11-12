@@ -24,6 +24,7 @@ export const migrations: Record<number, Migration> = {
   5: migrateV5ToV6,
   6: migrateV6ToV7,
   7: migrateV7ToV8,
+  8: migrateV8ToV9,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -174,6 +175,17 @@ export function migrateV6ToV7(data: Record<string, unknown>): Record<string, unk
 export function migrateV7ToV8(data: Record<string, unknown>): Record<string, unknown> {
   const plan = structuredClone(data);
   plan.schemaVersion = 8;
+  return plan;
+}
+
+/**
+ * Version 9 merkt sich Einlagen und Darlehen, deren Betrag im Assistenten noch fehlt.
+ * Sie liegen neben dem Fortschritt und nicht in der Finanzierung. Ältere Pläne haben
+ * die Listen nicht. Die Rechnung bleibt dieselbe.
+ */
+export function migrateV8ToV9(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  plan.schemaVersion = 9;
   return plan;
 }
 

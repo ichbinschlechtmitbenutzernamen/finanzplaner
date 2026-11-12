@@ -28,6 +28,8 @@ import type {
   Kostenposition,
   MonatFaktoren,
   MonatswertVorgabe,
+  OffeneEinlage,
+  OffenesDarlehen,
   Person,
   PersonalRolle,
   Personalstelle,
@@ -196,7 +198,8 @@ export interface EinmalEingabe {
 export interface EigenkapitalEingabe {
   id: string;
   bezeichnung: string;
-  betragCents: number;
+  /** null: der Betrag ist noch nicht erfasst und bleibt ein Entwurf. */
+  betragCents: number | null;
   monat: IsoMonth;
   art: EigenkapitalArt;
   personId?: string;
@@ -220,7 +223,8 @@ export interface WeiteresDarlehenEingabe {
   bezeichnung: string;
   geber: string;
   art: Darlehensart;
-  betragCents: number;
+  /** null: der Betrag ist noch nicht erfasst und bleibt ein Entwurf. */
+  betragCents: number | null;
   monat: IsoMonth;
   nominalzinsPa: number;
   laufzeitMonate: number;
@@ -559,19 +563,45 @@ export function setzeFinanzierung(plan: Finanzplan, eingabe: FinanzierungEingabe
     if (eingabe.betriebsmittelNotizen === "") delete betriebsmittel.notizen;
     else betriebsmittel.notizen = eingabe.betriebsmittelNotizen;
   }
-  const darlehen = [
-    ...(eingabe.tab ? [darlehenAusVorlage(plan, eingabe.tab)] : []),
-    ...eingabe.weitere.map((darlehen) => weiteresDarlehen(darlehen)),
-  ];
+  const eigenkapital: Finanzplan["finanzierung"]["eigenkapital"] = [];
+  const offeneEinlagen: OffeneEinlage[] = [];
+  for (const posten of eingabe.eigenkapital) {
+    const betrag = posten.betragCents;
+    if (betrag == null || betrag === 0) offeneEinlagen.push(offeneEinlageAus(posten));
+    else eigenkapital.push(eigenkapitalAus({ ...posten, betragCents: betrag }));
+  }
+  const darlehen = [...(eingabe.tab ? [darlehenAusVorlage(plan, eingabe.tab)] : [])];
+  const offeneDarlehen: OffenesDarlehen[] = [];
+  for (const posten of eingabe.weitere) {
+    const betrag = posten.betragCents;
+    if (betrag == null || betrag === 0) offeneDarlehen.push(offenesDarlehenAus(posten));
+    else darlehen.push(weiteresDarlehen({ ...posten, betragCents: betrag }));
+  }
   return {
     ...plan,
     kapitalbedarf: { ...plan.kapitalbedarf, betriebsmittel },
     finanzierung: {
       ...plan.finanzierung,
-      eigenkapital: eingabe.eigenkapital.map((posten) => eigenkapitalAus(posten)),
+      eigenkapital,
       darlehen,
     },
+    assistent: entwuerfeSetzen(plan, offeneEinlagen, offeneDarlehen),
   };
+}
+
+export function pruefeFinanzierung(eingabe: FinanzierungEingabe): string[] {
+  const meldungen: string[] = [];
+  for (const posten of eingabe.eigenkapital) {
+    if (betragOffen(posten.betragCents)) {
+      meldungen.push(`Der Betrag der Einlage „${posten.bezeichnung || "Einlage"}“ fehlt.`);
+    }
+  }
+  for (const darlehen of eingabe.weitere) {
+    if (betragOffen(darlehen.betragCents)) {
+      meldungen.push(`Der Betrag des Darlehens „${darlehen.bezeichnung || "Darlehen"}“ fehlt.`);
+    }
+  }
+  return meldungen;
 }
 
 export function setzeAbschluss(plan: Finanzplan, eingabe: AbschlussEingabe = {}): Finanzplan {
@@ -897,7 +927,11 @@ function einmalAus(eingabe: EinmalEingabe): Einmalkosten {
   };
 }
 
-function eigenkapitalAus(eingabe: EigenkapitalEingabe) {
+function betragOffen(betragCents: number | null): boolean {
+  return betragCents == null || betragCents === 0;
+}
+
+function eigenkapitalAus(eingabe: EigenkapitalEingabe & { betragCents: number }) {
   verlangeCents(eingabe.betragCents, eingabe.bezeichnung || "Eigenkapital");
   if (eingabe.betragCents === 0)
     throw new AssistentFehler("Die Einlage braucht einen Betrag über 0.");
@@ -942,7 +976,7 @@ function darlehenAusVorlage(plan: Finanzplan, eingabe: TabDarlehenEingabe): Darl
   };
 }
 
-function weiteresDarlehen(eingabe: WeiteresDarlehenEingabe): Darlehen {
+function weiteresDarlehen(eingabe: WeiteresDarlehenEingabe & { betragCents: number }): Darlehen {
   verlangeCents(eingabe.betragCents, eingabe.bezeichnung || "Darlehen");
   if (eingabe.nominalzinsPa < 0) throw new AssistentFehler("Der Zinssatz darf nicht negativ sein.");
   return {
@@ -965,6 +999,60 @@ function weiteresDarlehen(eingabe: WeiteresDarlehenEingabe): Darlehen {
     ...(eingabe.disagioCents != null ? { disagioCents: eingabe.disagioCents } : {}),
     ...(eingabe.notizen ? { notizen: eingabe.notizen } : {}),
   };
+}
+
+function offeneEinlageAus(eingabe: EigenkapitalEingabe): OffeneEinlage {
+  if (!isIsoMonth(eingabe.monat)) throw new AssistentFehler("Der Monat der Einlage fehlt.");
+  return {
+    id: eingabe.id,
+    bezeichnung: eingabe.bezeichnung,
+    monat: eingabe.monat,
+    art: eingabe.art,
+    ...(eingabe.personId ? { personId: eingabe.personId } : {}),
+    ...(eingabe.notizen ? { notizen: eingabe.notizen } : {}),
+  };
+}
+
+function offenesDarlehenAus(eingabe: WeiteresDarlehenEingabe): OffenesDarlehen {
+  if (!isIsoMonth(eingabe.monat)) throw new AssistentFehler("Der Monat des Darlehens fehlt.");
+  if (eingabe.nominalzinsPa < 0) throw new AssistentFehler("Der Zinssatz darf nicht negativ sein.");
+  return {
+    id: eingabe.id,
+    bezeichnung: eingabe.bezeichnung,
+    geber: eingabe.geber,
+    art: eingabe.art,
+    monat: eingabe.monat,
+    nominalzinsPa: eingabe.nominalzinsPa,
+    laufzeitMonate: eingabe.laufzeitMonate,
+    tilgungsfreieMonate: eingabe.tilgungsfreieMonate,
+    zinszahlungInTilgungsfreierZeit: eingabe.zinszahlungInTilgungsfreierZeit,
+    tilgungsart: eingabe.tilgungsart,
+    ...(eingabe.auszahlungAnteil != null ? { auszahlungAnteil: eingabe.auszahlungAnteil } : {}),
+    ...(eingabe.gebuehrenCents != null ? { gebuehrenCents: eingabe.gebuehrenCents } : {}),
+    ...(eingabe.personId ? { personId: eingabe.personId } : {}),
+    ...(eingabe.vorlageId ? { vorlageId: eingabe.vorlageId } : {}),
+    ...(eingabe.sicherheitenNotiz ? { sicherheitenNotiz: eingabe.sicherheitenNotiz } : {}),
+    ...(eingabe.disagioCents != null ? { disagioCents: eingabe.disagioCents } : {}),
+    ...(eingabe.notizen ? { notizen: eingabe.notizen } : {}),
+  };
+}
+
+function entwuerfeSetzen(
+  plan: Finanzplan,
+  offeneEinlagen: OffeneEinlage[],
+  offeneDarlehen: OffenesDarlehen[],
+): Finanzplan["assistent"] {
+  if (!plan.assistent && offeneEinlagen.length === 0 && offeneDarlehen.length === 0) {
+    return undefined;
+  }
+  const naechster: NonNullable<Finanzplan["assistent"]> = {
+    ...(plan.assistent ?? { station: "finanzierung", erledigt: [] }),
+  };
+  if (offeneEinlagen.length > 0) naechster.offeneEinlagen = offeneEinlagen;
+  else delete naechster.offeneEinlagen;
+  if (offeneDarlehen.length > 0) naechster.offeneDarlehen = offeneDarlehen;
+  else delete naechster.offeneDarlehen;
+  return naechster;
 }
 
 function verlangeCents(wert: number, feld: string): void {

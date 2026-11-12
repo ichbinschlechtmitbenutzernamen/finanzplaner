@@ -4,7 +4,7 @@ Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland
 
 Dieser Stand ist **Schritt 7**: Ein geführter Assistent füllt denselben Plan wie die Tabelle. Ein neuer Plan fragt, ob der Assistent oder die Tabelle startet. Zwischen Assistent, Tabelle und Überblick kann jederzeit gewechselt werden. PDF fehlt noch.
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md). Schema-Version ist 8. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen. Der Assistentenfortschritt liegt optional im Plan.
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die Berichte in [docs/berichte.md](docs/berichte.md). Schema-Version ist 9. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen. Der Assistentenfortschritt liegt optional im Plan.
 
 ## Voraussetzungen
 
@@ -60,4 +60,4 @@ npm run export:check
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 8. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 9. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.

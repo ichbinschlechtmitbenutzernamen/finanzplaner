@@ -35,6 +35,7 @@ export {
   monateDesPlans,
   monatsumsatzAusJahren,
   ordneInvestition,
+  pruefeFinanzierung,
   pruefeUmsatz,
   pruefeVorhaben,
   setzeAbschluss,

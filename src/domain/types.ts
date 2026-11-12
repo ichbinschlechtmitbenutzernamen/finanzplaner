@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 8 as const;
+export const SCHEMA_VERSION = 9 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -788,10 +788,51 @@ export type AssistentWeg = (typeof ASSISTENT_WEGE)[number];
  * dieselben Eingaben sehen und ein Wechsel nichts verwirft.
  * Fehlt `weg`, zeigt ein neuer Plan die Startauswahl.
  */
+/**
+ * Einlage, deren Betrag im Assistenten noch fehlt.
+ * Sie steht nicht in der Finanzierung und geht nicht in die Rechnung ein.
+ */
+export interface OffeneEinlage {
+  id: Id;
+  bezeichnung: string;
+  personId?: Id;
+  monat: IsoMonth;
+  art: EigenkapitalArt;
+  notizen?: string;
+}
+
+/**
+ * Darlehen, dessen Betrag im Assistenten noch fehlt.
+ * Es steht nicht in der Finanzierung und geht nicht in die Rechnung ein.
+ */
+export interface OffenesDarlehen {
+  id: Id;
+  bezeichnung: string;
+  geber: string;
+  art: Darlehensart;
+  monat: IsoMonth;
+  nominalzinsPa: number;
+  laufzeitMonate: number;
+  tilgungsfreieMonate: number;
+  zinszahlungInTilgungsfreierZeit: boolean;
+  tilgungsart: Tilgungsart;
+  auszahlungAnteil?: number;
+  gebuehrenCents?: EuroCents;
+  personId?: Id;
+  vorlageId?: Id;
+  sicherheitenNotiz?: string;
+  disagioCents?: EuroCents;
+  notizen?: string;
+}
+
 export interface AssistentFortschritt {
   weg?: AssistentWeg;
   station: AssistentStation;
   erledigt: AssistentStation[];
+  /** Einlagen ohne erfassten Betrag. Die Rechnung liest das Feld nicht. */
+  offeneEinlagen?: OffeneEinlage[];
+  /** Darlehen ohne erfassten Betrag. Die Rechnung liest das Feld nicht. */
+  offeneDarlehen?: OffenesDarlehen[];
 }
 
 export interface Finanzplan {

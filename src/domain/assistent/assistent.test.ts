@@ -10,9 +10,16 @@ import { migratePlan } from "../migrate.ts";
 import { erstelleBerichte } from "../reports/berichte.ts";
 import { finanzplanSchema } from "../schema.ts";
 import { spieleDurchlauf } from "./durchlauf.ts";
-import { durchlaufAus } from "./lesen.ts";
+import { durchlaufAus, leseFinanzierung } from "./lesen.ts";
 import { geheWeiter, naechsteStation, stationFaelltWeg } from "./stationen.ts";
-import { jahreswerteVon, monateDesPlans, setzeUmsatz, setzeVorhaben } from "./schreiben.ts";
+import {
+  jahreswerteVon,
+  monateDesPlans,
+  pruefeFinanzierung,
+  setzeFinanzierung,
+  setzeUmsatz,
+  setzeVorhaben,
+} from "./schreiben.ts";
 
 const FEST = new Date("2026-04-02T08:00:00.000Z");
 
@@ -98,6 +105,71 @@ describe("Assistent", () => {
     expect(weiter.stammdaten.personen[0]?.lebensbedarf).toBeUndefined();
   });
 
+  it("lässt eine Einlage und ein Darlehen ohne Betrag aus der Rechnung", () => {
+    const anfang = setzeVorhaben(createDraftFinanzplan({ id: "plan-offen", now: FEST }), {
+      name: "Offene Beträge",
+      gruendungsmonat: "2026-06",
+      rechtsform: "einzelunternehmen",
+      bundesland: "Thüringen",
+      hebesatz: 400,
+      kleinunternehmer: false,
+      gesellschafter: [{ id: "person-1", name: "Ada Grün", anteil: 1, rollen: ["inhaber"] }],
+    });
+    const vorher = berechnePlan(anfang);
+    const offen = setzeFinanzierung(anfang, {
+      eigenkapital: [
+        {
+          id: "ek-neu",
+          bezeichnung: "Bareinlage",
+          betragCents: null,
+          monat: "2026-06",
+          art: "bareinlage",
+        },
+      ],
+      tab: null,
+      weitere: [
+        {
+          id: "dl-neu",
+          bezeichnung: "Weiteres Darlehen",
+          geber: "Bank",
+          art: "bank",
+          betragCents: null,
+          monat: "2026-06",
+          nominalzinsPa: 0,
+          laufzeitMonate: 36,
+          tilgungsfreieMonate: 0,
+          tilgungsart: "ratentilgung",
+          zinszahlungInTilgungsfreierZeit: true,
+        },
+      ],
+    });
+    expect(offen.finanzierung.eigenkapital).toEqual([]);
+    expect(offen.finanzierung.darlehen).toEqual([]);
+    expect(offen.assistent?.offeneEinlagen?.map((posten) => posten.id)).toEqual(["ek-neu"]);
+    expect(offen.assistent?.offeneEinlagen?.[0]).not.toHaveProperty("betragCents");
+    expect(offen.assistent?.offeneDarlehen?.map((posten) => posten.id)).toEqual(["dl-neu"]);
+    expect(berechnePlan(offen)).toEqual(vorher);
+    expect(erstelleBerichte(offen, berechnePlan(offen))).toEqual(erstelleBerichte(anfang, vorher));
+    expect(pruefeFinanzierung(leseFinanzierung(offen))).toEqual([
+      "Der Betrag der Einlage „Bareinlage“ fehlt.",
+      "Der Betrag des Darlehens „Weiteres Darlehen“ fehlt.",
+    ]);
+    expect(finanzplanSchema.parse(offen).assistent?.offeneEinlagen).toHaveLength(1);
+
+    const gelesen = leseFinanzierung(offen);
+    const gefuellt = setzeFinanzierung(offen, {
+      ...gelesen,
+      eigenkapital: [{ ...gelesen.eigenkapital[0]!, betragCents: 150_000 }],
+      weitere: [{ ...gelesen.weitere[0]!, betragCents: 250_000 }],
+    });
+    expect(gefuellt.finanzierung.eigenkapital[0]?.betragCents).toBe(150_000);
+    expect(gefuellt.finanzierung.darlehen[0]?.betragCents).toBe(250_000);
+    expect(gefuellt.assistent?.offeneEinlagen).toBeUndefined();
+    expect(gefuellt.assistent?.offeneDarlehen).toBeUndefined();
+    expect(pruefeFinanzierung(leseFinanzierung(gefuellt))).toEqual([]);
+    expect(berechnePlan(gefuellt).finanzierung.summeEinlagenCents[0]).toBe(150_000);
+  });
+
   it("hebt Version 7 an, ohne Beispiele oder Regeln zu verändern", () => {
     for (const plan of [beispielElektro, beispielCafe, beispielGmbh, beispielEinzelunternehmen]) {
       const roh = structuredClone(plan) as unknown as Record<string, unknown>;
@@ -106,7 +178,14 @@ describe("Assistent", () => {
       const migriert = migratePlan(roh);
       expect(migriert).toEqual(plan);
       expect(migriert.assistent).toBeUndefined();
-      expect(migriert.schemaVersion).toBe(8);
+      expect(migriert.schemaVersion).toBe(9);
     }
+
+    const roh = structuredClone(beispielElektro) as unknown as Record<string, unknown>;
+    roh.schemaVersion = 8;
+    const ausAcht = migratePlan(roh);
+    expect(ausAcht.schemaVersion).toBe(9);
+    expect(ausAcht.assistent).toBeUndefined();
+    expect(ausAcht.finanzierung).toEqual(beispielElektro.finanzierung);
   });
 });

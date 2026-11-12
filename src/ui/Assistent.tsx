@@ -11,8 +11,8 @@ import {
   vorherigeStation,
   waehleWeg,
 } from "../domain/assistent/stationen.ts";
-import { leseUmsatz, leseVorhaben } from "../domain/assistent/lesen.ts";
-import { pruefeUmsatz, pruefeVorhaben } from "../domain/assistent/schreiben.ts";
+import { leseFinanzierung, leseUmsatz, leseVorhaben } from "../domain/assistent/lesen.ts";
+import { pruefeFinanzierung, pruefeUmsatz, pruefeVorhaben } from "../domain/assistent/schreiben.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import {
   PersoenlichStation,
@@ -167,6 +167,7 @@ function Station({
 function pruefeStation(station: AssistentStation, plan: Finanzplan): string[] {
   if (station === "vorhaben") return pruefeVorhaben(leseVorhaben(plan));
   if (station === "umsatz") return pruefeUmsatz(leseUmsatz(plan));
+  if (station === "finanzierung") return pruefeFinanzierung(leseFinanzierung(plan));
   if (station === "persoenlich" && stationFaelltWeg(station, plan.stammdaten.rechtsform)) return [];
   return [];
 }

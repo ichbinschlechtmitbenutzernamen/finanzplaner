@@ -46,11 +46,17 @@ export function EuroFeld({
   hilfe,
   cents,
   onChange,
+  pflicht = false,
+  positiv = false,
 }: {
   label: string;
   hilfe: string;
   cents: number | null;
   onChange: (cents: number) => void;
+  /** Leeres Feld ist ein Pflichtfeld-Fehler, bis ein Betrag erfasst ist. */
+  pflicht?: boolean;
+  /** 0 bleibt ein Fehler. Der Plan übernimmt den Betrag erst darüber. */
+  positiv?: boolean;
 }) {
   return (
     <EuroFeldInnen
@@ -59,6 +65,8 @@ export function EuroFeld({
       hilfe={hilfe}
       cents={cents}
       onChange={onChange}
+      pflicht={pflicht}
+      positiv={positiv}
     />
   );
 }
@@ -68,15 +76,21 @@ function EuroFeldInnen({
   hilfe,
   cents,
   onChange,
+  pflicht,
+  positiv,
 }: {
   label: string;
   hilfe: string;
   cents: number | null;
   onChange: (cents: number) => void;
+  pflicht: boolean;
+  positiv: boolean;
 }) {
   const id = useId();
   const [text, setText] = useState(() => (cents == null ? "" : formatEingabeEuro(cents)));
-  const [fehler, setFehler] = useState<string | null>(null);
+  const [fehler, setFehler] = useState<string | null>(
+    pflicht && cents == null ? "Der Betrag fehlt." : null,
+  );
   return (
     <div className="feld">
       <label htmlFor={id}>{label}</label>
@@ -84,8 +98,13 @@ function EuroFeldInnen({
         id={id}
         inputMode="decimal"
         value={text}
+        aria-invalid={fehler != null}
         onChange={(event) => setText(event.target.value)}
         onBlur={() => {
+          if (text.trim() === "") {
+            setFehler(pflicht ? "Der Betrag fehlt." : null);
+            return;
+          }
           const wert = parseCentBetrag(text);
           if (wert == null) {
             setFehler("Das ist kein Betrag.");
@@ -93,6 +112,10 @@ function EuroFeldInnen({
           }
           if (wert < 0) {
             setFehler("Beträge dürfen nicht negativ sein.");
+            return;
+          }
+          if (positiv && wert === 0) {
+            setFehler("Der Betrag muss größer als 0 sein.");
             return;
           }
           setFehler(null);

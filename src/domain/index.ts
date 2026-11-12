@@ -76,6 +76,8 @@ export type {
   AssistentFortschritt,
   AssistentStation,
   AssistentWeg,
+  OffeneEinlage,
+  OffenesDarlehen,
   Betriebsmittel,
   Bundesland,
   Darlehen,

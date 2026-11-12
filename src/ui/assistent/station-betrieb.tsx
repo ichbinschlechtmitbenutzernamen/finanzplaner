@@ -737,8 +737,10 @@ export function FinanzierungStation({
             />
             <EuroFeld
               label="Betrag"
-              hilfe="Bareinlage, die in diesem Monat auf dem Konto ankommt."
+              hilfe="Bareinlage, die in diesem Monat auf dem Konto ankommt. Pflicht, sobald die Einlage angelegt ist."
               cents={posten.betragCents}
+              pflicht
+              positiv
               onChange={(betragCents) =>
                 schreibe({
                   eigenkapital: eingabe.eigenkapital.map((eintrag) =>
@@ -781,7 +783,7 @@ export function FinanzierungStation({
               {
                 id: neueId("ek"),
                 bezeichnung: "Bareinlage",
-                betragCents: 1,
+                betragCents: null,
                 monat: plan.startMonat ?? "",
                 art: "bareinlage",
                 personId: plan.stammdaten.personen[0]?.id,
@@ -896,8 +898,10 @@ export function FinanzierungStation({
             />
             <EuroFeld
               label="Betrag"
-              hilfe="Summe, die in einem Monat ausgezahlt wird."
+              hilfe="Summe, die in einem Monat ausgezahlt wird. Pflicht, sobald das Darlehen angelegt ist."
               cents={darlehen.betragCents}
+              pflicht
+              positiv
               onChange={(betragCents) =>
                 schreibe({
                   weitere: eingabe.weitere.map((eintrag) =>
@@ -979,7 +983,7 @@ export function FinanzierungStation({
                 bezeichnung: "Weiteres Darlehen",
                 geber: "Bank",
                 art: "bank",
-                betragCents: 1,
+                betragCents: null,
                 monat: plan.startMonat ?? "",
                 nominalzinsPa: 0,
                 laufzeitMonate: 36,
