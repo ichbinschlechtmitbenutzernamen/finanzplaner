@@ -32,6 +32,7 @@ import type {
   Tilgungsart,
 } from "../../domain/types.ts";
 import { formatEuro, formatMonatLang, formatProzent } from "../format.ts";
+import { PRUEF_ICON, PruefBlock, usePruefMarke } from "../pruef-marke.tsx";
 import { AuswahlFeld, EuroFeld, MonatFeld, ProzentFeld, TextFeld, ZahlFeld } from "./felder.tsx";
 import type { PlanAendern } from "./typen.ts";
 
@@ -88,6 +89,8 @@ export function PersonalStation({ plan, onAendern }: { plan: Finanzplan; onAende
   return (
     <section className="assistent-station" aria-labelledby="station-personal">
       <h2 id="station-personal">Personal</h2>
+      <PruefBlock feld="personal" />
+      <PruefBlock feld="personal-gf" />
       <p className="hinweis">
         Jede Stelle hat ein Bruttogehalt und einen Eintritt. Der Arbeitgeberanteil ist eine eigene
         Eingabe, kein hinterlegter Beitragssatz.
@@ -238,9 +241,16 @@ export function KostenStation({ plan, onAendern }: { plan: Finanzplan; onAendern
       </p>
       <div className="vorschlag-liste">
         {KOSTEN_VORSCHLAEGE.map((vorschlag) => (
-          <button
+          <KostenVorschlagButton
             key={vorschlag.id}
-            type="button"
+            bezeichnung={vorschlag.bezeichnung}
+            feld={
+              vorschlag.kategorie === "versicherung"
+                ? "kosten-versicherung"
+                : vorschlag.kategorie === "beratung_buchhaltung"
+                  ? "kosten-steuerberatung"
+                  : undefined
+            }
             onClick={() => {
               if (posten.some((eintrag) => eintrag.bezeichnung === vorschlag.bezeichnung)) return;
               schreibe([
@@ -257,9 +267,7 @@ export function KostenStation({ plan, onAendern }: { plan: Finanzplan; onAendern
                 },
               ]);
             }}
-          >
-            {vorschlag.bezeichnung}
-          </button>
+          />
         ))}
       </div>
       <p className="feld-hilfe">
@@ -343,6 +351,34 @@ export function KostenStation({ plan, onAendern }: { plan: Finanzplan; onAendern
   );
 }
 
+function KostenVorschlagButton({
+  bezeichnung,
+  feld,
+  onClick,
+}: {
+  bezeichnung: string;
+  feld?: string;
+  onClick: () => void;
+}) {
+  const marke = usePruefMarke(feld);
+  return (
+    <button
+      type="button"
+      data-pruef={feld}
+      className={marke ? `pruef-feld pruef-${marke.stufe}` : undefined}
+      title={marke?.begruendung}
+      onClick={onClick}
+    >
+      {marke ? (
+        <span className={`pruef-icon pruef-${marke.stufe}`} aria-hidden="true">
+          {PRUEF_ICON[marke.stufe]}
+        </span>
+      ) : null}
+      {bezeichnung}
+    </button>
+  );
+}
+
 export function InvestitionStation({
   plan,
   onAendern,
@@ -358,6 +394,7 @@ export function InvestitionStation({
   return (
     <section className="assistent-station" aria-labelledby="station-invest">
       <h2 id="station-invest">Investitionen</h2>
+      <PruefBlock feld="investitionen" />
       <p className="hinweis">
         Der Nettobetrag wird anhand der Grenzen im Plan eingeordnet: Sofortaufwand, geringwertiges
         Wirtschaftsgut, Sammelposten oder lineare Abschreibung. Die Einordnung lässt sich ändern.
@@ -704,6 +741,7 @@ export function FinanzierungStation({
   return (
     <section className="assistent-station" aria-labelledby="station-finanz">
       <h2 id="station-finanz">Finanzierung</h2>
+      <PruefBlock feld="eigenkapital" />
       <p className="hinweis">Eigenkapital, das Thüringer Mikrodarlehen und weitere Darlehen.</p>
       <div className="feld-raster">
         <EuroFeld
@@ -794,183 +832,191 @@ export function FinanzierungStation({
       >
         Einlage hinzufügen
       </button>
-      <fieldset className="feld-gruppe">
-        <legend>Thüringer Mikrodarlehen</legend>
-        <p className="feld-hilfe">
-          Vorlage der Thüringer Aufbaubank aus dem Plan
-          {vorlage
-            ? `: Sollzins ${formatProzent(vorlage.nominalzinsPa)}, ${TILGUNG[vorlage.tilgungsart]}, Auszahlung ${formatProzent(vorlage.auszahlungAnteil)}.`
-            : "."}{" "}
-          Betrag, Laufzeit und tilgungsfreie Zeit bleiben innerhalb der Vorlage änderbar.
-        </p>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={eingabe.tab != null}
-            onChange={(event) => {
-              if (!event.target.checked) {
-                schreibe({ tab: null });
-                return;
-              }
-              schreibe({
-                tab: {
-                  id: neueId("darlehen"),
-                  betragCents: vorlage?.betragMinCents ?? 500_000,
-                  monat: plan.startMonat ?? "",
-                  laufzeitMonate: vorlage?.laufzeitMaxMonate ?? 84,
-                  tilgungsfreieMonate: 0,
-                  bezeichnung: vorlage?.bezeichnung,
-                  geber: vorlage?.anbieter,
-                },
-              });
-            }}
-          />
-          Mikrodarlehen aufnehmen
-        </label>
-        {eingabe.tab ? (
-          <div className="feld-raster">
-            <EuroFeld
-              label="Betrag"
-              hilfe="Auszahlungsbetrag. Er muss in der Spanne der Vorlage liegen."
-              cents={eingabe.tab.betragCents}
-              onChange={(betragCents) =>
-                schreibe({ tab: eingabe.tab ? { ...eingabe.tab, betragCents } : null })
-              }
-            />
-            <MonatFeld
-              label="Auszahlung"
-              hilfe="Monat, in dem das Darlehen auf dem Konto ankommt. Die erste Rate folgt im nächsten Monat."
-              value={eingabe.tab.monat}
-              onChange={(monat) =>
-                schreibe({ tab: eingabe.tab ? { ...eingabe.tab, monat } : null })
-              }
-            />
-            <ZahlFeld
-              label="Laufzeit in Monaten"
-              hilfe="Gesamte Laufzeit ab der ersten Rate, einschließlich tilgungsfreier Monate."
-              wert={eingabe.tab.laufzeitMonate}
-              ganzzahlig
-              onChange={(laufzeitMonate) => {
-                if (laufzeitMonate == null || !eingabe.tab) return;
-                schreibe({ tab: { ...eingabe.tab, laufzeitMonate } });
-              }}
-            />
-            <ZahlFeld
-              label="Tilgungsfreie Monate"
-              hilfe="Monate am Anfang ohne Tilgung. Zinsen werden laut Vorlage weiter gezahlt."
-              wert={eingabe.tab.tilgungsfreieMonate}
-              ganzzahlig
-              onChange={(tilgungsfreieMonate) => {
-                if (tilgungsfreieMonate == null || !eingabe.tab) return;
-                schreibe({ tab: { ...eingabe.tab, tilgungsfreieMonate } });
-              }}
-            />
-          </div>
-        ) : null}
-      </fieldset>
-      {eingabe.weitere.map((darlehen) => (
-        <fieldset key={darlehen.id} className="feld-gruppe">
-          <legend>{darlehen.bezeichnung}</legend>
-          <div className="feld-raster">
-            <TextFeld
-              label="Bezeichnung"
-              hilfe="Name des Darlehens im Plan."
-              value={darlehen.bezeichnung}
-              onChange={(bezeichnung) =>
+      <PruefBlock feld={eingabe.tab ? `darlehen-${eingabe.tab.id}` : ""}>
+        <fieldset className="feld-gruppe">
+          <legend>Thüringer Mikrodarlehen</legend>
+          <p className="feld-hilfe">
+            Vorlage der Thüringer Aufbaubank aus dem Plan
+            {vorlage
+              ? `: Sollzins ${formatProzent(vorlage.nominalzinsPa)}, ${TILGUNG[vorlage.tilgungsart]}, Auszahlung ${formatProzent(vorlage.auszahlungAnteil)}.`
+              : "."}{" "}
+            Betrag, Laufzeit und tilgungsfreie Zeit bleiben innerhalb der Vorlage änderbar.
+          </p>
+          <label className="check">
+            <input
+              type="checkbox"
+              checked={eingabe.tab != null}
+              onChange={(event) => {
+                if (!event.target.checked) {
+                  schreibe({ tab: null });
+                  return;
+                }
                 schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id ? { ...eintrag, bezeichnung } : eintrag,
-                  ),
-                })
-              }
-            />
-            <TextFeld
-              label="Geber"
-              hilfe="Bank oder andere Stelle, die auszahlt."
-              value={darlehen.geber}
-              onChange={(geber) =>
-                schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id ? { ...eintrag, geber } : eintrag,
-                  ),
-                })
-              }
-            />
-            <EuroFeld
-              label="Betrag"
-              hilfe="Summe, die in einem Monat ausgezahlt wird. Pflicht, sobald das Darlehen angelegt ist."
-              cents={darlehen.betragCents}
-              pflicht
-              positiv
-              onChange={(betragCents) =>
-                schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id ? { ...eintrag, betragCents } : eintrag,
-                  ),
-                })
-              }
-            />
-            <ProzentFeld
-              label="Nominalzins pro Jahr"
-              hilfe="Sollzins, mit dem die Zinsen auf die Restschuld gerechnet werden."
-              satz={darlehen.nominalzinsPa}
-              onChange={(nominalzinsPa) => {
-                if (nominalzinsPa == null) return;
-                schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id ? { ...eintrag, nominalzinsPa } : eintrag,
-                  ),
+                  tab: {
+                    id: neueId("darlehen"),
+                    betragCents: vorlage?.betragMinCents ?? 500_000,
+                    monat: plan.startMonat ?? "",
+                    laufzeitMonate: vorlage?.laufzeitMaxMonate ?? 84,
+                    tilgungsfreieMonate: 0,
+                    bezeichnung: vorlage?.bezeichnung,
+                    geber: vorlage?.anbieter,
+                  },
                 });
               }}
             />
-            <AuswahlFeld
-              label="Tilgung"
-              hilfe="Annuität, gleichbleibende Rate oder endfällige Tilgung."
-              value={darlehen.tilgungsart}
-              onChange={(tilgungsart) =>
-                schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id
-                      ? { ...eintrag, tilgungsart: tilgungsart as Tilgungsart }
-                      : eintrag,
-                  ),
-                })
-              }
-            >
-              {(Object.keys(TILGUNG) as Tilgungsart[]).map((art) => (
-                <option key={art} value={art}>
-                  {TILGUNG[art]}
-                </option>
-              ))}
-            </AuswahlFeld>
-            <AuswahlFeld
-              label="Art"
-              hilfe="Herkunft des Darlehens."
-              value={darlehen.art}
-              onChange={(art) =>
-                schreibe({
-                  weitere: eingabe.weitere.map((eintrag) =>
-                    eintrag.id === darlehen.id ? { ...eintrag, art: art as Darlehensart } : eintrag,
-                  ),
-                })
-              }
-            >
-              {(Object.keys(DARLEHEN_ART) as Darlehensart[]).map((art) => (
-                <option key={art} value={art}>
-                  {DARLEHEN_ART[art]}
-                </option>
-              ))}
-            </AuswahlFeld>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              schreibe({ weitere: eingabe.weitere.filter((eintrag) => eintrag.id !== darlehen.id) })
-            }
-          >
-            Darlehen entfernen
-          </button>
+            Mikrodarlehen aufnehmen
+          </label>
+          {eingabe.tab ? (
+            <div className="feld-raster">
+              <EuroFeld
+                label="Betrag"
+                hilfe="Auszahlungsbetrag. Er muss in der Spanne der Vorlage liegen."
+                cents={eingabe.tab.betragCents}
+                onChange={(betragCents) =>
+                  schreibe({ tab: eingabe.tab ? { ...eingabe.tab, betragCents } : null })
+                }
+              />
+              <MonatFeld
+                label="Auszahlung"
+                hilfe="Monat, in dem das Darlehen auf dem Konto ankommt. Die erste Rate folgt im nächsten Monat."
+                value={eingabe.tab.monat}
+                onChange={(monat) =>
+                  schreibe({ tab: eingabe.tab ? { ...eingabe.tab, monat } : null })
+                }
+              />
+              <ZahlFeld
+                label="Laufzeit in Monaten"
+                hilfe="Gesamte Laufzeit ab der ersten Rate, einschließlich tilgungsfreier Monate."
+                wert={eingabe.tab.laufzeitMonate}
+                ganzzahlig
+                onChange={(laufzeitMonate) => {
+                  if (laufzeitMonate == null || !eingabe.tab) return;
+                  schreibe({ tab: { ...eingabe.tab, laufzeitMonate } });
+                }}
+              />
+              <ZahlFeld
+                label="Tilgungsfreie Monate"
+                hilfe="Monate am Anfang ohne Tilgung. Zinsen werden laut Vorlage weiter gezahlt."
+                wert={eingabe.tab.tilgungsfreieMonate}
+                ganzzahlig
+                onChange={(tilgungsfreieMonate) => {
+                  if (tilgungsfreieMonate == null || !eingabe.tab) return;
+                  schreibe({ tab: { ...eingabe.tab, tilgungsfreieMonate } });
+                }}
+              />
+            </div>
+          ) : null}
         </fieldset>
+      </PruefBlock>
+      {eingabe.weitere.map((darlehen) => (
+        <PruefBlock key={darlehen.id} feld={`darlehen-${darlehen.id}`}>
+          <fieldset className="feld-gruppe">
+            <legend>{darlehen.bezeichnung}</legend>
+            <div className="feld-raster">
+              <TextFeld
+                label="Bezeichnung"
+                hilfe="Name des Darlehens im Plan."
+                value={darlehen.bezeichnung}
+                onChange={(bezeichnung) =>
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id ? { ...eintrag, bezeichnung } : eintrag,
+                    ),
+                  })
+                }
+              />
+              <TextFeld
+                label="Geber"
+                hilfe="Bank oder andere Stelle, die auszahlt."
+                value={darlehen.geber}
+                onChange={(geber) =>
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id ? { ...eintrag, geber } : eintrag,
+                    ),
+                  })
+                }
+              />
+              <EuroFeld
+                label="Betrag"
+                hilfe="Summe, die in einem Monat ausgezahlt wird. Pflicht, sobald das Darlehen angelegt ist."
+                cents={darlehen.betragCents}
+                pflicht
+                positiv
+                onChange={(betragCents) =>
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id ? { ...eintrag, betragCents } : eintrag,
+                    ),
+                  })
+                }
+              />
+              <ProzentFeld
+                label="Nominalzins pro Jahr"
+                hilfe="Sollzins, mit dem die Zinsen auf die Restschuld gerechnet werden."
+                satz={darlehen.nominalzinsPa}
+                onChange={(nominalzinsPa) => {
+                  if (nominalzinsPa == null) return;
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id ? { ...eintrag, nominalzinsPa } : eintrag,
+                    ),
+                  });
+                }}
+              />
+              <AuswahlFeld
+                label="Tilgung"
+                hilfe="Annuität, gleichbleibende Rate oder endfällige Tilgung."
+                value={darlehen.tilgungsart}
+                onChange={(tilgungsart) =>
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id
+                        ? { ...eintrag, tilgungsart: tilgungsart as Tilgungsart }
+                        : eintrag,
+                    ),
+                  })
+                }
+              >
+                {(Object.keys(TILGUNG) as Tilgungsart[]).map((art) => (
+                  <option key={art} value={art}>
+                    {TILGUNG[art]}
+                  </option>
+                ))}
+              </AuswahlFeld>
+              <AuswahlFeld
+                label="Art"
+                hilfe="Herkunft des Darlehens."
+                value={darlehen.art}
+                onChange={(art) =>
+                  schreibe({
+                    weitere: eingabe.weitere.map((eintrag) =>
+                      eintrag.id === darlehen.id
+                        ? { ...eintrag, art: art as Darlehensart }
+                        : eintrag,
+                    ),
+                  })
+                }
+              >
+                {(Object.keys(DARLEHEN_ART) as Darlehensart[]).map((art) => (
+                  <option key={art} value={art}>
+                    {DARLEHEN_ART[art]}
+                  </option>
+                ))}
+              </AuswahlFeld>
+            </div>
+            <button
+              type="button"
+              onClick={() =>
+                schreibe({
+                  weitere: eingabe.weitere.filter((eintrag) => eintrag.id !== darlehen.id),
+                })
+              }
+            >
+              Darlehen entfernen
+            </button>
+          </fieldset>
+        </PruefBlock>
       ))}
       <button
         type="button"
@@ -1034,10 +1080,12 @@ export function ZusammenfassungStation({
                 : "im Horizont nicht erreicht"
             }
           />
-          <Kennzahl
-            titel="Tiefster Kontostand"
-            wert={formatEuro(kennzahlen.tiefsterLiquiditaetsstandCents)}
-          />
+          <PruefBlock feld="liquiditaet">
+            <Kennzahl
+              titel="Tiefster Kontostand"
+              wert={formatEuro(kennzahlen.tiefsterLiquiditaetsstandCents)}
+            />
+          </PruefBlock>
           <Kennzahl
             titel="Eigenkapitalquote"
             wert={

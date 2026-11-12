@@ -178,13 +178,13 @@ describe("Assistent", () => {
       const migriert = migratePlan(roh);
       expect(migriert).toEqual(plan);
       expect(migriert.assistent).toBeUndefined();
-      expect(migriert.schemaVersion).toBe(9);
+      expect(migriert.schemaVersion).toBe(10);
     }
 
     const roh = structuredClone(beispielElektro) as unknown as Record<string, unknown>;
     roh.schemaVersion = 8;
     const ausAcht = migratePlan(roh);
-    expect(ausAcht.schemaVersion).toBe(9);
+    expect(ausAcht.schemaVersion).toBe(10);
     expect(ausAcht.assistent).toBeUndefined();
     expect(ausAcht.finanzierung).toEqual(beispielElektro.finanzierung);
   });

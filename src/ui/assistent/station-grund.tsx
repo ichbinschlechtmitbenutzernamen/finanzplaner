@@ -34,6 +34,7 @@ import {
   TextFeld,
   ZahlFeld,
 } from "./felder.tsx";
+import { PruefBlock } from "../pruef-marke.tsx";
 import type { PlanAendern } from "./typen.ts";
 
 export function VorhabenStation({ plan, onAendern }: { plan: Finanzplan; onAendern: PlanAendern }) {
@@ -139,16 +140,18 @@ export function VorhabenStation({ plan, onAendern }: { plan: Finanzplan; onAende
           />
         ) : null}
       </div>
-      <Feld
-        label="Kleinunternehmerregelung"
-        hilfe="Ohne Umsatzsteuer auf den Erlös und ohne Vorsteuerabzug."
-      >
-        <input
-          type="checkbox"
-          checked={eingabe.kleinunternehmer}
-          onChange={(event) => schreibe({ kleinunternehmer: event.target.checked })}
-        />
-      </Feld>
+      <PruefBlock feld="kleinunternehmer">
+        <Feld
+          label="Kleinunternehmerregelung"
+          hilfe="Ohne Umsatzsteuer auf den Erlös und ohne Vorsteuerabzug."
+        >
+          <input
+            type="checkbox"
+            checked={eingabe.kleinunternehmer}
+            onChange={(event) => schreibe({ kleinunternehmer: event.target.checked })}
+          />
+        </Feld>
+      </PruefBlock>
       {eingabe.kleinunternehmer ? null : (
         <AuswahlFeld
           label="Umsatzsteuer-Voranmeldung"
@@ -342,36 +345,40 @@ export function PersoenlichStation({
           <fieldset key={person.id} className="feld-gruppe">
             <legend>{person.name || "Person"}</legend>
             <div className="feld-raster">
-              <EuroFeld
-                label="Lebenshaltung"
-                hilfe="Wohnen, Essen und der übrige Alltag, ohne die Versicherungsbeiträge daneben."
-                cents={leben.lebenshaltung.basisCents}
-                onChange={(basisCents) => setze({ lebenshaltung: { basisCents } })}
-              />
-              <EuroFeld
-                label="Krankenversicherung"
-                hilfe="Monatlicher Beitrag zur Krankenversicherung, privat gezahlt."
-                cents={leben.krankenversicherung.basisCents}
-                onChange={(basisCents) => setze({ krankenversicherung: { basisCents } })}
-              />
-              <EuroFeld
-                label="Pflegeversicherung"
-                hilfe="Monatlicher Beitrag zur Pflegeversicherung."
-                cents={leben.pflegeversicherung.basisCents}
-                onChange={(basisCents) => setze({ pflegeversicherung: { basisCents } })}
-              />
-              <EuroFeld
-                label="Altersvorsorge"
-                hilfe="Monatlicher Beitrag zur Altersvorsorge."
-                cents={leben.altersvorsorge.basisCents}
-                onChange={(basisCents) => setze({ altersvorsorge: { basisCents } })}
-              />
-              <EuroFeld
-                label="Sonstige Vorsorge"
-                hilfe="Weitere private Versicherungen, etwa Haftpflicht oder Berufsunfähigkeit."
-                cents={leben.sonstigeVersicherungen.basisCents}
-                onChange={(basisCents) => setze({ sonstigeVersicherungen: { basisCents } })}
-              />
+              <PruefBlock feld={`leben-${person.id}-lebenshaltung`}>
+                <EuroFeld
+                  label="Lebenshaltung"
+                  hilfe="Wohnen, Essen und der übrige Alltag, ohne die Versicherungsbeiträge daneben."
+                  cents={leben.lebenshaltung.basisCents}
+                  onChange={(basisCents) => setze({ lebenshaltung: { basisCents } })}
+                />
+              </PruefBlock>
+              <PruefBlock feld={`leben-${person.id}-vorsorge`}>
+                <EuroFeld
+                  label="Krankenversicherung"
+                  hilfe="Monatlicher Beitrag zur Krankenversicherung, privat gezahlt."
+                  cents={leben.krankenversicherung.basisCents}
+                  onChange={(basisCents) => setze({ krankenversicherung: { basisCents } })}
+                />
+                <EuroFeld
+                  label="Pflegeversicherung"
+                  hilfe="Monatlicher Beitrag zur Pflegeversicherung."
+                  cents={leben.pflegeversicherung.basisCents}
+                  onChange={(basisCents) => setze({ pflegeversicherung: { basisCents } })}
+                />
+                <EuroFeld
+                  label="Altersvorsorge"
+                  hilfe="Monatlicher Beitrag zur Altersvorsorge."
+                  cents={leben.altersvorsorge.basisCents}
+                  onChange={(basisCents) => setze({ altersvorsorge: { basisCents } })}
+                />
+                <EuroFeld
+                  label="Sonstige Vorsorge"
+                  hilfe="Weitere private Versicherungen, etwa Haftpflicht oder Berufsunfähigkeit."
+                  cents={leben.sonstigeVersicherungen.basisCents}
+                  onChange={(basisCents) => setze({ sonstigeVersicherungen: { basisCents } })}
+                />
+              </PruefBlock>
             </div>
             <Feld
               label="Kirchensteuer"
@@ -531,6 +538,7 @@ export function UmsatzStation({ plan, onAendern }: { plan: Finanzplan; onAendern
   return (
     <section className="assistent-station" aria-labelledby="station-umsatz">
       <h2 id="station-umsatz">Umsatz</h2>
+      <PruefBlock feld="umsatz" />
       <p className="hinweis">
         Jede Leistung ist entweder ein Monatsstart mit Wachstum und Saison oder ein Jahreswert je
         Planjahr. Beides schreibt dieselbe Monatsregel wie die Tabelle.
@@ -816,48 +824,51 @@ export function WareneinsatzStation({
   return (
     <section className="assistent-station" aria-labelledby="station-ware">
       <h2 id="station-ware">Wareneinsatz</h2>
+      <PruefBlock feld="wareneinsatz" />
       <p className="hinweis">Der Wareneinsatz ist ein Prozentsatz vom Nettoumsatz der Leistung.</p>
       {linien.length === 0 ? (
         <p className="hinweis">Zuerst unter Umsatz eine Leistung anlegen.</p>
       ) : null}
       {linien.map((linie) => (
-        <fieldset key={linie.id} className="feld-gruppe">
-          <legend>{namen.get(linie.id) || "Leistung"}</legend>
-          <div className="feld-raster">
-            <ProzentFeld
-              label="Anteil vom Umsatz"
-              hilfe="Leer bedeutet kein Wareneinsatz. Ein Anteil über 100 Prozent bleibt zulässig."
-              satz={linie.quote}
-              leerErlaubt
-              onChange={(quote) =>
-                onAendern((aktuell) =>
-                  setzeWareneinsatz(
-                    aktuell,
-                    leseWareneinsatz(aktuell).map((eintrag) =>
-                      eintrag.id === linie.id ? { ...eintrag, quote } : eintrag,
+        <PruefBlock key={linie.id} feld={`ware-${linie.id}`}>
+          <fieldset className="feld-gruppe">
+            <legend>{namen.get(linie.id) || "Leistung"}</legend>
+            <div className="feld-raster">
+              <ProzentFeld
+                label="Anteil vom Umsatz"
+                hilfe="Leer bedeutet kein Wareneinsatz. Ein Anteil über 100 Prozent bleibt zulässig."
+                satz={linie.quote}
+                leerErlaubt
+                onChange={(quote) =>
+                  onAendern((aktuell) =>
+                    setzeWareneinsatz(
+                      aktuell,
+                      leseWareneinsatz(aktuell).map((eintrag) =>
+                        eintrag.id === linie.id ? { ...eintrag, quote } : eintrag,
+                      ),
                     ),
-                  ),
-                )
-              }
-            />
-            <ProzentFeld
-              label="Vorsteuer auf den Wareneinsatz"
-              hilfe="Satz der Vorsteuer auf den Einkauf dieser Leistung."
-              satz={linie.umsatzsteuerSatz}
-              onChange={(umsatzsteuerSatz) => {
-                if (umsatzsteuerSatz == null) return;
-                onAendern((aktuell) =>
-                  setzeWareneinsatz(
-                    aktuell,
-                    leseWareneinsatz(aktuell).map((eintrag) =>
-                      eintrag.id === linie.id ? { ...eintrag, umsatzsteuerSatz } : eintrag,
+                  )
+                }
+              />
+              <ProzentFeld
+                label="Vorsteuer auf den Wareneinsatz"
+                hilfe="Satz der Vorsteuer auf den Einkauf dieser Leistung."
+                satz={linie.umsatzsteuerSatz}
+                onChange={(umsatzsteuerSatz) => {
+                  if (umsatzsteuerSatz == null) return;
+                  onAendern((aktuell) =>
+                    setzeWareneinsatz(
+                      aktuell,
+                      leseWareneinsatz(aktuell).map((eintrag) =>
+                        eintrag.id === linie.id ? { ...eintrag, umsatzsteuerSatz } : eintrag,
+                      ),
                     ),
-                  ),
-                );
-              }}
-            />
-          </div>
-        </fieldset>
+                  );
+                }}
+              />
+            </div>
+          </fieldset>
+        </PruefBlock>
       ))}
     </section>
   );

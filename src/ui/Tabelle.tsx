@@ -1,6 +1,9 @@
 import { useRef, useState, type ClipboardEvent, type KeyboardEvent } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import type { IsoMonth } from "../domain/types.ts";
+import type { TabellenAnsicht } from "../domain/checks/index.ts";
+import type { Pruefmeldung } from "../domain/checks/index.ts";
+import { PRUEF_ICON, markeFuerZeile } from "./pruef-marke.tsx";
 import {
   formatEingabeEuro,
   formatEuro,
@@ -28,6 +31,8 @@ interface TabelleProps {
   onRedo: () => void;
   bearbeiten: boolean;
   eingeklappt: ReadonlySet<number>;
+  pruefungen?: readonly Pruefmeldung[];
+  ansicht?: TabellenAnsicht;
 }
 
 interface Edit {
@@ -50,6 +55,8 @@ export function Tabelle({
   onRedo,
   bearbeiten,
   eingeklappt,
+  pruefungen = [],
+  ansicht = "eingaben",
 }: TabelleProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [edit, setEdit] = useState<Edit | null>(null);
@@ -256,15 +263,30 @@ export function Tabelle({
           {fenster.map((eintrag) => {
             const zeile = zeilen[eintrag.index];
             if (!zeile) return null;
+            const marke = markeFuerZeile(pruefungen, ansicht, zeile.id);
             return (
-              <tr key={zeile.id} role="row" className={zeilenKlasse(zeile)} style={{ height: 36 }}>
+              <tr
+                key={zeile.id}
+                role="row"
+                className={zeilenKlasse(zeile, marke?.stufe)}
+                style={{ height: 36 }}
+              >
                 <th
                   className="spalte-name klebt"
                   scope="row"
                   role="rowheader"
-                  title={zeile.bezeichnung}
+                  title={marke ? `${zeile.bezeichnung}. ${marke.text}` : zeile.bezeichnung}
                 >
                   <span style={{ paddingLeft: `${zeile.ebene * 0.9}rem` }}>
+                    {marke ? (
+                      <span
+                        className={`pruef-icon pruef-${marke.stufe}`}
+                        title={marke.begruendung}
+                        aria-label={marke.text}
+                      >
+                        {PRUEF_ICON[marke.stufe]}
+                      </span>
+                    ) : null}
                     {zeile.bezeichnung}
                   </span>
                 </th>
@@ -276,6 +298,10 @@ export function Tabelle({
                   const aktiv = auswahl?.zeile === eintrag.index && auswahl.spalte === index;
                   const imEdit = edit?.zeile === eintrag.index && edit.spalte === index;
                   const label = zellenLabel(zeile, spalte, wert);
+                  const monatMarke =
+                    marke?.monat != null && spalte.art === "monat" && spalte.monat === marke.monat
+                      ? marke.stufe
+                      : null;
                   return (
                     <td
                       key={spalte.key}
@@ -285,7 +311,8 @@ export function Tabelle({
                       aria-readonly={!kann}
                       aria-label={label}
                       tabIndex={aktiv ? -1 : undefined}
-                      className={zellenKlasse(zeile, spalte, wert, aktiv, kann)}
+                      title={monatMarke ? marke?.text : undefined}
+                      className={zellenKlasse(zeile, spalte, wert, aktiv, kann, monatMarke)}
                       onClick={(event) => {
                         event.currentTarget.focus();
                         onAuswahl({ zeile: eintrag.index, spalte: index });
@@ -362,12 +389,13 @@ function zellenLabel(zeile: TabellenZeile, spalte: DatenSpalte, wert: number | n
   return `${zeile.bezeichnung}, ${wann}, ${anzeige(zeile, wert) || "leer"}`;
 }
 
-function zeilenKlasse(zeile: TabellenZeile): string {
+function zeilenKlasse(zeile: TabellenZeile, stufe?: Pruefmeldung["stufe"]): string {
   const teile = ["zeile"];
   if (zeile.kopf) teile.push("kopf");
   if (zeile.rolle === "summe" || zeile.rolle === "ergebnis") teile.push("fett");
   if (zeile.rolle === "nachricht") teile.push("nachricht");
   if (zeile.rolle === "ergebnis") teile.push("ergebnis");
+  if (stufe) teile.push(`pruef-${stufe}`);
   return teile.join(" ");
 }
 
@@ -377,6 +405,7 @@ function zellenKlasse(
   wert: number | null,
   aktiv: boolean,
   kann: boolean,
+  monatStufe?: Pruefmeldung["stufe"] | null,
 ): string {
   const teile = ["zahl"];
   if (spalte.art === "jahr") teile.push("spalte-jahr");
@@ -384,6 +413,7 @@ function zellenKlasse(
   if (aktiv) teile.push("aktiv");
   if (kann) teile.push("kann");
   if (zeile.rolle === "summe" || zeile.rolle === "ergebnis") teile.push("fett");
+  if (monatStufe) teile.push(`pruef-monat-${monatStufe}`);
   return teile.join(" ");
 }
 

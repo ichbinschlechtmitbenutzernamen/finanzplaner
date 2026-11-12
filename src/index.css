@@ -723,3 +723,212 @@ button.primaer {
   clip: rect(0, 0, 0, 0);
   border: 0;
 }
+
+.pruef-zaehler {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 1.35rem;
+  margin-left: 0.35rem;
+  padding: 0 0.35rem;
+  border-radius: 999px;
+  background: var(--line);
+  color: var(--ink);
+  font-size: 0.75rem;
+  font-weight: 750;
+  line-height: 1.35rem;
+}
+
+.pruef-zaehler.pruef-fehler,
+.pruef-icon.pruef-fehler {
+  background: var(--neg);
+  color: #fff;
+}
+
+.pruef-zaehler.pruef-warnung,
+.pruef-icon.pruef-warnung {
+  background: var(--warn);
+  color: #fff;
+}
+
+.pruef-zaehler.pruef-hinweis,
+.pruef-icon.pruef-hinweis {
+  background: var(--accent);
+  color: #f4f1ea;
+}
+
+.pruef-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.05rem;
+  height: 1.05rem;
+  margin-right: 0.35rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-style: normal;
+  font-weight: 750;
+  vertical-align: middle;
+}
+
+.zeile.pruef-fehler th,
+.zeile.pruef-fehler td {
+  background: #fde8e8;
+}
+
+.zeile.pruef-warnung th,
+.zeile.pruef-warnung td {
+  background: var(--warn-bg);
+}
+
+.zeile.pruef-hinweis th,
+.zeile.pruef-hinweis td {
+  background: var(--accent-soft);
+}
+
+.zeile.pruef-fehler .spalte-name {
+  box-shadow: inset 4px 0 0 var(--neg);
+}
+
+.zeile.pruef-warnung .spalte-name {
+  box-shadow: inset 4px 0 0 var(--warn);
+}
+
+.zeile.pruef-hinweis .spalte-name {
+  box-shadow: inset 4px 0 0 var(--accent);
+}
+
+.zahl.pruef-monat-fehler,
+.zahl.pruef-monat-warnung,
+.zahl.pruef-monat-hinweis {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
+
+.zahl.pruef-monat-fehler {
+  color: var(--neg);
+}
+
+.pruefung h2,
+.pruef-gruppe h3,
+.pruef-gruppe h4,
+.pruef-karte h5 {
+  margin: 0 0 0.35rem;
+}
+
+.pruef-gruppe h4 {
+  margin-top: 0.6rem;
+  color: var(--muted);
+  font-size: 0.95rem;
+}
+
+.pruef-karte {
+  margin: 0.45rem 0;
+  padding: 0.75rem 0.85rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-left-width: 4px;
+  border-radius: 12px;
+}
+
+.pruef-karte p {
+  margin: 0.2rem 0 0.55rem;
+}
+
+.pruef-karte.pruef-fehler {
+  border-left-color: var(--neg);
+}
+
+.pruef-karte.pruef-warnung {
+  border-left-color: var(--warn);
+}
+
+.pruef-karte.pruef-hinweis {
+  border-left-color: var(--accent);
+}
+
+.pruef-aktionen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+}
+
+.pruef-aktionen button,
+.schwellen button {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.3rem 0.7rem;
+  cursor: pointer;
+}
+
+.pruef-feld {
+  position: relative;
+  margin: 0.35rem 0;
+  padding: 0.45rem 0.6rem;
+  border-radius: 12px;
+}
+
+.pruef-feld.pruef-fehler {
+  background: #fde8e8;
+  outline: 2px solid var(--neg);
+}
+
+.pruef-feld.pruef-warnung {
+  background: var(--warn-bg);
+  outline: 2px solid var(--warn);
+}
+
+.pruef-feld.pruef-hinweis {
+  background: var(--accent-soft);
+  outline: 2px solid var(--accent);
+}
+
+.pruef-zeile {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.15rem;
+  margin: 0 0 0.35rem;
+  font-weight: 650;
+}
+
+.pruef-tooltip {
+  display: none;
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  top: calc(100% - 0.2rem);
+  width: min(28rem, 80vw);
+  padding: 0.5rem 0.65rem;
+  border-radius: 8px;
+  background: var(--ink);
+  color: #f4f1ea;
+  font-size: 0.85rem;
+  font-weight: 450;
+  line-height: 1.35;
+  white-space: normal;
+}
+
+.pruef-feld:hover .pruef-tooltip,
+.pruef-feld:focus-within .pruef-tooltip {
+  display: block;
+}
+
+.schwellen {
+  margin-top: 0.4rem;
+  padding: 0.8rem;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.schwellen summary {
+  cursor: pointer;
+  font-weight: 650;
+}
+
+.schwellen-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+  gap: 0.7rem;
+  margin: 0.7rem 0;
+}

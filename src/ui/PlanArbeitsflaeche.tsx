@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useReducer, useState } from "react";
+import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { springeZu } from "../domain/assistent/stationen.ts";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
+import { pruefePlan, type Pruefmeldung, type TabellenAnsicht } from "../domain/checks/index.ts";
 import { roundCents } from "../domain/calc/round.ts";
 import {
   einfuegenSerie,
@@ -13,7 +15,7 @@ import { erstelleBerichte } from "../domain/reports/berichte.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import { finanzplanSchema } from "../domain/schema.ts";
 import { RECHTSFORM_LABEL } from "../domain/labels.ts";
-import type { Finanzplan, IsoMonth } from "../domain/types.ts";
+import type { Finanzplan, IsoMonth, AssistentStation } from "../domain/types.ts";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
@@ -21,6 +23,8 @@ import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
 import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
 import { Assistent, Startauswahl, waehleAssistent, waehleTabelle } from "./Assistent.tsx";
+import { Pruefung, zaehlerStufe } from "./Pruefung.tsx";
+import { PruefAnbieter } from "./pruef-marke.tsx";
 import { Ueberblick } from "./Ueberblick.tsx";
 import { berichtZeilen, type BerichtReiter } from "./zeilen-bericht.ts";
 import { eingabeZeilen, planMonate } from "./zeilen-eingabe.ts";
@@ -29,6 +33,7 @@ import type { TabellenZeile } from "./zeilen-modell.ts";
 export const REITER = [
   { id: "assistent", label: "Assistent" },
   { id: "ueberblick", label: "Überblick" },
+  { id: "pruefung", label: "Prüfung" },
   { id: "eingaben", label: "Eingaben" },
   { id: "rentabilitaet", label: "Rentabilitätsvorschau" },
   { id: "liquiditaet", label: "Liquiditätsplan" },
@@ -38,6 +43,14 @@ export const REITER = [
 ] as const;
 
 export type ReiterId = (typeof REITER)[number]["id"];
+
+type Sprung =
+  | { art: "tabelle"; ansicht: TabellenAnsicht; zeileId: string; monat?: string }
+  | { art: "assistent"; station: AssistentStation; feld: string };
+
+function istTabelle(reiter: ReiterId): reiter is TabellenAnsicht {
+  return reiter !== "assistent" && reiter !== "ueberblick" && reiter !== "pruefung";
+}
 
 const DECKUNG: Record<Berichte["kapital"]["deckungArt"], string> = {
   ueberdeckung: "Überdeckung",
@@ -70,6 +83,8 @@ export function PlanArbeitsflaeche({
 }: PlanArbeitsflaecheProps) {
   const [verlauf, dispatch] = useReducer(verlaufReduzieren<Finanzplan>, anfangsplan, verlaufAnfang);
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
+  const [sprung, setSprung] = useState<Sprung | null>(null);
+  const sprungAngewandt = useRef("");
   const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
   const [meldung, setMeldung] = useState<string | null>(null);
   const plan = verlauf.gegenwart;
@@ -80,12 +95,33 @@ export function PlanArbeitsflaeche({
     [monate, jahre, eingeklappt],
   );
   const rechnung = useMemo(() => rechne(plan), [plan]);
+  const meldungen = useMemo(
+    () => (rechnung.berichte ? pruefePlan(plan, rechnung.berichte) : []),
+    [plan, rechnung.berichte],
+  );
   const zeilen = useMemo(
     () => zeilenFuer(plan, monate, jahre, reiter, rechnung.berichte),
     [plan, monate, jahre, reiter, rechnung.berichte],
   );
   const gewaehlt = zeilen[auswahl?.zeile ?? -1] ?? null;
   const monat = monatDerAuswahl(spalten, auswahl);
+
+  useEffect(() => {
+    if (!sprung || sprung.art !== "tabelle" || reiter !== sprung.ansicht) return;
+    const index = zeilen.findIndex((zeile) => zeile.id === sprung.zeileId);
+    if (index < 0) return;
+    const schluessel = `${sprung.ansicht}:${sprung.zeileId}:${sprung.monat ?? ""}:${index}`;
+    if (sprungAngewandt.current === schluessel) return;
+    let spalte = 0;
+    if (sprung.monat) {
+      const gefunden = spalten.findIndex(
+        (eintrag) => eintrag.art === "monat" && eintrag.monat === sprung.monat,
+      );
+      if (gefunden >= 0) spalte = gefunden;
+    }
+    sprungAngewandt.current = schluessel;
+    setAuswahl({ zeile: index, spalte });
+  }, [sprung, reiter, zeilen, spalten]);
 
   useEffect(() => {
     if (verlauf.vergangenheit.length === 0 && verlauf.zukunft.length === 0) return;
@@ -202,6 +238,36 @@ export function PlanArbeitsflaeche({
     });
   }
 
+  function springe(meldung: Pruefmeldung, wohin: "tabelle" | "assistent") {
+    if (wohin === "assistent" && meldung.ziel.assistent) {
+      const ziel = meldung.ziel.assistent;
+      aendern((aktuell) => springeZu(aktuell, ziel.station));
+      setSprung({ art: "assistent", station: ziel.station, feld: ziel.feld });
+      onReiter("assistent");
+      return;
+    }
+    const tabelle = meldung.ziel.tabelle;
+    if (!tabelle) return;
+    if (tabelle.monat) {
+      const monat = tabelle.monat;
+      const jahr = jahre.find((eintrag) => monat >= eintrag.vonMonat && monat <= eintrag.bisMonat);
+      if (jahr && eingeklappt.has(jahr.nummer)) {
+        setEingeklappt((bisher) => {
+          const naechste = new Set(bisher);
+          naechste.delete(jahr.nummer);
+          return naechste;
+        });
+      }
+    }
+    setSprung({
+      art: "tabelle",
+      ansicht: tabelle.ansicht,
+      zeileId: tabelle.zeileId,
+      monat: tabelle.monat,
+    });
+    onReiter(tabelle.ansicht);
+  }
+
   const rechtsform = plan.stammdaten.rechtsform;
   const letzter = monate.at(-1);
 
@@ -209,7 +275,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 7 · Geführter Assistent</p>
+          <p className="eyebrow">Schritt 8 · Plausibilitätschecks</p>
           <h1>{plan.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {plan.stammdaten.planName}
@@ -274,7 +340,7 @@ export function PlanArbeitsflaeche({
             aria-selected={reiter === eintrag.id}
             aria-controls="plan-ansicht"
             onClick={() => {
-              if (zeigeStartauswahl(plan)) {
+              if (zeigeStartauswahl(plan) && eintrag.id !== "pruefung") {
                 aendern((aktuell) =>
                   eintrag.id === "assistent" ? waehleAssistent(aktuell) : waehleTabelle(aktuell),
                 );
@@ -283,92 +349,120 @@ export function PlanArbeitsflaeche({
             }}
           >
             {eintrag.label}
+            {eintrag.id === "pruefung" ? (
+              <span
+                className={`pruef-zaehler pruef-${zaehlerStufe(meldungen)}`}
+                aria-label={`${meldungen.length} ${meldungen.length === 1 ? "Meldung" : "Meldungen"}`}
+              >
+                {meldungen.length}
+              </span>
+            ) : null}
           </button>
         ))}
       </div>
 
       <div role="tabpanel" id="plan-ansicht" aria-labelledby={`reiter-${reiter}`}>
-        {zeigeStartauswahl(plan) ? (
-          <Startauswahl
-            onAssistent={() => {
-              aendern((aktuell) => waehleAssistent(aktuell));
-              onReiter("assistent");
-            }}
-            onTabelle={() => {
-              aendern((aktuell) => waehleTabelle(aktuell));
-              onReiter("eingaben");
-            }}
-          />
-        ) : reiter === "assistent" ? (
-          <Assistent
-            plan={plan}
-            berichte={rechnung.berichte}
-            onAendern={aendern}
-            onUeberblick={() => onReiter("ueberblick")}
-          />
-        ) : reiter === "ueberblick" ? (
+        <PruefAnbieter meldungen={meldungen}>
+          {zeigeStartauswahl(plan) ? (
+            <Startauswahl
+              onAssistent={() => {
+                aendern((aktuell) => waehleAssistent(aktuell));
+                onReiter("assistent");
+              }}
+              onTabelle={() => {
+                aendern((aktuell) => waehleTabelle(aktuell));
+                onReiter("eingaben");
+              }}
+            />
+          ) : reiter === "assistent" ? (
+            <Assistent
+              plan={plan}
+              berichte={rechnung.berichte}
+              onAendern={aendern}
+              onUeberblick={() => onReiter("ueberblick")}
+              hervorhebung={sprung?.art === "assistent" ? sprung : null}
+            />
+          ) : reiter === "pruefung" ? (
+            <Pruefung
+              plan={plan}
+              meldungen={meldungen}
+              fehler={rechnung.fehler}
+              onAendern={aendern}
+              onSpringen={springe}
+            />
+          ) : reiter === "ueberblick" ? (
+            rechnung.berichte ? (
+              <Ueberblick berichte={rechnung.berichte} />
+            ) : (
+              <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
+            )
+          ) : null}
+          {reiter !== "ueberblick" &&
+          reiter !== "assistent" &&
+          reiter !== "pruefung" &&
+          !zeigeStartauswahl(plan) &&
           rechnung.berichte ? (
-            <Ueberblick berichte={rechnung.berichte} />
+            <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
+          ) : null}
+          {zeigeStartauswahl(plan) ||
+          reiter === "assistent" ||
+          reiter === "ueberblick" ||
+          reiter === "pruefung" ? null : reiter === "eingaben" ? (
+            <Hilfeleiste
+              plan={plan}
+              zeile={gewaehlt}
+              monat={monat?.monat ?? null}
+              monate={monate}
+              monatIndex={monat?.monatIndex ?? null}
+              onAendern={aendern}
+            />
           ) : (
-            <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
-          )
-        ) : null}
-        {reiter !== "ueberblick" &&
-        reiter !== "assistent" &&
-        !zeigeStartauswahl(plan) &&
-        rechnung.berichte ? (
-          <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
-        ) : null}
-        {zeigeStartauswahl(plan) ||
-        reiter === "assistent" ||
-        reiter === "ueberblick" ? null : reiter === "eingaben" ? (
-          <Hilfeleiste
-            plan={plan}
-            zeile={gewaehlt}
-            monat={monat?.monat ?? null}
-            monate={monate}
-            monatIndex={monat?.monatIndex ?? null}
-            onAendern={aendern}
-          />
-        ) : (
-          <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
-        )}
-        {meldung &&
-        reiter !== "ueberblick" &&
-        reiter !== "assistent" &&
-        !zeigeStartauswahl(plan) ? (
-          <p className="fehler" role="alert">
-            {meldung}
-          </p>
-        ) : null}
-        {rechnung.fehler &&
-        reiter !== "eingaben" &&
-        reiter !== "ueberblick" &&
-        reiter !== "assistent" ? (
-          <p className="fehler">{rechnung.fehler}</p>
-        ) : null}
-        {zeigeStartauswahl(plan) || reiter === "ueberblick" || reiter === "assistent" ? null : (
-          <Tabelle
-            zeilen={zeilen}
-            spalten={spalten}
-            auswahl={auswahl}
-            onAuswahl={setAuswahl}
-            eingeklappt={eingeklappt}
-            onUmschalten={(nummer) => {
-              setEingeklappt((bisher) => {
-                const naechste = new Set(bisher);
-                if (naechste.has(nummer)) naechste.delete(nummer);
-                else naechste.add(nummer);
-                return naechste;
-              });
-            }}
-            onCommit={commitZelle}
-            onPaste={einfuegen}
-            onUndo={() => dispatch({ typ: "zurueck" })}
-            onRedo={() => dispatch({ typ: "vor" })}
-            bearbeiten={reiter === "eingaben"}
-          />
-        )}
+            <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
+          )}
+          {meldung &&
+          reiter !== "ueberblick" &&
+          reiter !== "assistent" &&
+          reiter !== "pruefung" &&
+          !zeigeStartauswahl(plan) ? (
+            <p className="fehler" role="alert">
+              {meldung}
+            </p>
+          ) : null}
+          {rechnung.fehler &&
+          reiter !== "eingaben" &&
+          reiter !== "ueberblick" &&
+          reiter !== "assistent" &&
+          reiter !== "pruefung" ? (
+            <p className="fehler">{rechnung.fehler}</p>
+          ) : null}
+          {zeigeStartauswahl(plan) ||
+          reiter === "ueberblick" ||
+          reiter === "assistent" ||
+          reiter === "pruefung" ? null : (
+            <Tabelle
+              zeilen={zeilen}
+              spalten={spalten}
+              auswahl={auswahl}
+              onAuswahl={setAuswahl}
+              eingeklappt={eingeklappt}
+              onUmschalten={(nummer) => {
+                setEingeklappt((bisher) => {
+                  const naechste = new Set(bisher);
+                  if (naechste.has(nummer)) naechste.delete(nummer);
+                  else naechste.add(nummer);
+                  return naechste;
+                });
+              }}
+              onCommit={commitZelle}
+              onPaste={einfuegen}
+              onUndo={() => dispatch({ typ: "zurueck" })}
+              onRedo={() => dispatch({ typ: "vor" })}
+              bearbeiten={reiter === "eingaben"}
+              pruefungen={meldungen}
+              ansicht={istTabelle(reiter) ? reiter : "eingaben"}
+            />
+          )}
+        </PruefAnbieter>
       </div>
     </div>
   );
@@ -387,7 +481,7 @@ function zeilenFuer(
   reiter: ReiterId,
   berichte: Berichte | null,
 ): TabellenZeile[] {
-  if (reiter === "ueberblick" || reiter === "assistent") return [];
+  if (reiter === "ueberblick" || reiter === "assistent" || reiter === "pruefung") return [];
   if (reiter === "eingaben") return eingabeZeilen(plan, monate, jahre);
   if (!berichte) return [];
   return berichtZeilen(berichte, reiter);
@@ -415,7 +509,13 @@ function hinweis(berichte: Berichte | null, reiter: BerichtReiter): string {
 
 function KennzahlenZeile({ berichte, reiter }: { berichte: Berichte; reiter: ReiterId }) {
   const kennzahlen = berichte.kennzahlen;
-  if (reiter === "eingaben" || reiter === "ueberblick" || reiter === "assistent") return null;
+  if (
+    reiter === "eingaben" ||
+    reiter === "ueberblick" ||
+    reiter === "assistent" ||
+    reiter === "pruefung"
+  )
+    return null;
   if (reiter === "rentabilitaet") {
     const bruch = kennzahlen.breakEven;
     return (

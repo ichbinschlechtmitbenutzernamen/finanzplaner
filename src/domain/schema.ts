@@ -621,6 +621,28 @@ const offenesDarlehenSchema = z.strictObject({
   notizen: optionalTextSchema(2000).optional(),
 });
 
+const satzBis = (max: number) => z.number().min(0).max(max);
+
+const pruefSchwellenSchema = z.strictObject({
+  kontostandMinCents: centsSchema,
+  verfuegbarPlanjahr2MinCents: centsSchema,
+  lebenshaltungMinMonatCents: centsSchema,
+  vorsorgeMinMonatCents: centsSchema,
+  anlaufMonate: z.number().int().min(1).max(12),
+  anlaufAnteil: satzBis(2),
+  wachstumMax: satzBis(10),
+  wareneinsatzHoch: satzBis(5),
+  wareneinsatzGrenze: satzBis(5),
+  personalquoteMax: satzBis(5),
+  kleinunternehmerVorjahrCents: centsSchema,
+  kleinunternehmerLaufendCents: centsSchema,
+  eigenkapitalquoteMin: satzBis(1),
+});
+
+const pruefungSchema = z.strictObject({
+  schwellen: pruefSchwellenSchema,
+});
+
 const assistentSchema = z.strictObject({
   weg: z.enum(ASSISTENT_WEGE).optional(),
   station: z.enum(ASSISTENT_STATIONEN),
@@ -650,6 +672,7 @@ export const finanzplanSchema = z
     steuerplanung: steuerplanungSchema,
     szenarien: szenarienSchema,
     assistent: assistentSchema.optional(),
+    pruefung: pruefungSchema,
     notizen: optionalTextSchema(5000).optional(),
   })
   .superRefine((plan, ctx) => {
