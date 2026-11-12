@@ -31,8 +31,8 @@ import type { Berichte } from "../domain/reports/typen.ts";
 import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from "./format.ts";
 
 /**
- * Diagramme für den Überblick. Dieselben Komponenten kann Schritt 10 für das PDF
- * mit `fest` in fester SVG-Größe rendern. Die Zahlen kommen aus den Berichten.
+ * Diagramme für den Überblick. Das PDF zeichnet dieselben Zahlenreihen als Vektoren.
+ * Die Zahlen kommen aus den Berichten.
  */
 
 export interface DiagrammFest {

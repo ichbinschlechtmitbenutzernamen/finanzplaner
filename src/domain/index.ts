@@ -58,6 +58,7 @@ export {
   ASSISTENT_STATIONEN,
   ASSISTENT_WEGE,
   BASIS_SZENARIO_ID,
+  PDF_KAPITEL,
   SCHEMA_VERSION,
   SZENARIO_IDS,
   TILGUNGSARTEN,
@@ -83,6 +84,15 @@ export {
   wendeHebelAn,
   standardPlanSzenarien,
 } from "./szenarien/index.ts";
+export { erstellePdfDokument, type PdfDokument, type PdfSzenarioAbschnitt } from "./pdf/modell.ts";
+export {
+  PDF_KAPITEL_LABEL,
+  fehlerVermerkText,
+  kapitelFuerRechtsform,
+  normalisiereKapitel,
+  pdfDateiname,
+  standardPdfExport,
+} from "./pdf/kapitel.ts";
 export type { ExportSzenarioVergleich } from "./szenarien/index.ts";
 export type {
   ExportPruefmeldung,
@@ -148,6 +158,8 @@ export type {
   PlanSzenario,
   PlanSzenarioArt,
   PlanStand,
+  PdfKapitelId,
+  PdfExportEinstellungen,
   AbweichungsSzenario,
   KopieSzenario,
   Tilgungsart,

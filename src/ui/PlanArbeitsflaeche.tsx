@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
 import { pruefePlan, type Pruefmeldung, type TabellenAnsicht } from "../domain/checks/index.ts";
@@ -16,7 +17,7 @@ import { erstelleBerichte } from "../domain/reports/berichte.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import { finanzplanSchema } from "../domain/schema.ts";
 import { RECHTSFORM_LABEL } from "../domain/labels.ts";
-import type { Finanzplan, IsoMonth, AssistentStation } from "../domain/types.ts";
+import type { AssistentStation, Finanzplan, IsoMonth, PdfKapitelId } from "../domain/types.ts";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
@@ -95,6 +96,7 @@ export function PlanArbeitsflaeche({
   const sprungAngewandt = useRef("");
   const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
   const [meldung, setMeldung] = useState<string | null>(null);
+  const [pdfOffen, setPdfOffen] = useState(false);
   const plan = verlauf.gegenwart;
   const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
   const modus = aktivesSzenario(plan)?.art ?? "basis";
@@ -305,7 +307,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 9 · Szenarien</p>
+          <p className="eyebrow">Schritt 10 · PDF</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}
@@ -350,6 +352,9 @@ export function PlanArbeitsflaeche({
             </button>
             <button type="button" onClick={onZuruecksetzen}>
               {plan.stammdaten.beispiel ? "Beispiel zurücksetzen" : "Plan zurücksetzen"}
+            </button>
+            <button type="button" onClick={() => setPdfOffen(true)}>
+              PDF erstellen
             </button>
           </div>
         </div>
@@ -506,6 +511,13 @@ export function PlanArbeitsflaeche({
           )}
         </PruefAnbieter>
       </div>
+      {pdfOffen ? (
+        <PdfDialog
+          plan={plan}
+          onSchliessen={() => setPdfOffen(false)}
+          onKapitel={(kapitel: PdfKapitelId[]) => uebernehmen({ ...plan, pdfExport: { kapitel } })}
+        />
+      ) : null}
     </div>
   );
 }

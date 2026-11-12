@@ -1,4 +1,5 @@
 import { standardSchwellen } from "../domain/checks/schwellen.ts";
+import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
 import type { Finanzplan } from "../domain/types.ts";
@@ -10,7 +11,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielGmbh = {
   id: "plan-beispiel-hafenlicht-gmbh",
-  schemaVersion: 11,
+  schemaVersion: 12,
   status: "vollstaendig",
   erstelltAm: "2026-01-08T09:00:00.000Z",
   geaendertAm: "2026-01-20T09:00:00.000Z",
@@ -139,6 +140,7 @@ export const beispielGmbh = {
   },
   planSzenarien: standardPlanSzenarien(),
   pruefung: { schwellen: standardSchwellen() },
+  pdfExport: standardPdfExport(),
   notizen:
     "Dieser Plan ist vollständig erfunden. Mira Kolb und die Hafenlicht GmbH gibt es nicht. Der Hebesatz 400 ist ein Beispielwert, keine Auskunft über Köln. Das Geschäftsführergehalt ist Personalaufwand. Ausschüttungen werden nicht besteuert. Keine Verwendung für einen echten Antrag.",
 } satisfies Finanzplan;

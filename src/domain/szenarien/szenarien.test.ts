@@ -338,7 +338,7 @@ describe("Migration und Vergleich", () => {
     roh.schemaVersion = 10;
     delete roh.planSzenarien;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(11);
+    expect(migriert.schemaVersion).toBe(12);
     expect(migriert).toEqual(beispielElektro);
     expect(migriert.planSzenarien.aktivId).toBe("basis");
     expect(migriert.planSzenarien.eintraege.map((eintrag) => eintrag.name)).toEqual([
@@ -352,7 +352,7 @@ describe("Migration und Vergleich", () => {
     roh.schemaVersion = 10;
     (roh.planSzenarien as { eintraege: unknown[] }).eintraege = [];
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(11);
+    expect(migriert.schemaVersion).toBe(12);
     expect(migriert.planSzenarien.eintraege).toEqual([]);
   });
 
@@ -403,7 +403,7 @@ describe("Migration und Vergleich", () => {
         "abweichung",
         "abweichung",
       ]);
-      expect(plan.schemaVersion).toBe(11);
+      expect(plan.schemaVersion).toBe(12);
     }
   });
 });
