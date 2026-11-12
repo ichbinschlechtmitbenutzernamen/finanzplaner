@@ -91,6 +91,7 @@ function Harness() {
       reiter={reiter}
       onBeispiel={() => undefined}
       onReiter={setReiter}
+      onNeu={() => undefined}
       onSpeichern={() => undefined}
       onZuruecksetzen={() => undefined}
     />

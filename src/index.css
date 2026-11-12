@@ -530,3 +530,196 @@ button:disabled {
     grid-column: auto;
   }
 }
+
+.stationen {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+}
+
+.stationen button {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+}
+
+.stationen button span {
+  display: inline-grid;
+  place-items: center;
+  width: 1.3rem;
+  height: 1.3rem;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.stationen button[aria-current="step"] {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #f4f1ea;
+}
+
+.stationen button[aria-current="step"] span {
+  background: #f4f1ea;
+  color: var(--accent);
+}
+
+.stationen button.erledigt span {
+  background: var(--accent);
+  color: #f4f1ea;
+}
+
+.stationen button[aria-current="step"].erledigt span {
+  background: #f4f1ea;
+  color: var(--accent);
+}
+
+.stationen button[data-uebersprungen="true"] {
+  opacity: 0.55;
+}
+
+.stationen small {
+  color: inherit;
+  font-size: 0.75rem;
+}
+
+.assistent-station h2,
+.startwahl h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.35rem;
+}
+
+.feld-raster,
+.saison-raster {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 0.8rem;
+  margin: 0.6rem 0;
+}
+
+.saison-raster {
+  grid-template-columns: repeat(auto-fit, minmax(5.5rem, 1fr));
+}
+
+.feld,
+.feld-gruppe {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  margin: 0 0 0.8rem;
+}
+
+.feld label,
+.feld-label,
+.feld-gruppe legend {
+  font-weight: 650;
+}
+
+.feld input,
+.feld select,
+.feld-gruppe input[type="text"],
+.feld-gruppe input[type="month"],
+.feld-gruppe select,
+.hilfe-zeile input,
+.hilfe-zeile select {
+  width: 100%;
+  max-width: 24rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #fff;
+}
+
+.feld-hilfe {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
+.feld-gruppe {
+  padding: 0.8rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper);
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.25rem 0;
+}
+
+.check input {
+  width: auto;
+}
+
+.assistent-nav,
+.startwahl-aktionen,
+.vorschlag-liste {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.8rem 0;
+}
+
+.assistent-nav button,
+.startwahl-aktionen button,
+.vorschlag-liste button,
+.feld-gruppe > button,
+.karte button {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  cursor: pointer;
+}
+
+button.primaer {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #f4f1ea;
+}
+
+.startwahl {
+  max-width: 36rem;
+  margin-top: 1rem;
+  padding: 1.2rem;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--paper);
+}
+
+.karte {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1rem;
+  align-items: end;
+  margin: 0.4rem 0;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--line);
+}
+
+.einordnung {
+  margin: 0.2rem 0 0.4rem;
+  font-weight: 650;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}

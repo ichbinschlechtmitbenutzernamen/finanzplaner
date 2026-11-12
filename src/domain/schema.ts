@@ -19,6 +19,8 @@ import {
   UST_REGIME,
   UST_VERSTEUERUNG,
   UST_VORANMELDUNG,
+  ASSISTENT_STATIONEN,
+  ASSISTENT_WEGE,
   WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
@@ -590,6 +592,43 @@ const szenarienSchema = z.strictObject({
   worst: szenarioSchema,
 });
 
+const offeneEinlageSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  personId: idSchema.optional(),
+  monat: isoMonthSchema,
+  art: z.enum(EIGENKAPITAL_ARTEN),
+  notizen: optionalTextSchema(2000).optional(),
+});
+
+const offenesDarlehenSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  geber: textSchema(200),
+  art: z.enum(DARLEHENSARTEN),
+  monat: isoMonthSchema,
+  nominalzinsPa: satzSchema,
+  laufzeitMonate: z.number().int().min(1).max(600),
+  tilgungsfreieMonate: z.number().int().min(0).max(600),
+  zinszahlungInTilgungsfreierZeit: z.boolean(),
+  tilgungsart: z.enum(TILGUNGSARTEN),
+  auszahlungAnteil: z.number().min(0).max(1).optional(),
+  gebuehrenCents: centsSchema.optional(),
+  personId: idSchema.optional(),
+  vorlageId: idSchema.optional(),
+  sicherheitenNotiz: optionalTextSchema(2000).optional(),
+  disagioCents: centsSchema.optional(),
+  notizen: optionalTextSchema(2000).optional(),
+});
+
+const assistentSchema = z.strictObject({
+  weg: z.enum(ASSISTENT_WEGE).optional(),
+  station: z.enum(ASSISTENT_STATIONEN),
+  erledigt: z.array(z.enum(ASSISTENT_STATIONEN)).max(ASSISTENT_STATIONEN.length),
+  offeneEinlagen: z.array(offeneEinlageSchema).max(50).optional(),
+  offeneDarlehen: z.array(offenesDarlehenSchema).max(50).optional(),
+});
+
 export const finanzplanSchema = z
   .strictObject({
     id: idSchema,
@@ -610,6 +649,7 @@ export const finanzplanSchema = z
     umsatzsteuer: umsatzsteuerSchema,
     steuerplanung: steuerplanungSchema,
     szenarien: szenarienSchema,
+    assistent: assistentSchema.optional(),
     notizen: optionalTextSchema(5000).optional(),
   })
   .superRefine((plan, ctx) => {

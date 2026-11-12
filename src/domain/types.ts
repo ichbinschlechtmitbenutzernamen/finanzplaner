@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 7 as const;
+export const SCHEMA_VERSION = 9 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -763,6 +763,78 @@ export interface Szenarien {
   worst: Szenario;
 }
 
+export const ASSISTENT_STATIONEN = [
+  "vorhaben",
+  "persoenlich",
+  "umsatz",
+  "wareneinsatz",
+  "personal",
+  "kosten",
+  "investitionen",
+  "finanzierung",
+  "zusammenfassung",
+] as const;
+
+/** Stationen des geführten Assistenten, in fester Reihenfolge. */
+export type AssistentStation = (typeof ASSISTENT_STATIONEN)[number];
+
+export const ASSISTENT_WEGE = ["assistent", "tabelle"] as const;
+
+/** Ob ein neuer Plan über den Assistenten oder direkt in der Tabelle beginnt. */
+export type AssistentWeg = (typeof ASSISTENT_WEGE)[number];
+
+/**
+ * Fortschritt des Assistenten. Liegt im Plan, damit Tabelle und Überblick
+ * dieselben Eingaben sehen und ein Wechsel nichts verwirft.
+ * Fehlt `weg`, zeigt ein neuer Plan die Startauswahl.
+ */
+/**
+ * Einlage, deren Betrag im Assistenten noch fehlt.
+ * Sie steht nicht in der Finanzierung und geht nicht in die Rechnung ein.
+ */
+export interface OffeneEinlage {
+  id: Id;
+  bezeichnung: string;
+  personId?: Id;
+  monat: IsoMonth;
+  art: EigenkapitalArt;
+  notizen?: string;
+}
+
+/**
+ * Darlehen, dessen Betrag im Assistenten noch fehlt.
+ * Es steht nicht in der Finanzierung und geht nicht in die Rechnung ein.
+ */
+export interface OffenesDarlehen {
+  id: Id;
+  bezeichnung: string;
+  geber: string;
+  art: Darlehensart;
+  monat: IsoMonth;
+  nominalzinsPa: number;
+  laufzeitMonate: number;
+  tilgungsfreieMonate: number;
+  zinszahlungInTilgungsfreierZeit: boolean;
+  tilgungsart: Tilgungsart;
+  auszahlungAnteil?: number;
+  gebuehrenCents?: EuroCents;
+  personId?: Id;
+  vorlageId?: Id;
+  sicherheitenNotiz?: string;
+  disagioCents?: EuroCents;
+  notizen?: string;
+}
+
+export interface AssistentFortschritt {
+  weg?: AssistentWeg;
+  station: AssistentStation;
+  erledigt: AssistentStation[];
+  /** Einlagen ohne erfassten Betrag. Die Rechnung liest das Feld nicht. */
+  offeneEinlagen?: OffeneEinlage[];
+  /** Darlehen ohne erfassten Betrag. Die Rechnung liest das Feld nicht. */
+  offeneDarlehen?: OffenesDarlehen[];
+}
+
 export interface Finanzplan {
   id: Id;
   schemaVersion: typeof SCHEMA_VERSION;
@@ -784,5 +856,7 @@ export interface Finanzplan {
   umsatzsteuer: UmsatzsteuerEinstellungen;
   steuerplanung: Steuerplanung;
   szenarien: Szenarien;
+  /** Optional. Ältere Pläne haben keinen Assistentenstand. */
+  assistent?: AssistentFortschritt;
   notizen?: string;
 }
