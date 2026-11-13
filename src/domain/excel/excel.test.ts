@@ -31,7 +31,7 @@ async function mappeVon(plan: (typeof beispielplaene)[number]["plan"], szenario 
   const modell = erstelleArbeitsmappe(plan, DATUM, szenario);
   const puffer = await arbeitsmappeZuBuffer(modell);
   const workbook = new Workbook();
-  await workbook.xlsx.load(Buffer.from(puffer));
+  await workbook.xlsx.load(puffer as never);
   return { modell, workbook };
 }
 

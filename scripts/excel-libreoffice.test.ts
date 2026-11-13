@@ -4,12 +4,12 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { afterAll, describe, expect, it } from "vitest";
-import { berechnePlan } from "../../domain/calc/berechnen.ts";
-import { erstelleArbeitsmappe } from "../../domain/excel/mappe.ts";
-import { berichtSpalte } from "../../domain/excel/gitter.ts";
-import { erstelleBerichte } from "../../domain/reports/berichte.ts";
-import { beispielplaene } from "../../fixtures/index.ts";
-import { arbeitsmappeZuBuffer } from "./datei.ts";
+import { berechnePlan } from "../src/domain/calc/berechnen.ts";
+import { erstelleArbeitsmappe } from "../src/domain/excel/mappe.ts";
+import { berichtSpalte } from "../src/domain/excel/gitter.ts";
+import { erstelleBerichte } from "../src/domain/reports/berichte.ts";
+import { beispielplaene } from "../src/fixtures/index.ts";
+import { arbeitsmappeZuBuffer } from "../src/ui/excel/datei.ts";
 
 const PORT = 2011;
 let prozess: ChildProcess | undefined;
@@ -68,30 +68,26 @@ describe.skipIf(!vorhanden)("LibreOffice rechnet die Formeln nach", () => {
       ],
       { stdio: "ignore" },
     );
-    const bereit = async () => {
-      for (let versuch = 0; versuch < 20; versuch += 1) {
-        try {
-          execFileSync("python3", ["-c", "import uno"], { stdio: "ignore" });
-          execFileSync(
-            "python3",
-            [
-              "-c",
-              `import uno
+    for (let versuch = 0; versuch < 20; versuch += 1) {
+      try {
+        execFileSync(
+          "python3",
+          [
+            "-c",
+            `import uno
 local = uno.getComponentContext()
 resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
 resolver.resolve("uno:socket,host=127.0.0.1,port=${PORT};urp;StarOffice.ComponentContext")
 `,
-            ],
-            { stdio: "ignore" },
-          );
-          return;
-        } catch {
-          await new Promise((resolve) => setTimeout(resolve, 500));
-        }
+          ],
+          { stdio: "ignore" },
+        );
+        break;
+      } catch (fehler) {
+        if (versuch === 19) throw fehler;
+        await new Promise((resolve) => setTimeout(resolve, 500));
       }
-      throw new Error("LibreOffice hat den Anschluss nicht geöffnet.");
-    };
-    await bereit();
+    }
     const datum = new Date("2026-11-13T12:00:00.000Z");
     for (const beispiel of beispielplaene) {
       const modell = erstelleArbeitsmappe(beispiel.plan, datum);
