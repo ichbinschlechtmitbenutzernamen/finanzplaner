@@ -1,4 +1,5 @@
 import { standardSchwellen } from "../domain/checks/schwellen.ts";
+import { standardExcelExport } from "../domain/excel/blaetter.ts";
 import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
@@ -11,7 +12,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 12,
+  schemaVersion: 13,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -378,6 +379,7 @@ export const beispielEinzelunternehmen = {
   planSzenarien: standardPlanSzenarien(),
   pruefung: { schwellen: standardSchwellen() },
   pdfExport: standardPdfExport(),
+  excelExport: standardExcelExport(),
   notizen:
     "Dieser Plan ist vollständig erfunden und dient als Beispieldatensatz für die Entwicklung. Lina Bergmann und Studio Nordlicht gibt es nicht. Keine Verwendung für einen echten Antrag.",
 } satisfies Finanzplan;
