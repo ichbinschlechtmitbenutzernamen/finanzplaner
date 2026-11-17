@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 12 as const;
+export const SCHEMA_VERSION = 13 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -965,6 +965,32 @@ export interface PdfExportEinstellungen {
   kapitel: PdfKapitelId[];
 }
 
+/**
+ * Blätter des Excel-Exports, in der Reihenfolge der Datei.
+ * Hilfsblätter stehen nicht in der Auswahl. Sie kommen dazu, sobald ein Rechenblatt gewählt ist.
+ * Die Tragfähigkeit gilt nur für Einzelunternehmen, Freiberuf und Personengesellschaften.
+ */
+export const EXCEL_BLAETTER = [
+  "uebersicht",
+  "eingaben",
+  "kapital",
+  "investitionen",
+  "umsatz",
+  "rentabilitaet",
+  "liquiditaet",
+  "tragfaehigkeit",
+  "steuern",
+  "pruefung",
+  "vergleich",
+] as const;
+
+export type ExcelBlattId = (typeof EXCEL_BLAETTER)[number];
+
+/** Welche Blätter der nächste Excel-Export enthält. Die Zahlen stehen nicht im Plan. */
+export interface ExcelExportEinstellungen {
+  blaetter: ExcelBlattId[];
+}
+
 export interface AssistentFortschritt {
   weg?: AssistentWeg;
   station: AssistentStation;
@@ -1004,5 +1030,7 @@ export interface Finanzplan {
   pruefung: PruefungEinstellungen;
   /** Kapitelauswahl für den PDF-Export. Beträge werden daraus nicht gespeichert. */
   pdfExport: PdfExportEinstellungen;
+  /** Blattauswahl für den Excel-Export. Beträge werden daraus nicht gespeichert. */
+  excelExport: ExcelExportEinstellungen;
   notizen?: string;
 }

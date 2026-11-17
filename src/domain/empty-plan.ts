@@ -1,4 +1,5 @@
 import { standardSchwellen } from "./checks/schwellen.ts";
+import { standardExcelExport } from "./excel/blaetter.ts";
 import { standardPdfExport } from "./pdf/kapitel.ts";
 import { createParameterSnapshot } from "./parameter.ts";
 import { toIsoMonth } from "./months.ts";
@@ -50,6 +51,7 @@ function shell(
   | "planSzenarien"
   | "pruefung"
   | "pdfExport"
+  | "excelExport"
 > {
   return {
     id: options.id ?? crypto.randomUUID(),
@@ -84,6 +86,7 @@ function shell(
     planSzenarien: standardPlanSzenarien(),
     pruefung: { schwellen: standardSchwellen() },
     pdfExport: standardPdfExport(),
+    excelExport: standardExcelExport(),
   };
 }
 

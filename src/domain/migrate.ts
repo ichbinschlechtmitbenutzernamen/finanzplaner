@@ -1,4 +1,5 @@
 import { standardSchwellen } from "./checks/schwellen.ts";
+import { standardExcelExport } from "./excel/blaetter.ts";
 import { standardPdfExport } from "./pdf/kapitel.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
@@ -31,6 +32,7 @@ export const migrations: Record<number, Migration> = {
   9: migrateV9ToV10,
   10: migrateV10ToV11,
   11: migrateV11ToV12,
+  12: migrateV12ToV13,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -233,6 +235,19 @@ export function migrateV11ToV12(data: Record<string, unknown>): Record<string, u
     plan.pdfExport = standardPdfExport();
   }
   plan.schemaVersion = 12;
+  return plan;
+}
+
+/**
+ * Version 13 merkt sich, welche Blätter der Excel-Export enthalten soll.
+ * Ältere Pläne bekommen alle Blätter. Eine schon gespeicherte Auswahl bleibt.
+ */
+export function migrateV12ToV13(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  if (!isRecord(plan.excelExport)) {
+    plan.excelExport = standardExcelExport();
+  }
+  plan.schemaVersion = 13;
   return plan;
 }
 

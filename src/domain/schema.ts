@@ -22,6 +22,7 @@ import {
   ASSISTENT_STATIONEN,
   ASSISTENT_WEGE,
   PDF_KAPITEL,
+  EXCEL_BLAETTER,
   WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
@@ -666,6 +667,20 @@ const pdfExportSchema = z
     }
   });
 
+const excelExportSchema = z
+  .strictObject({
+    blaetter: z.array(z.enum(EXCEL_BLAETTER)).max(EXCEL_BLAETTER.length),
+  })
+  .superRefine((wert, ctx) => {
+    if (new Set(wert.blaetter).size !== wert.blaetter.length) {
+      ctx.addIssue({
+        code: "custom",
+        message: "Jedes Blatt darf nur einmal gewählt sein.",
+        path: ["blaetter"],
+      });
+    }
+  });
+
 const assistentSchema = z.strictObject({
   weg: z.enum(ASSISTENT_WEGE).optional(),
   station: z.enum(ASSISTENT_STATIONEN),
@@ -737,6 +752,7 @@ export const finanzplanSchema = z
     assistent: assistentSchema.optional(),
     pruefung: pruefungSchema,
     pdfExport: pdfExportSchema,
+    excelExport: excelExportSchema,
     notizen: optionalTextSchema(5000).optional(),
   })
   .superRefine((plan, ctx) => {

@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { ExcelDialog } from "./excel/ExcelDialog.tsx";
 import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
@@ -17,7 +18,13 @@ import { erstelleBerichte } from "../domain/reports/berichte.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import { finanzplanSchema } from "../domain/schema.ts";
 import { RECHTSFORM_LABEL } from "../domain/labels.ts";
-import type { AssistentStation, Finanzplan, IsoMonth, PdfKapitelId } from "../domain/types.ts";
+import type {
+  AssistentStation,
+  ExcelBlattId,
+  Finanzplan,
+  IsoMonth,
+  PdfKapitelId,
+} from "../domain/types.ts";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
@@ -97,6 +104,7 @@ export function PlanArbeitsflaeche({
   const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
   const [meldung, setMeldung] = useState<string | null>(null);
   const [pdfOffen, setPdfOffen] = useState(false);
+  const [excelOffen, setExcelOffen] = useState(false);
   const plan = verlauf.gegenwart;
   const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
   const modus = aktivesSzenario(plan)?.art ?? "basis";
@@ -307,7 +315,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 10 · PDF</p>
+          <p className="eyebrow">Schritt 11 · Excel</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}
@@ -355,6 +363,9 @@ export function PlanArbeitsflaeche({
             </button>
             <button type="button" onClick={() => setPdfOffen(true)}>
               PDF erstellen
+            </button>
+            <button type="button" onClick={() => setExcelOffen(true)}>
+              Excel erstellen
             </button>
           </div>
         </div>
@@ -516,6 +527,15 @@ export function PlanArbeitsflaeche({
           plan={plan}
           onSchliessen={() => setPdfOffen(false)}
           onKapitel={(kapitel: PdfKapitelId[]) => uebernehmen({ ...plan, pdfExport: { kapitel } })}
+        />
+      ) : null}
+      {excelOffen ? (
+        <ExcelDialog
+          plan={plan}
+          onSchliessen={() => setExcelOffen(false)}
+          onBlaetter={(blaetter: ExcelBlattId[]) =>
+            uebernehmen({ ...plan, excelExport: { blaetter } })
+          }
         />
       ) : null}
     </div>

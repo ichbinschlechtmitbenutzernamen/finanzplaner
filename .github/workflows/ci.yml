@@ -17,6 +17,8 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci
+      - name: LibreOffice für den Formelabgleich
+        run: sudo apt-get update && sudo apt-get install -y libreoffice-calc python3-uno
       - run: npm test
       - run: npm run lint
       - run: npm run build
