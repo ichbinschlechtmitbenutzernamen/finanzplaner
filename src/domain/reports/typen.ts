@@ -116,8 +116,15 @@ export interface TragfaehigkeitPerson {
   anteil: number;
   lebensbedarfErfasst: boolean;
   gewinnNachSteuern: Bewegungszeile;
+  /** Summe der Alltagsblöcke, ohne Versicherungen und ohne Block 6. */
   lebenshaltung: Bewegungszeile;
+  /** Private Versicherungen plus gerechnete Beiträge, ohne die Steuerrücklage. */
   vorsorge: Bewegungszeile;
+  /** Blöcke 1 bis 6 mit den einzelnen Posten als Unterzeilen. */
+  bloecke: Bewegungszeile[];
+  herleitung: string[];
+  /** Hinweis, wenn die Mindestbemessung der gesetzlichen Krankenversicherung greift. */
+  kvMindestbeitrag: boolean;
   verfuegbaresEinkommen: Bewegungszeile;
   /** Verfügbares Einkommen im Planjahr 2. Null, wenn es kein Planjahr 2 gibt. */
   planjahr2Cents: number | null;

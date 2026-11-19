@@ -243,7 +243,7 @@ describe("Branchenvorlagen", () => {
     const roh = structuredClone(leer) as unknown as Record<string, unknown>;
     roh.schemaVersion = 13;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(14);
+    expect(migriert.schemaVersion).toBe(15);
     expect(migriert.stammdaten.angewendeteVorlage).toBeUndefined();
     expect(migriert.assistent?.offeneUmsaetze).toBeUndefined();
     expect(migriert.assistent?.offeneStellen).toBeUndefined();
@@ -258,7 +258,7 @@ describe("Branchenvorlagen", () => {
     const cafe = structuredClone(beispielCafe) as unknown as Record<string, unknown>;
     cafe.schemaVersion = 13;
     const cafeMigriert = migratePlan(cafe);
-    expect(cafeMigriert.schemaVersion).toBe(14);
+    expect(cafeMigriert.schemaVersion).toBe(15);
     expect(cafeMigriert.umsatzplanung).toEqual(beispielCafe.umsatzplanung);
     expect(cafeMigriert.personal).toEqual(beispielCafe.personal);
     expect(cafeMigriert.laufendeKosten).toEqual(beispielCafe.laufendeKosten);

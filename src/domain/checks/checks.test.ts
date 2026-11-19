@@ -5,6 +5,7 @@ import { createEmptyFinanzplan } from "../empty-plan.ts";
 import { exportPlanToJson, importPlanFromJson } from "../io.ts";
 import { migratePlan } from "../migrate.ts";
 import { TAB_MIKRODARLEHEN_ID } from "../parameter.ts";
+import { lebensbedarfMit } from "../privat.ts";
 import { erstelleBerichte } from "../reports/berichte.ts";
 import type { Darlehen, Finanzplan, Kostenkategorie, PersonalRolle } from "../types.ts";
 import { meldungenFuerExport, pruefePlan, standardSchwellen } from "./index.ts";
@@ -76,13 +77,16 @@ function kosten(plan: Finanzplan, basisCents: number, kategorie: Kostenkategorie
 function leben(plan: Finanzplan, lebenshaltung: number, vorsorge: number): void {
   const person = plan.stammdaten.personen[0];
   if (!person) throw new Error("Person fehlt");
-  person.lebensbedarf = {
-    lebenshaltung: { basisCents: lebenshaltung },
-    krankenversicherung: { basisCents: vorsorge },
-    pflegeversicherung: { basisCents: 0 },
-    altersvorsorge: { basisCents: 0 },
-    sonstigeVersicherungen: { basisCents: 0 },
-  };
+  person.lebensbedarf = lebensbedarfMit(
+    person.id,
+    { alltag: lebenshaltung, haftpflicht: vorsorge },
+    {
+      krankenversicherung: "privat",
+      privatbeitragCents: 0,
+      rentenversicherung: "nein",
+      arbeitslosenversicherung: false,
+    },
+  );
 }
 
 function stelle(plan: Finanzplan, basisCents: number, rolle: PersonalRolle = "angestellt"): void {
@@ -463,7 +467,7 @@ describe("Export und Migration", () => {
     roh.schemaVersion = 9;
     delete roh.pruefung;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(14);
+    expect(migriert.schemaVersion).toBe(15);
     expect(migriert.pruefung.schwellen).toEqual(standardSchwellen());
     expect(migriert).toEqual(beispielElektro);
   });

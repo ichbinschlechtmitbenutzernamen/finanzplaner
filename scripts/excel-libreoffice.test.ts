@@ -141,7 +141,7 @@ resolver.resolve("uno:socket,host=127.0.0.1,port=${PORT};urp;StarOffice.Componen
           expect(
             Math.abs(ist - (cents[index] ?? 0) / 100),
             `${beispiel.label} ${label} Monat ${index + 1}`,
-          ).toBeLessThanOrEqual(0.01);
+          ).toBeLessThanOrEqual(0.005);
         }
       }
     }

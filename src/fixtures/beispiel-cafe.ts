@@ -3,6 +3,7 @@ import { standardExcelExport } from "../domain/excel/blaetter.ts";
 import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
+import { lebensbedarfMit } from "../domain/privat.ts";
 import type { Finanzplan } from "../domain/types.ts";
 
 /**
@@ -11,7 +12,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielCafe = {
   id: "plan-beispiel-cafe-leseecke",
-  schemaVersion: 14,
+  schemaVersion: 15,
   status: "vollstaendig",
   erstelltAm: "2026-05-10T10:00:00.000Z",
   geaendertAm: "2026-06-01T10:00:00.000Z",
@@ -43,13 +44,35 @@ export const beispielCafe = {
         rollen: ["inhaber"],
         anteil: 1,
         steuerprofil: { kirchensteuer: false, splitting: true, kinderfreibetraege: 0.5 },
-        lebensbedarf: {
-          lebenshaltung: { basisCents: 150_000 },
-          krankenversicherung: { basisCents: 43_000 },
-          pflegeversicherung: { basisCents: 8_800 },
-          altersvorsorge: { basisCents: 12_000 },
-          sonstigeVersicherungen: { basisCents: 4_000 },
-        },
+        lebensbedarf: lebensbedarfMit(
+          "person-mara-sommer",
+          {
+            miete: 85_000,
+            energie: 16_000,
+            alltag: 48_000,
+            telefon: 4_000,
+            medien: 3_500,
+            freizeit: 5_000,
+            kinderbetreuung: 18_000,
+            haftpflicht: 2_000,
+            altersvorsorge: 10_000,
+            weitere_versicherungen: 3_000,
+            kfz_steuer: 4_000,
+            tanken: 6_000,
+            reparatur: 2_000,
+            mobilitaet_sonstiges: 1_000,
+            urlaub: 6_000,
+            anschaffungen: 2_500,
+          },
+          {
+            krankenversicherung: "gesetzlich",
+            krankengeldanspruch: false,
+            kinder: true,
+            rentenversicherung: "freiwillig",
+            arbeitslosenversicherung: false,
+          },
+          { lebenshaltung: { jahr2: 1.02, jahr3: 1.04 } },
+        ),
       },
     ],
     zwecke: ["bank_kfw", "eigene_planung"],

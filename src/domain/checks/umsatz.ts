@@ -31,6 +31,32 @@ export function pruefeUmsatz(
   if (anlauf) meldungen.push(anlauf);
   const wachstum = pruefeWachstum(berichte, schwellen, plan);
   if (wachstum) meldungen.push(wachstum);
+  meldungen.push(...grosseFaktoren(plan));
+  return meldungen;
+}
+
+/** Große Monatsfaktoren sind Mengen, zum Beispiel Stunden, und kein Fehler. */
+function grosseFaktoren(plan: Finanzplan): Pruefmeldung[] {
+  const meldungen: Pruefmeldung[] = [];
+  for (const linie of plan.umsatzplanung) {
+    const faktoren =
+      linie.art === "monatsumsatz"
+        ? linie.monatsumsatz.saison?.faktoren
+        : linie.mengeProMonat.saison?.faktoren;
+    const gross = faktoren?.filter((faktor) => faktor >= 10) ?? [];
+    if (gross.length === 0) continue;
+    meldungen.push({
+      id: `umsatz-faktor-gross-${linie.id}`,
+      stufe: "hinweis",
+      kategorie: "umsatz",
+      text: `Der Monatsfaktor von ${linie.bezeichnung} ist mindestens 10.`,
+      begruendung: `Der größte Faktor ist ${gross.reduce((max, wert) => Math.max(max, wert), 0)}. Das ist zulässig und kein Fehler. Der Faktor kann eine Menge sein, zum Beispiel 80 Stunden mal einem Stundenpreis.`,
+      ziel: {
+        tabelle: { ansicht: "eingaben", zeileId: umsatzZeile(plan) },
+        assistent: { station: "umsatz", feld: "umsatz" },
+      },
+    });
+  }
   return meldungen;
 }
 

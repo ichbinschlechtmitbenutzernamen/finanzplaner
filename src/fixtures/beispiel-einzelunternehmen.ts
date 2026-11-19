@@ -3,6 +3,7 @@ import { standardExcelExport } from "../domain/excel/blaetter.ts";
 import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
+import { lebensbedarfMit } from "../domain/privat.ts";
 import type { Finanzplan } from "../domain/types.ts";
 
 /**
@@ -12,7 +13,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 14,
+  schemaVersion: 15,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",
@@ -48,14 +49,32 @@ export const beispielEinzelunternehmen = {
           splitting: false,
           kinderfreibetraege: 0,
         },
-        lebensbedarf: {
-          lebenshaltung: { basisCents: 145_000 },
-          krankenversicherung: { basisCents: 42_000 },
-          pflegeversicherung: { basisCents: 8_500 },
-          altersvorsorge: { basisCents: 15_000 },
-          sonstigeVersicherungen: { basisCents: 4_500 },
-          notizen: "Private Beträge, keine Betriebsausgaben. Nur für Liquidität und Tragfähigkeit.",
-        },
+        lebensbedarf: lebensbedarfMit(
+          "person-lina-bergmann",
+          {
+            miete: 68_000,
+            energie: 9_000,
+            alltag: 38_000,
+            telefon: 5_000,
+            medien: 2_500,
+            freizeit: 7_000,
+            haftpflicht: 1_800,
+            altersvorsorge: 20_000,
+            weitere_versicherungen: 3_500,
+            bahn: 5_800,
+            urlaub: 10_000,
+            anschaffungen: 4_000,
+          },
+          {
+            krankenversicherung: "gesetzlich",
+            krankengeldanspruch: true,
+            kinder: false,
+            rentenversicherung: "nein",
+            arbeitslosenversicherung: false,
+          },
+          {},
+          "Private Beträge, keine Betriebsausgaben. Nur für Liquidität und Tragfähigkeit.",
+        ),
       },
     ],
     zwecke: ["gruendungszuschuss", "eigene_planung"],

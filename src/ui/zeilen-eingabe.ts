@@ -1,6 +1,8 @@
 import type { EinmalZiel } from "../domain/eingabe/plan-aendern.ts";
 import { roundCents, roundRate } from "../domain/calc/round.ts";
 import { istAktiv, mengeImMonat, monatsbetragCents } from "../domain/calc/monatswert.ts";
+import { blockMonatCents, postenMonatCents } from "../domain/privat.ts";
+import type { Tragfaehigkeit } from "../domain/reports/typen.ts";
 import { addMonths } from "../domain/months.ts";
 import type { Planjahr } from "../domain/reports/planjahr.ts";
 import type {
@@ -19,27 +21,12 @@ import {
   type TabellenZeile,
 } from "./zeilen-modell.ts";
 
-const LEBEN: {
-  feld:
-    | "lebenshaltung"
-    | "krankenversicherung"
-    | "pflegeversicherung"
-    | "altersvorsorge"
-    | "sonstigeVersicherungen";
-  label: string;
-}[] = [
-  { feld: "lebenshaltung", label: "Lebenshaltung" },
-  { feld: "krankenversicherung", label: "Krankenversicherung" },
-  { feld: "pflegeversicherung", label: "Pflegeversicherung" },
-  { feld: "altersvorsorge", label: "Altersvorsorge" },
-  { feld: "sonstigeVersicherungen", label: "Sonstige Versicherungen" },
-];
-
 /** Eingabezeilen: bearbeitbare Regeln und einmalige Beträge, plus nachgerechnete Summen. */
 export function eingabeZeilen(
   plan: Finanzplan,
   monate: readonly IsoMonth[],
   jahre: readonly Planjahr[],
+  tragfaehigkeit: Tragfaehigkeit | null = null,
 ): TabellenZeile[] {
   const start = plan.startMonat;
   if (!start) return zeilenOhneHorizont(plan);
@@ -49,7 +36,7 @@ export function eingabeZeilen(
   const kosten = kostenZeilen(plan, monate, start, jahre, umsatz.netto);
   const investitionen = listenZeilen(plan, monate, jahre);
   const finanzierung = finanzierungZeilen(plan, monate, jahre);
-  const leben = lebenZeilen(plan, monate, start, jahre);
+  const leben = lebenZeilen(plan, monate, start, jahre, tragfaehigkeit);
 
   return [
     kopfZeile("kopf-umsatz", "Umsatz", laenge),
@@ -473,38 +460,83 @@ function lebenZeilen(
   monate: readonly IsoMonth[],
   start: IsoMonth,
   jahre: readonly Planjahr[],
+  tragfaehigkeit: Tragfaehigkeit | null,
 ): TabellenZeile[] {
-  const bloecke = plan.stammdaten.personen.flatMap((person) => {
-    if (!person.lebensbedarf) return [];
-    const zeilen = LEBEN.map((feld) => {
-      const vorgabe = person.lebensbedarf?.[feld.feld];
-      if (!vorgabe) return null;
-      return euroZeile(
-        {
-          id: `leben-${person.id}-${feld.feld}`,
-          bezeichnung: `${person.name}, ${feld.label}`,
-          ebene: 1,
-          rolle: "normal",
-          werte: reihe(vorgabe, monate, start, () => true),
-          bearbeitbar: monate.map(() => true),
-          serie: { art: "leben", personId: person.id, feld: feld.feld },
-        },
-        jahre,
+  return plan.stammdaten.personen.flatMap((person) => {
+    const bedarf = person.lebensbedarf;
+    if (!bedarf) return [];
+    const zeilen: TabellenZeile[] = [];
+    for (const block of bedarf.bloecke) {
+      const schluessel = block.schluessel === "eigen" ? block.id : block.schluessel;
+      zeilen.push(
+        euroZeile(
+          {
+            id: `block-${person.id}-${schluessel}`,
+            bezeichnung: `${block.bezeichnung} · Jahr 2 × ${faktorText(block.faktorJahr2)}, Jahr 3 × ${faktorText(block.faktorJahr3)}`,
+            ebene: 1,
+            rolle: "summe",
+            werte: monate.map((monat, index) => blockMonatCents(block, monat, start, index)),
+            bearbeitbar: monate.map(() => false),
+          },
+          jahre,
+        ),
       );
-    }).filter((zeile) => zeile != null);
+      for (const eintrag of block.posten) {
+        zeilen.push(
+          euroZeile(
+            {
+              id: `posten-${eintrag.id}`,
+              bezeichnung: eintrag.bezeichnung,
+              ebene: 2,
+              rolle: "normal",
+              werte: monate.map((monat, index) =>
+                postenMonatCents(eintrag, block, monat, start, index),
+              ),
+              bearbeitbar: monate.map(() => true),
+              serie: { art: "leben", personId: person.id, postenId: eintrag.id },
+            },
+            jahre,
+          ),
+        );
+      }
+    }
+    const bericht = tragfaehigkeit?.personen.find((eintrag) => eintrag.personId === person.id);
+    const abgaben = bericht?.bloecke.find((zeile) => zeile.id === `block-${person.id}-abgaben`);
+    if (abgaben) {
+      zeilen.push({
+        id: abgaben.id,
+        bezeichnung: "Abgaben und Steuern · gerechnet",
+        ebene: 1,
+        rolle: "summe",
+        kopf: false,
+        werte: [...abgaben.monateCents],
+        planjahre: [...abgaben.planjahreCents],
+        bearbeitbar: monate.map(() => false),
+        einheit: "euro",
+      });
+      for (const posten of abgaben.unterzeilen ?? []) {
+        zeilen.push({
+          id: posten.id,
+          bezeichnung: posten.bezeichnung,
+          ebene: 2,
+          rolle: posten.rolle === "nachricht" ? "nachricht" : "normal",
+          kopf: false,
+          werte: [...posten.monateCents],
+          planjahre: [...posten.planjahreCents],
+          bearbeitbar: monate.map(() => false),
+          einheit: "euro",
+        });
+      }
+    }
     return [
       kopfZeile(`kopf-leben-${person.id}`, `Privatbedarf ${person.name}`, monate.length),
       ...zeilen,
-      summenZeile(
-        `summe-leben-${person.id}`,
-        `Summe Privatbedarf ${person.name}`,
-        zeilen,
-        monate.length,
-        jahre,
-      ),
     ];
   });
-  return bloecke;
+}
+
+function faktorText(faktor: number): string {
+  return faktor.toLocaleString("de-DE", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }
 
 function zuschussZeile(

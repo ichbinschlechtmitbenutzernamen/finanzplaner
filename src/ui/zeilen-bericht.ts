@@ -175,8 +175,7 @@ function tragfaehigkeitZeilen(berichte: Berichte): TabellenZeile[] {
     return [
       kopf(`kopf-${person.personId}`, `${person.name} · ${stand}`),
       bewegung(person.gewinnNachSteuern, 1),
-      bewegung(person.lebenshaltung, 1),
-      bewegung(person.vorsorge, 1),
+      ...person.bloecke.flatMap((block) => ausBewegung(block, 1)),
       bewegung(person.verfuegbaresEinkommen, 1),
     ];
   });

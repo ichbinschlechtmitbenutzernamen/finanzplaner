@@ -62,11 +62,9 @@ export function leseLebensbedarf(plan: Finanzplan): LebensbedarfEingabe[] {
     return [
       {
         personId: person.id,
-        lebenshaltung: person.lebensbedarf.lebenshaltung,
-        krankenversicherung: person.lebensbedarf.krankenversicherung,
-        pflegeversicherung: person.lebensbedarf.pflegeversicherung,
-        altersvorsorge: person.lebensbedarf.altersvorsorge,
-        sonstigeVersicherungen: person.lebensbedarf.sonstigeVersicherungen,
+        bloecke: person.lebensbedarf.bloecke,
+        sozialversicherung: person.lebensbedarf.sozialversicherung,
+        notizen: person.lebensbedarf.notizen,
         kirchensteuer: person.steuerprofil?.kirchensteuer ?? false,
         splitting: person.steuerprofil?.splitting,
         kinderfreibetraege: person.steuerprofil?.kinderfreibetraege,

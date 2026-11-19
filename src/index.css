@@ -1152,3 +1152,18 @@ button.primaer {
     grid-template-columns: 1fr;
   }
 }
+
+.privat-block {
+  margin-top: 0.8rem;
+}
+
+.privat-posten {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.herleitung p {
+  margin: 0.2rem 0;
+}

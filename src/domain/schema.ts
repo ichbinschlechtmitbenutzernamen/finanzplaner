@@ -24,6 +24,9 @@ import {
   ASSISTENT_WEGE,
   PDF_KAPITEL,
   EXCEL_BLAETTER,
+  PRIVATBLOCK_SCHLUESSEL,
+  KRANKENVERSICHERUNG_ARTEN,
+  RENTENVERSICHERUNG_ARTEN,
   WACHSTUMSBEZUEGE,
   WACHSTUMSMODI,
   WAEHRUNG,
@@ -69,7 +72,11 @@ const optionalTextSchema = (max: number) => z.string().max(max);
 
 const tageSchema = z.number().int().min(0).max(365);
 
-const faktorSchema = z.number().min(0).max(10);
+/** Monats- oder Saisonfaktor. Keine Obergrenze: der Faktor kann eine Menge sein, zum Beispiel Stunden. */
+const faktorSchema = z
+  .number()
+  .min(0, "Der Faktor darf nicht negativ sein.")
+  .refine((wert) => Number.isFinite(wert), "Der Faktor muss eine endliche Zahl sein.");
 
 const szenarioFaktorSchema = z.number().min(0).max(5);
 
@@ -144,12 +151,39 @@ const steuerprofilSchema = z.strictObject({
   weitereEinkuenfteJahrCents: centsSchema.optional(),
 });
 
+const blockFaktorSchema = z
+  .number()
+  .min(0, "Der Faktor darf nicht negativ sein.")
+  .refine((wert) => Number.isFinite(wert), "Der Faktor muss eine endliche Zahl sein.");
+
+const privatPostenSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  schluessel: z.string().min(1).max(40),
+  betrag: monatswertSchema,
+});
+
+const privatBlockSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  schluessel: z.enum(PRIVATBLOCK_SCHLUESSEL),
+  faktorJahr2: blockFaktorSchema,
+  faktorJahr3: blockFaktorSchema,
+  posten: z.array(privatPostenSchema).max(40),
+});
+
+const sozialversicherungEingabeSchema = z.strictObject({
+  krankenversicherung: z.enum(KRANKENVERSICHERUNG_ARTEN),
+  krankengeldanspruch: z.boolean(),
+  kinder: z.boolean(),
+  privatbeitragCents: centsSchema,
+  rentenversicherung: z.enum(RENTENVERSICHERUNG_ARTEN),
+  arbeitslosenversicherung: z.boolean(),
+});
+
 const lebensbedarfSchema = z.strictObject({
-  lebenshaltung: monatswertSchema,
-  krankenversicherung: monatswertSchema,
-  pflegeversicherung: monatswertSchema,
-  altersvorsorge: monatswertSchema,
-  sonstigeVersicherungen: monatswertSchema,
+  bloecke: z.array(privatBlockSchema).max(20),
+  sozialversicherung: sozialversicherungEingabeSchema,
   notizen: optionalTextSchema(2000).optional(),
 });
 
@@ -515,6 +549,24 @@ const steuerparameterSchema = z.strictObject({
   sammelpostenMaxNettoCents: centsSchema,
 });
 
+const sozialversicherungParameterSchema = z.strictObject({
+  quelle: textSchema(500),
+  kvAllgemeinSatz: satzSchema,
+  kvErmaessigtSatz: satzSchema,
+  kvZusatzbeitragSatz: satzSchema,
+  pvSatz: satzSchema,
+  pvKinderlosZuschlagSatz: satzSchema,
+  kvMindestbemessungMonatCents: centsSchema,
+  kvHoechstbemessungMonatCents: centsSchema,
+  rvSatz: satzSchema,
+  bezugsGroesseMonatCents: centsSchema,
+  rvMindestbemessungMonatCents: centsSchema,
+  rvHoechstbemessungMonatCents: centsSchema,
+  avSatz: satzSchema,
+  altersvorsorgeHoechstbetragCents: centsSchema,
+  sonstigeVorsorgeHoechstbetragCents: centsSchema,
+});
+
 const steuerplanungSchema = z.strictObject({
   abschlusszahlungMonat: z.number().int().min(1).max(12),
 });
@@ -541,6 +593,7 @@ const planparameterSchema = z.strictObject({
   bezeichnung: textSchema(200),
   hinweis: optionalTextSchema(2000).optional(),
   steuer: steuerparameterSchema,
+  sozialversicherung: sozialversicherungParameterSchema,
   darlehensvorlagen: z.array(darlehensvorlageSchema).max(30),
 });
 

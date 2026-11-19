@@ -1,7 +1,7 @@
-import { monatsbetragCents } from "../calc/monatswert.ts";
 import { verteileNachAnteilen } from "../calc/steuer.ts";
-import type { Planberechnung, SteuerPersonJahr } from "../calc/types.ts";
-import type { Finanzplan, MonatswertVorgabe, Person } from "../types.ts";
+import type { Planberechnung, SteuerPersonJahr, VorsorgePerson } from "../calc/types.ts";
+import { LEBENSHALTUNG_BLOECKE, blockMonatCents, postenMonatCents } from "../privat.ts";
+import type { Finanzplan, Person, Privatblock } from "../types.ts";
 import {
   bewegung,
   differenz,
@@ -9,6 +9,7 @@ import {
   istPersonenunternehmen,
   leereCents,
   steuerAufMonate,
+  type Bewegungszeile,
   type Planjahr,
 } from "./planjahr.ts";
 import type { Tragfaehigkeit, TragfaehigkeitPerson } from "./typen.ts";
@@ -20,7 +21,7 @@ const HINWEIS_OHNE_FORM =
   "Ohne Rechtsform wird die Tragfähigkeit nicht ausgewiesen. Sie gilt für Einzelunternehmen, Freiberuf und Personengesellschaften.";
 
 const HINWEIS_PERSONEN =
-  "Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindestens 0 ist. Verfügbares Einkommen ist der Gewinnanteil nach den eigenen Steuern, minus Lebenshaltung und minus Vorsorge. Die Steuer des Kalenderjahres wird wie in der Rentabilitätsvorschau auf die Planmonate dieses Kalenderjahres verteilt. Fehlt der Lebensbedarf, sind Lebenshaltung und Vorsorge 0.";
+  "Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindestens 0 ist. Verfügbares Einkommen ist der Gewinnanteil nach den eigenen Steuern, minus die privaten Blöcke 1 bis 5, minus Kranken-, Pflege-, Renten- und Arbeitslosenversicherung. Die Einkommensteuerrücklage steht im Block Abgaben und Steuern nur nachrichtlich: die festgesetzte Steuer ist in der Zeile Steuern schon abgezogen. Die Steuer des Kalenderjahres wird wie in der Rentabilitätsvorschau auf die Planmonate dieses Kalenderjahres verteilt. Fehlt der Lebensbedarf, sind die Blöcke 0.";
 
 /** Privatbedarf und Tragfähigkeit je beteiligter Person. Für GmbH und UG nur der Hinweis. */
 export function tragfaehigkeit(
@@ -84,24 +85,26 @@ function personBericht(
     steuerCents: steuerDerPerson(jahr.personen.find((eintrag) => eintrag.personId === person.id)),
   }));
   const steuern = steuerAufMonate(ergebnis.monate, steuerJahre);
-  const lebenshaltung = leereCents(laenge);
-  const kranken = leereCents(laenge);
-  const pflege = leereCents(laenge);
-  const alter = leereCents(laenge);
-  const sonstige = leereCents(laenge);
   const bedarf = person.lebensbedarf;
-  ergebnis.monate.forEach((monat, index) => {
-    lebenshaltung[index] = betrag(bedarf?.lebenshaltung, monat, start);
-    kranken[index] = betrag(bedarf?.krankenversicherung, monat, start);
-    pflege[index] = betrag(bedarf?.pflegeversicherung, monat, start);
-    alter[index] = betrag(bedarf?.altersvorsorge, monat, start);
-    sonstige[index] = betrag(bedarf?.sonstigeVersicherungen, monat, start);
-  });
-  const vorsorgeMonate = kranken.map(
-    (wert, index) => wert + (pflege[index] ?? 0) + (alter[index] ?? 0) + (sonstige[index] ?? 0),
-  );
+  const sozial = ergebnis.vorsorge.personen.find((eintrag) => eintrag.personId === person.id);
+  const privatBloecke = (bedarf?.bloecke ?? []).map((block) => ({
+    schluessel: block.schluessel,
+    zeile: blockZeile(block, person.id, ergebnis.monate, start, jahre),
+  }));
+  const abgaben = abgabenZeile(person, sozial, laenge, jahre);
+  const alleBloecke = [...privatBloecke.map((block) => block.zeile), abgaben];
+  const alltag = privatBloecke
+    .filter((block) => LEBENSHALTUNG_BLOECKE.includes(block.schluessel))
+    .map((block) => block.zeile);
+  const lebenshaltung = summeZeilen("lebenshaltung", "Lebenshaltung", alltag, laenge, jahre);
+  const versicherung = privatBloecke.find((block) => block.schluessel === "versicherungen")?.zeile;
+  const vorsorgeTeile = [
+    ...(versicherung ? [versicherung] : []),
+    ...(abgaben.unterzeilen ?? []).filter((zeile) => !zeile.id.startsWith(`est-${person.id}`)),
+  ];
+  const vorsorgeMonate = summiere(vorsorgeTeile, laenge);
   const nachSteuern = differenz(gewinnanteil, steuern);
-  const verfuegbar = differenz(differenz(nachSteuern, lebenshaltung), vorsorgeMonate);
+  const verfuegbar = differenz(differenz(nachSteuern, lebenshaltung.monateCents), vorsorgeMonate);
   const planjahr2 = jahre.find((jahr) => jahr.nummer === 2);
   const planjahr2Cents = planjahr2
     ? verfuegbar
@@ -121,15 +124,13 @@ function personBericht(
         bewegung("steuern", "Steuern", steuern, jahre),
       ],
     }),
-    lebenshaltung: bewegung("lebenshaltung", "Lebenshaltung", lebenshaltung, jahre),
+    lebenshaltung,
     vorsorge: bewegung("vorsorge", "Vorsorge", vorsorgeMonate, jahre, {
-      unterzeilen: [
-        bewegung("krankenversicherung", "Krankenversicherung", kranken, jahre),
-        bewegung("pflegeversicherung", "Pflegeversicherung", pflege, jahre),
-        bewegung("altersvorsorge", "Altersvorsorge", alter, jahre),
-        bewegung("sonstige-versicherungen", "Sonstige Versicherungen", sonstige, jahre),
-      ],
+      unterzeilen: vorsorgeTeile,
     }),
+    bloecke: alleBloecke,
+    herleitung: sozial?.herleitung ?? [],
+    kvMindestbeitrag: sozial?.mindestbeitrag ?? false,
     verfuegbaresEinkommen: bewegung(
       "verfuegbares-einkommen",
       "Verfügbares Einkommen",
@@ -152,7 +153,77 @@ function steuerDerPerson(person: SteuerPersonJahr | undefined): number {
   );
 }
 
-function betrag(vorgabe: MonatswertVorgabe | undefined, monat: string, start: string): number {
-  if (!vorgabe) return 0;
-  return monatsbetragCents(vorgabe, monat, start);
+function blockZeile(
+  block: Privatblock,
+  personId: string,
+  monate: readonly string[],
+  start: string,
+  jahre: readonly Planjahr[],
+): Bewegungszeile {
+  const posten = block.posten.map((eintrag) =>
+    bewegung(
+      `posten-${eintrag.id}`,
+      eintrag.bezeichnung,
+      monate.map((monat, index) => postenMonatCents(eintrag, block, monat, start, index)),
+      jahre,
+    ),
+  );
+  const schluessel = block.schluessel === "eigen" ? block.id : block.schluessel;
+  return bewegung(
+    `block-${personId}-${schluessel}`,
+    block.bezeichnung,
+    monate.map((monat, index) => blockMonatCents(block, monat, start, index)),
+    jahre,
+    { unterzeilen: posten },
+  );
+}
+
+function abgabenZeile(
+  person: Person,
+  sozial: VorsorgePerson | undefined,
+  laenge: number,
+  jahre: readonly Planjahr[],
+): Bewegungszeile {
+  const kv = sozial?.kvCents ?? leereCents(laenge);
+  const pv = sozial?.pvCents ?? leereCents(laenge);
+  const zusammen = kv.map((wert, index) => wert + (pv[index] ?? 0));
+  const rente = sozial?.rvCents ?? leereCents(laenge);
+  const arbeit = sozial?.avCents ?? leereCents(laenge);
+  const ruecklage = sozial?.estRuecklageCents ?? leereCents(laenge);
+  const posten = [
+    bewegung(`kv-${person.id}`, "Kranken- und Pflegeversicherung", zusammen, jahre),
+    bewegung(`rv-${person.id}`, "Gesetzliche Rentenversicherung", rente, jahre),
+    bewegung(`av-${person.id}`, "Arbeitslosenversicherung", arbeit, jahre),
+    bewegung(`est-${person.id}`, "Einkommensteuerrücklage", ruecklage, jahre, {
+      rolle: "nachricht",
+    }),
+  ];
+  const summe = zusammen.map(
+    (wert, index) => wert + (rente[index] ?? 0) + (arbeit[index] ?? 0) + (ruecklage[index] ?? 0),
+  );
+  return bewegung(`block-${person.id}-abgaben`, "Abgaben und Steuern", summe, jahre, {
+    unterzeilen: posten,
+  });
+}
+
+function summeZeilen(
+  id: string,
+  bezeichnung: string,
+  zeilen: readonly Bewegungszeile[],
+  laenge: number,
+  jahre: readonly Planjahr[],
+): Bewegungszeile {
+  return bewegung(id, bezeichnung, summiere(zeilen, laenge), jahre, {
+    unterzeilen: [...zeilen],
+  });
+}
+
+function summiere(zeilen: readonly { monateCents: readonly number[] }[], laenge: number): number[] {
+  const werte = leereCents(laenge);
+  for (const zeile of zeilen) {
+    zeile.monateCents.forEach((wert, index) => {
+      werte[index] = (werte[index] ?? 0) + wert;
+    });
+  }
+  return werte;
 }
