@@ -12,7 +12,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielGmbh = {
   id: "plan-beispiel-hafenlicht-gmbh",
-  schemaVersion: 13,
+  schemaVersion: 14,
   status: "vollstaendig",
   erstelltAm: "2026-01-08T09:00:00.000Z",
   geaendertAm: "2026-01-20T09:00:00.000Z",

@@ -690,12 +690,34 @@ button.primaer {
 }
 
 .startwahl {
-  max-width: 36rem;
+  max-width: 40rem;
   margin-top: 1rem;
   padding: 1.2rem;
   border: 1px solid var(--line);
   border-radius: 16px;
   background: var(--paper);
+}
+
+.vorlage-wahl {
+  margin: 0.9rem 0 0.2rem;
+  padding: 0.75rem 0.9rem 0.85rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
+.vorlage-wahl legend {
+  font-weight: 650;
+}
+
+.vorlage-wahl label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  margin: 0.3rem 0;
+}
+
+.vorlage-wahl input {
+  width: auto;
 }
 
 .karte {

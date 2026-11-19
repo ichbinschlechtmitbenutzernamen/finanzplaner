@@ -12,7 +12,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielEinzelunternehmen = {
   id: "plan-beispiel-studio-nordlicht",
-  schemaVersion: 13,
+  schemaVersion: 14,
   status: "vollstaendig",
   erstelltAm: "2026-03-01T09:00:00.000Z",
   geaendertAm: "2026-03-15T09:00:00.000Z",

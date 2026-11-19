@@ -33,6 +33,7 @@ export const migrations: Record<number, Migration> = {
   10: migrateV10ToV11,
   11: migrateV11ToV12,
   12: migrateV12ToV13,
+  13: migrateV13ToV14,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -248,6 +249,17 @@ export function migrateV12ToV13(data: Record<string, unknown>): Record<string, u
     plan.excelExport = standardExcelExport();
   }
   plan.schemaVersion = 13;
+  return plan;
+}
+
+/**
+ * Version 14 merkt sich eine beim Anlegen gewählte Branchenvorlage.
+ * Ältere Pläne bekommen keine Posten und keine Vorlage. Fehlende Felder
+ * bedeuten „ohne Vorlage“. Beträge werden hier nicht ergänzt.
+ */
+export function migrateV13ToV14(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  plan.schemaVersion = 14;
   return plan;
 }
 

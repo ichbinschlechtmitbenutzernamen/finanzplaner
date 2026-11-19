@@ -11,8 +11,23 @@ import {
   vorherigeStation,
   waehleWeg,
 } from "../domain/assistent/stationen.ts";
-import { leseFinanzierung, leseUmsatz, leseVorhaben } from "../domain/assistent/lesen.ts";
-import { pruefeFinanzierung, pruefeUmsatz, pruefeVorhaben } from "../domain/assistent/schreiben.ts";
+import {
+  leseFinanzierung,
+  leseInvestitionen,
+  leseKosten,
+  lesePersonal,
+  leseUmsatz,
+  leseVorhaben,
+} from "../domain/assistent/lesen.ts";
+import {
+  pruefeFinanzierung,
+  pruefeInvestitionen,
+  pruefeKosten,
+  pruefePersonal,
+  pruefeUmsatz,
+  pruefeVorhaben,
+} from "../domain/assistent/schreiben.ts";
+import { BRANCHENVORLAGE_AUSWAHL, type BranchenvorlageId } from "../domain/vorlagen/branchen.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import {
   PersoenlichStation,
@@ -30,9 +45,13 @@ import {
 import type { PlanAendern } from "./assistent/typen.ts";
 
 export function Startauswahl({
+  vorlage,
+  onVorlage,
   onAssistent,
   onTabelle,
 }: {
+  vorlage: BranchenvorlageId;
+  onVorlage: (vorlage: BranchenvorlageId) => void;
   onAssistent: () => void;
   onTabelle: () => void;
 }) {
@@ -44,6 +63,27 @@ export function Startauswahl({
         Der Assistent führt durch dieselben Eingaben wie die Tabelle. Sie können jederzeit wechseln,
         ohne etwas zu verlieren.
       </p>
+      <fieldset className="vorlage-wahl">
+        <legend>Branchenvorlage</legend>
+        <p id="vorlage-hilfe" className="feld-hilfe">
+          Die Vorlage legt typische Posten an. Beträge bleiben leer. Sie gilt nur beim Anlegen und
+          lässt sich später nicht nachladen.
+        </p>
+        <div role="radiogroup" aria-describedby="vorlage-hilfe">
+          {BRANCHENVORLAGE_AUSWAHL.map((eintrag) => (
+            <label key={eintrag.id}>
+              <input
+                type="radio"
+                name="branchenvorlage"
+                value={eintrag.id}
+                checked={vorlage === eintrag.id}
+                onChange={() => onVorlage(eintrag.id)}
+              />
+              {eintrag.name}
+            </label>
+          ))}
+        </div>
+      </fieldset>
       <div className="startwahl-aktionen">
         <button type="button" className="primaer" onClick={onAssistent}>
           Assistent starten
@@ -186,6 +226,9 @@ function Station({
 function pruefeStation(station: AssistentStation, plan: Finanzplan): string[] {
   if (station === "vorhaben") return pruefeVorhaben(leseVorhaben(plan));
   if (station === "umsatz") return pruefeUmsatz(leseUmsatz(plan));
+  if (station === "personal") return pruefePersonal(lesePersonal(plan));
+  if (station === "kosten") return pruefeKosten(leseKosten(plan));
+  if (station === "investitionen") return pruefeInvestitionen(leseInvestitionen(plan).posten);
   if (station === "finanzierung") return pruefeFinanzierung(leseFinanzierung(plan));
   if (station === "persoenlich" && stationFaelltWeg(station, plan.stammdaten.rechtsform)) return [];
   return [];

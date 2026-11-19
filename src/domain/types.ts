@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 13 as const;
+export const SCHEMA_VERSION = 14 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -860,10 +860,59 @@ export const ASSISTENT_WEGE = ["assistent", "tabelle"] as const;
 export type AssistentWeg = (typeof ASSISTENT_WEGE)[number];
 
 /**
- * Fortschritt des Assistenten. Liegt im Plan, damit Tabelle und Überblick
- * dieselben Eingaben sehen und ein Wechsel nichts verwirft.
- * Fehlt `weg`, zeigt ein neuer Plan die Startauswahl.
+ * Umsatzzeile, deren Betrag noch fehlt.
+ * Sie steht nicht in der Umsatzplanung und geht nicht in die Rechnung ein.
+ * `nurMaterial` markiert eine Zeile, deren Umsatz schon im Plan steht und bei der
+ * nur der Wareneinsatz noch ohne Quote ist.
  */
+export interface OffenerUmsatz {
+  id: Id;
+  bezeichnung: string;
+  /** true: der Umsatz steht schon im Plan, der Materialposten hat noch keine Quote. */
+  nurMaterial?: boolean;
+  /** Bezeichnung des Material- oder Wareneinsatzpostens. Fehlt sie, gibt es keinen. */
+  material?: string;
+  /** Quote, sobald sie erfasst ist. Fehlt sie, bleibt das Feld leer. */
+  materialQuote?: number;
+  materialUmsatzsteuerSatz?: Satz;
+}
+
+/** Stelle, deren Gehalt oder Eintritt noch fehlt. Steht nicht in `personal`. */
+export interface OffeneStelle {
+  id: Id;
+  bezeichnung: string;
+  rolle: PersonalRolle;
+  name?: string;
+  /** Fehlt, solange das Gehalt leer ist. */
+  bruttoCents?: EuroCents;
+  eintritt?: IsoMonth;
+  agNebenkostenSatz?: Satz;
+  wochenstunden?: number;
+}
+
+/** Laufender Posten ohne Betrag. Steht nicht in `laufendeKosten`. */
+export interface OffeneKosten {
+  id: Id;
+  bezeichnung: string;
+  kategorie: Kostenkategorie;
+  umsatzsteuerSatz?: Satz;
+  zahlungszielTage?: number;
+}
+
+/** Investition ohne Nettopreis oder ohne Kaufmonat. Steht nicht im Kapitalbedarf. */
+export interface OffeneInvestition {
+  id: Id;
+  bezeichnung: string;
+  kategorie: InvestitionsKategorie;
+  /** Fehlt, solange der Nettopreis leer ist. */
+  nettoCents?: EuroCents;
+  anschaffungsmonat?: IsoMonth;
+  umsatzsteuerSatz?: Satz;
+  zahlungszielTage?: number;
+  methode?: AfaMethode;
+  nutzungsdauerMonate?: number;
+}
+
 /**
  * Einlage, deren Betrag im Assistenten noch fehlt.
  * Sie steht nicht in der Finanzierung und geht nicht in die Rechnung ein.
@@ -991,6 +1040,13 @@ export interface ExcelExportEinstellungen {
   blaetter: ExcelBlattId[];
 }
 
+/**
+ * Fortschritt des Assistenten. Liegt im Plan, damit Tabelle und Überblick
+ * dieselben Eingaben sehen und ein Wechsel nichts verwirft.
+ * Fehlt `weg`, zeigt ein neuer Plan die Startauswahl.
+ * Posten ohne Betrag stammen von einer Branchenvorlage oder aus einer noch
+ * unvollständigen Eingabe. Die Rechnung liest sie nicht.
+ */
 export interface AssistentFortschritt {
   weg?: AssistentWeg;
   station: AssistentStation;
@@ -999,6 +1055,14 @@ export interface AssistentFortschritt {
   offeneEinlagen?: OffeneEinlage[];
   /** Darlehen ohne erfassten Betrag. Die Rechnung liest das Feld nicht. */
   offeneDarlehen?: OffenesDarlehen[];
+  /** Umsatzzeilen ohne Betrag. Die Rechnung liest das Feld nicht. */
+  offeneUmsaetze?: OffenerUmsatz[];
+  /** Stellen ohne Gehalt. Die Rechnung liest das Feld nicht. */
+  offeneStellen?: OffeneStelle[];
+  /** Laufende Kosten ohne Betrag. Die Rechnung liest das Feld nicht. */
+  offeneKosten?: OffeneKosten[];
+  /** Investitionen ohne Nettopreis. Die Rechnung liest das Feld nicht. */
+  offeneInvestitionen?: OffeneInvestition[];
 }
 
 export interface Finanzplan {
