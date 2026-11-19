@@ -71,8 +71,16 @@ export function PersoenlichStation({
                   <legend>{block.bezeichnung}</legend>
                   {block.posten.map((posten) => (
                     <div key={posten.id} className="privat-posten">
+                      <TextFeld
+                        label="Bezeichnung"
+                        hilfe="Name des Postens. Eigene Posten dürfen frei benannt werden."
+                        value={posten.bezeichnung}
+                        onChange={(bezeichnung) =>
+                          setze(benennePosten(leben, block.id, posten.id, bezeichnung))
+                        }
+                      />
                       <EuroFeld
-                        label={posten.bezeichnung}
+                        label="Monatsbetrag"
                         hilfe="Monatsbetrag. Der Faktor des Blocks gilt darauf in Planjahr 2 und 3."
                         cents={posten.betrag.basisCents}
                         onChange={(basisCents) =>
@@ -401,6 +409,27 @@ function leerLeben(personId: string): LebensbedarfEingabe {
     bloecke: basis.bloecke,
     sozialversicherung: basis.sozialversicherung,
     kirchensteuer: false,
+  };
+}
+
+function benennePosten(
+  leben: LebensbedarfEingabe,
+  blockId: string,
+  postenId: string,
+  bezeichnung: string,
+): LebensbedarfEingabe {
+  return {
+    ...leben,
+    bloecke: leben.bloecke.map((block) =>
+      block.id !== blockId
+        ? block
+        : {
+            ...block,
+            posten: block.posten.map((posten) =>
+              posten.id === postenId ? { ...posten, bezeichnung } : posten,
+            ),
+          },
+    ),
   };
 }
 

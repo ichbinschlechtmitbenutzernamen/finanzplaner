@@ -21,7 +21,8 @@ import { planjahreVon } from "../../domain/reports/planjahr.ts";
 import { BUNDESLAENDER, PLAN_ZWECKE, RECHTSFORMEN } from "../../domain/types.ts";
 import type { Finanzplan, MonatFaktoren, Rechtsform, Wachstumsbezug } from "../../domain/types.ts";
 import { PLAN_ZWECK_LABEL, RECHTSFORM_LABEL } from "../../domain/labels.ts";
-import { KALENDER_KURZ } from "../format.ts";
+import { roundCents } from "../../domain/calc/round.ts";
+import { KALENDER_KURZ, formatEuro } from "../format.ts";
 import {
   AuswahlFeld,
   EuroFeld,
@@ -484,6 +485,11 @@ function UmsatzKarte({
             faktoren={linie.saison ?? neutraleSaison()}
             onChange={(saison) => onChange({ ...linie, saison })}
           />
+          <p className="feld-hilfe">
+            Ergebnis ohne Wachstum: Januar{" "}
+            {formatEuro(roundCents(linie.basisCents * (linie.saison?.[0] ?? 1)))}, Februar{" "}
+            {formatEuro(roundCents(linie.basisCents * (linie.saison?.[1] ?? 1)))}.
+          </p>
           <div className="hilfe-zeile">
             <button
               type="button"

@@ -315,7 +315,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 11 · Excel</p>
+          <p className="eyebrow">Schritt 12 · Private Blöcke</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}
