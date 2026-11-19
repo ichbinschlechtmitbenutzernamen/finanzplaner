@@ -198,7 +198,7 @@ describe("Excel-Export", () => {
     roh.schemaVersion = 12;
     delete roh.excelExport;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(14);
+    expect(migriert.schemaVersion).toBe(15);
     expect(migriert.excelExport).toEqual(standardExcelExport());
     expect(migriert.excelExport.blaetter).toEqual([...EXCEL_BLAETTER]);
 
@@ -206,7 +206,7 @@ describe("Excel-Export", () => {
     behalten.schemaVersion = 12;
     (behalten.excelExport as { blaetter: string[] }).blaetter = ["pruefung"];
     const mitAuswahl = migratePlan(behalten);
-    expect(mitAuswahl.schemaVersion).toBe(14);
+    expect(mitAuswahl.schemaVersion).toBe(15);
     expect(mitAuswahl.excelExport.blaetter).toEqual(["pruefung"]);
   });
 });

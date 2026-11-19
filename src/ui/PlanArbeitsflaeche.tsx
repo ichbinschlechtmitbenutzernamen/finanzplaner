@@ -31,7 +31,8 @@ import { Hilfeleiste } from "./Hilfeleiste.tsx";
 import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
 import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
-import { Assistent, Startauswahl, waehleAssistent, waehleTabelle } from "./Assistent.tsx";
+import { Assistent, Startauswahl } from "./Assistent.tsx";
+import { starteMitVorlage, type BranchenvorlageId } from "../domain/vorlagen/branchen.ts";
 import { Pruefung, zaehlerStufe } from "./Pruefung.tsx";
 import { PruefAnbieter } from "./pruef-marke.tsx";
 import { Szenarien, SzenarioHinweis, SzenarioUmschalter } from "./Szenarien.tsx";
@@ -105,6 +106,7 @@ export function PlanArbeitsflaeche({
   const [meldung, setMeldung] = useState<string | null>(null);
   const [pdfOffen, setPdfOffen] = useState(false);
   const [excelOffen, setExcelOffen] = useState(false);
+  const [vorlage, setVorlage] = useState<BranchenvorlageId>("keine");
   const plan = verlauf.gegenwart;
   const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
   const modus = aktivesSzenario(plan)?.art ?? "basis";
@@ -315,7 +317,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 12 · Private Blöcke</p>
+          <p className="eyebrow">Schritt 12 · Private Blöcke und Vorlagen</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}
@@ -393,7 +395,11 @@ export function PlanArbeitsflaeche({
                 eintrag.id !== "szenarien"
               ) {
                 aendernEingabe((aktuell) =>
-                  eintrag.id === "assistent" ? waehleAssistent(aktuell) : waehleTabelle(aktuell),
+                  starteMitVorlage(
+                    aktuell,
+                    eintrag.id === "assistent" ? "assistent" : "tabelle",
+                    vorlage,
+                  ),
                 );
               }
               onReiter(eintrag.id);
@@ -417,12 +423,14 @@ export function PlanArbeitsflaeche({
           <SzenarioHinweis plan={plan} />
           {zeigeStartauswahl(plan) ? (
             <Startauswahl
+              vorlage={vorlage}
+              onVorlage={setVorlage}
               onAssistent={() => {
-                aendernEingabe((aktuell) => waehleAssistent(aktuell));
+                aendernEingabe((aktuell) => starteMitVorlage(aktuell, "assistent", vorlage));
                 onReiter("assistent");
               }}
               onTabelle={() => {
-                aendernEingabe((aktuell) => waehleTabelle(aktuell));
+                aendernEingabe((aktuell) => starteMitVorlage(aktuell, "tabelle", vorlage));
                 onReiter("eingaben");
               }}
             />

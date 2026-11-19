@@ -207,7 +207,7 @@ describe("Migration der Lebenshaltung", () => {
     };
     delete (alt.parameter as { sozialversicherung?: unknown }).sozialversicherung;
     const plan = migratePlan(alt);
-    expect(plan.schemaVersion).toBe(14);
+    expect(plan.schemaVersion).toBe(15);
     const bedarf = plan.stammdaten.personen[0]?.lebensbedarf;
     const alltag = bedarf?.bloecke
       .flatMap((block) => block.posten)

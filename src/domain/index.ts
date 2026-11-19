@@ -4,6 +4,12 @@ export {
   type EmptyPlanOptions,
 } from "./empty-plan.ts";
 export {
+  BRANCHENVORLAGE_AUSWAHL,
+  starteMitVorlage,
+  wendeBranchenvorlage,
+} from "./vorlagen/branchen.ts";
+export type { BranchenvorlageId } from "./vorlagen/branchen.ts";
+export {
   anlageKlassifikationHinweise,
   type AnlageHinweis,
   type AnlageHinweisCode,
@@ -109,6 +115,10 @@ export type {
   AssistentStation,
   AssistentWeg,
   OffeneEinlage,
+  OffeneInvestition,
+  OffeneKosten,
+  OffeneStelle,
+  OffenerUmsatz,
   OffenesDarlehen,
   Betriebsmittel,
   Bundesland,

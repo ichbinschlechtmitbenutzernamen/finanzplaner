@@ -188,7 +188,7 @@ describe("Migration auf Schema 12", () => {
     roh.schemaVersion = 11;
     delete roh.pdfExport;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(14);
+    expect(migriert.schemaVersion).toBe(15);
     expect(migriert.pdfExport).toEqual(standardPdfExport());
     expect(migriert.finanzierung).toEqual(beispielElektro.finanzierung);
     expect(migriert.planSzenarien).toEqual(beispielElektro.planSzenarien);
@@ -197,7 +197,7 @@ describe("Migration auf Schema 12", () => {
     behalten.schemaVersion = 11;
     (behalten.pdfExport as { kapitel: string[] }).kapitel = ["deckblatt", "pruefung"];
     const mitAuswahl = migratePlan(behalten);
-    expect(mitAuswahl.schemaVersion).toBe(14);
+    expect(mitAuswahl.schemaVersion).toBe(15);
     expect(mitAuswahl.pdfExport.kapitel).toEqual(["deckblatt", "pruefung"]);
   });
 });

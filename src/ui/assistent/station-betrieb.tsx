@@ -126,12 +126,17 @@ export function PersonalStation({ plan, onAendern }: { plan: Finanzplan; onAende
             <EuroFeld
               label="Bruttomonatsgehalt"
               hilfe="Brutto je Monat ab dem Eintritt."
-              cents={stelle.brutto.basisCents}
+              cents={stelle.betragOffen ? null : stelle.brutto.basisCents}
+              pflicht={stelle.betragOffen === true}
               onChange={(basisCents) =>
                 schreibe(
                   stellen.map((eintrag) =>
                     eintrag.id === stelle.id
-                      ? { ...eintrag, brutto: { ...eintrag.brutto, basisCents } }
+                      ? {
+                          ...eintrag,
+                          betragOffen: false,
+                          brutto: { ...eintrag.brutto, basisCents },
+                        }
                       : eintrag,
                   ),
                 )
@@ -313,12 +318,17 @@ export function KostenStation({ plan, onAendern }: { plan: Finanzplan; onAendern
               <EuroFeld
                 label="Monatlicher Nettobetrag"
                 hilfe="Fester Betrag je Monat, ohne Umsatzsteuer."
-                cents={eintrag.betrag.basisCents}
+                cents={eintrag.betragOffen ? null : eintrag.betrag.basisCents}
+                pflicht={eintrag.betragOffen === true}
                 onChange={(basisCents) =>
                   schreibe(
                     posten.map((zeile) =>
                       zeile.id === eintrag.id && zeile.art === "fix"
-                        ? { ...zeile, betrag: { ...zeile.betrag, basisCents } }
+                        ? {
+                            ...zeile,
+                            betragOffen: false,
+                            betrag: { ...zeile.betrag, basisCents },
+                          }
                         : zeile,
                     ),
                   )
@@ -400,17 +410,21 @@ export function InvestitionStation({
         Wirtschaftsgut, Sammelposten oder lineare Abschreibung. Die Einordnung lässt sich ändern.
       </p>
       {bestand.posten.map((posten) => {
-        const auto = ordneInvestition(posten.nettoCents, plan.parameter.steuer);
+        const preisOffen = posten.betragOffen === true;
+        const auto = preisOffen ? null : ordneInvestition(posten.nettoCents, plan.parameter.steuer);
         const hinweis = hinweise.find((eintrag) => eintrag.investitionId === posten.id);
         return (
           <fieldset key={posten.id} className="feld-gruppe">
             <legend>{posten.bezeichnung}</legend>
             <p className="einordnung">
-              Einordnung: {auto.label}
-              {posten.methode &&
-              posten.methode !== (auto.art === "sofortaufwand" ? "sofort_gwg" : auto.art)
-                ? `, gewählt: ${methodeLabel(posten.methode)}`
-                : ""}
+              {auto
+                ? `Einordnung: ${auto.label}${
+                    posten.methode &&
+                    posten.methode !== (auto.art === "sofortaufwand" ? "sofort_gwg" : auto.art)
+                      ? `, gewählt: ${methodeLabel(posten.methode)}`
+                      : ""
+                  }`
+                : "Einordnung folgt aus dem Nettopreis."}
             </p>
             {hinweis ? <p className="hinweis">{hinweis.message}</p> : null}
             <div className="feld-raster">
@@ -430,12 +444,16 @@ export function InvestitionStation({
               <EuroFeld
                 label="Nettopreis"
                 hilfe="Anschaffungskosten ohne Umsatzsteuer. Daraus folgt die Einordnung."
-                cents={posten.nettoCents}
+                cents={preisOffen ? null : posten.nettoCents}
+                pflicht={preisOffen}
+                positiv={preisOffen}
                 onChange={(nettoCents) =>
                   schreibe({
                     ...bestand,
                     posten: bestand.posten.map((eintrag) =>
-                      eintrag.id === posten.id ? { ...eintrag, nettoCents } : eintrag,
+                      eintrag.id === posten.id
+                        ? { ...eintrag, nettoCents, betragOffen: false }
+                        : eintrag,
                     ),
                   })
                 }
@@ -484,7 +502,8 @@ export function InvestitionStation({
                 <option value="sammelposten">Sammelposten</option>
                 <option value="linear">lineare Abschreibung</option>
               </AuswahlFeld>
-              {posten.methode === "linear" || (posten.methode == null && auto.art === "linear") ? (
+              {auto &&
+              (posten.methode === "linear" || (posten.methode == null && auto.art === "linear")) ? (
                 <ZahlFeld
                   label="Nutzungsdauer in Monaten"
                   hilfe="Monate der linearen Abschreibung, mindestens ein Monat."

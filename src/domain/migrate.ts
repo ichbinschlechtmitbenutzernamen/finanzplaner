@@ -35,6 +35,7 @@ export const migrations: Record<number, Migration> = {
   11: migrateV11ToV12,
   12: migrateV12ToV13,
   13: migrateV13ToV14,
+  14: migrateV14ToV15,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -282,6 +283,17 @@ export function migrateV13ToV14(data: Record<string, unknown>): Record<string, u
     }
   }
   plan.schemaVersion = 14;
+  return plan;
+}
+
+/**
+ * Version 15 merkt sich eine beim Anlegen gewählte Branchenvorlage.
+ * Ältere Pläne bekommen keine Posten und keine Vorlage. Fehlende Felder
+ * bedeuten „ohne Vorlage“. Beträge werden hier nicht ergänzt.
+ */
+export function migrateV14ToV15(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  plan.schemaVersion = 15;
   return plan;
 }
 

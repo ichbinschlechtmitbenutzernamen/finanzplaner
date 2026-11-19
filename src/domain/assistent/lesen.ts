@@ -95,11 +95,25 @@ export function leseGruendungszuschuss(plan: Finanzplan): GruendungszuschussEing
 
 export function leseUmsatz(plan: Finanzplan): UmsatzEingabe[] {
   const monate = monateDesPlans(plan);
-  return plan.umsatzplanung.flatMap((linie) => umsatzEingabe(plan, linie, monate));
+  const satz = plan.parameter.steuer.umsatzsteuerRegelsatz;
+  const offen = (plan.assistent?.offeneUmsaetze ?? []).flatMap((eintrag) => {
+    if (eintrag.nurMaterial) return [];
+    const zeile: UmsatzEingabe = {
+      modus: "monat",
+      id: eintrag.id,
+      bezeichnung: eintrag.bezeichnung,
+      basisCents: 0,
+      umsatzsteuerSatz: satz,
+      zahlungszielTage: 0,
+      betragOffen: true,
+    };
+    return [zeile];
+  });
+  return [...plan.umsatzplanung.flatMap((linie) => umsatzEingabe(plan, linie, monate)), ...offen];
 }
 
 export function leseWareneinsatz(plan: Finanzplan): WareneinsatzEingabe[] {
-  return plan.umsatzplanung.map((linie) => ({
+  const real = plan.umsatzplanung.map((linie) => ({
     id: linie.id,
     quote: linie.wareneinsatz.art === "keiner" ? null : linie.wareneinsatz.quote,
     umsatzsteuerSatz:
@@ -107,10 +121,24 @@ export function leseWareneinsatz(plan: Finanzplan): WareneinsatzEingabe[] {
         ? linie.wareneinsatz.umsatzsteuerSatz
         : linie.umsatzsteuerSatz,
   }));
+  const ids = new Set(real.map((eintrag) => eintrag.id));
+  const satz = plan.parameter.steuer.umsatzsteuerRegelsatz;
+  const extra = (plan.assistent?.offeneUmsaetze ?? []).flatMap((eintrag) => {
+    if (ids.has(eintrag.id)) return [];
+    if (!eintrag.material && eintrag.materialQuote == null) return [];
+    return [
+      {
+        id: eintrag.id,
+        quote: eintrag.materialQuote ?? null,
+        umsatzsteuerSatz: eintrag.materialUmsatzsteuerSatz ?? satz,
+      },
+    ];
+  });
+  return [...real, ...extra];
 }
 
 export function lesePersonal(plan: Finanzplan): StelleEingabe[] {
-  return plan.personal.map((stelle) => ({
+  const real = plan.personal.map((stelle) => ({
     id: stelle.id,
     bezeichnung: stelle.bezeichnung,
     name: stelle.name,
@@ -126,10 +154,35 @@ export function lesePersonal(plan: Finanzplan): StelleEingabe[] {
     sonderzahlungen: stelle.sonderzahlungen,
     nebenkostenDetail: stelle.nebenkostenDetail,
   }));
+  const offen = (plan.assistent?.offeneStellen ?? []).map((stelle) => ({
+    id: stelle.id,
+    bezeichnung: stelle.bezeichnung,
+    name: stelle.name,
+    rolle: stelle.rolle,
+    brutto: { basisCents: stelle.bruttoCents ?? 0 },
+    eintritt: stelle.eintritt ?? "",
+    agNebenkostenSatz: stelle.agNebenkostenSatz ?? 0,
+    sozialversicherungspflichtig: true,
+    wochenstunden: stelle.wochenstunden,
+    betragOffen: stelle.bruttoCents == null,
+  }));
+  return [...real, ...offen];
 }
 
 export function leseKosten(plan: Finanzplan): KostenEingabe[] {
-  return plan.laufendeKosten.map((posten) => kostenEingabe(posten));
+  const satz = plan.parameter.steuer.umsatzsteuerRegelsatz;
+  const offen = (plan.assistent?.offeneKosten ?? []).map((posten) => ({
+    id: posten.id,
+    bezeichnung: posten.bezeichnung,
+    kategorie: posten.kategorie,
+    art: "fix" as const,
+    betrag: { basisCents: 0 },
+    umsatzsteuerSatz: posten.umsatzsteuerSatz ?? satz,
+    zahlungszielTage: posten.zahlungszielTage ?? 0,
+    betriebsausgabe: true,
+    betragOffen: true,
+  }));
+  return [...plan.laufendeKosten.map((posten) => kostenEingabe(posten)), ...offen];
 }
 
 export function leseInvestitionen(plan: Finanzplan): {
@@ -138,20 +191,35 @@ export function leseInvestitionen(plan: Finanzplan): {
   anlaufkosten: EinmalEingabe[];
 } {
   return {
-    posten: plan.kapitalbedarf.investitionen.map((posten) => ({
-      id: posten.id,
-      bezeichnung: posten.bezeichnung,
-      kategorie: posten.kategorie,
-      nettoCents: posten.nettoCents,
-      umsatzsteuerSatz: posten.umsatzsteuerSatz,
-      anschaffungsmonat: posten.anschaffungsmonat,
-      zahlungszielTage: posten.zahlungszielTage,
-      methode: posten.afaMethode,
-      nutzungsdauerMonate: posten.afaMethode === "linear" ? posten.nutzungsdauerMonate : undefined,
-      afaStartMonat: posten.afaStartMonat,
-      restwertCents: posten.afaMethode === "sofort_gwg" ? undefined : posten.restwertCents,
-      notizen: posten.notizen,
-    })),
+    posten: [
+      ...plan.kapitalbedarf.investitionen.map((posten) => ({
+        id: posten.id,
+        bezeichnung: posten.bezeichnung,
+        kategorie: posten.kategorie,
+        nettoCents: posten.nettoCents,
+        umsatzsteuerSatz: posten.umsatzsteuerSatz,
+        anschaffungsmonat: posten.anschaffungsmonat,
+        zahlungszielTage: posten.zahlungszielTage,
+        methode: posten.afaMethode,
+        nutzungsdauerMonate:
+          posten.afaMethode === "linear" ? posten.nutzungsdauerMonate : undefined,
+        afaStartMonat: posten.afaStartMonat,
+        restwertCents: posten.afaMethode === "sofort_gwg" ? undefined : posten.restwertCents,
+        notizen: posten.notizen,
+      })),
+      ...(plan.assistent?.offeneInvestitionen ?? []).map((posten) => ({
+        id: posten.id,
+        bezeichnung: posten.bezeichnung,
+        kategorie: posten.kategorie,
+        nettoCents: posten.nettoCents ?? 0,
+        umsatzsteuerSatz: posten.umsatzsteuerSatz ?? plan.parameter.steuer.umsatzsteuerRegelsatz,
+        anschaffungsmonat: posten.anschaffungsmonat ?? "",
+        zahlungszielTage: posten.zahlungszielTage ?? 0,
+        methode: posten.methode,
+        nutzungsdauerMonate: posten.nutzungsdauerMonate,
+        betragOffen: posten.nettoCents == null,
+      })),
+    ],
     gruendungskosten: plan.kapitalbedarf.gruendungskosten.map(einmalEingabe),
     anlaufkosten: plan.kapitalbedarf.anlaufkosten.map(einmalEingabe),
   };

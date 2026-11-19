@@ -15,6 +15,7 @@ import {
 } from "../reports/planjahr.ts";
 import type {
   AfaMethode,
+  AssistentFortschritt,
   Bundesland,
   Darlehen,
   Darlehensart,
@@ -31,6 +32,10 @@ import type {
   Privatblock,
   SozialversicherungEingabe,
   OffeneEinlage,
+  OffeneInvestition,
+  OffeneKosten,
+  OffeneStelle,
+  OffenerUmsatz,
   OffenesDarlehen,
   Person,
   PersonalRolle,
@@ -43,6 +48,7 @@ import type {
   Szenarien,
   Tilgungsart,
   Umsatzposition,
+  Wareneinsatz,
   UstVersteuerung,
   UstVoranmeldung,
   Wachstumsbezug,
@@ -127,6 +133,8 @@ export type UmsatzEingabe =
   | (UmsatzBasis & {
       modus: "monat";
       basisCents: number;
+      /** true: der Betrag ist noch leer und steht nicht in der Umsatzplanung. */
+      betragOffen?: boolean;
       wachstum?: Wachstum;
       saison?: MonatFaktoren;
     })
@@ -154,6 +162,8 @@ export interface StelleEingabe {
   notizen?: string;
   sonderzahlungen?: Personalstelle["sonderzahlungen"];
   nebenkostenDetail?: Personalstelle["nebenkostenDetail"];
+  /** true: das Gehalt ist noch leer und die Stelle steht nicht in `personal`. */
+  betragOffen?: boolean;
 }
 
 export type KostenEingabe = {
@@ -167,6 +177,8 @@ export type KostenEingabe = {
   aktivVon?: IsoMonth;
   aktivBis?: IsoMonth;
   notizen?: string;
+  /** true: der Betrag ist noch leer und der Posten steht nicht in `laufendeKosten`. */
+  betragOffen?: boolean;
 } & ({ art: "fix"; betrag: MonatswertVorgabe } | { art: "umsatzabhaengig"; umsatzquote: number });
 
 export interface InvestitionEingabe {
@@ -177,6 +189,8 @@ export interface InvestitionEingabe {
   umsatzsteuerSatz: number;
   anschaffungsmonat: IsoMonth;
   zahlungszielTage: number;
+  /** true: der Nettopreis ist noch leer und die Investition steht nicht im Kapitalbedarf. */
+  betragOffen?: boolean;
   /** Fehlt die Methode, ordnet der Assistent nach den Grenzen im Parametersatz ein. */
   methode?: AfaMethode;
   nutzungsdauerMonate?: number;
@@ -476,13 +490,41 @@ export function setzePersoenlich(
 }
 
 export function setzeUmsatz(plan: Finanzplan, linien: readonly UmsatzEingabe[]): Finanzplan {
+  const bisherOffen = new Map(
+    (plan.assistent?.offeneUmsaetze ?? []).map((eintrag) => [eintrag.id, eintrag]),
+  );
   const behalten = plan.umsatzplanung.filter(
     (linie) =>
       linie.art === "menge_mal_preis" && !linien.some((eingabe) => eingabe.id === linie.id),
   );
+  const fertig: Umsatzposition[] = [];
+  const offen: OffenerUmsatz[] = [];
+  for (const linie of linien) {
+    const alt = bisherOffen.get(linie.id);
+    if (linie.modus === "monat" && linie.betragOffen) {
+      offen.push(offenerUmsatzAus(linie, alt));
+      continue;
+    }
+    fertig.push(umsatzAus(plan, linie, wareneinsatzAusOffen(alt, linie.umsatzsteuerSatz)));
+    if (alt?.material && alt.materialQuote == null) {
+      offen.push({
+        id: linie.id,
+        bezeichnung: linie.bezeichnung,
+        material: alt.material,
+        nurMaterial: true,
+      });
+    }
+  }
+  for (const alt of plan.assistent?.offeneUmsaetze ?? []) {
+    if (!alt.nurMaterial || offen.some((eintrag) => eintrag.id === alt.id)) continue;
+    if (fertig.some((eintrag) => eintrag.id === alt.id) || behalten.some((e) => e.id === alt.id)) {
+      offen.push(alt);
+    }
+  }
   return {
     ...plan,
-    umsatzplanung: [...linien.map((eingabe) => umsatzAus(plan, eingabe)), ...behalten],
+    umsatzplanung: [...fertig, ...behalten],
+    assistent: schreibeAssistent(plan, "offeneUmsaetze", offen),
   };
 }
 
@@ -490,35 +532,66 @@ export function setzeWareneinsatz(
   plan: Finanzplan,
   eintraege: readonly WareneinsatzEingabe[],
 ): Finanzplan {
+  for (const eingabe of eintraege) {
+    if (eingabe.quote != null && eingabe.quote < 0) {
+      throw new AssistentFehler("Der Wareneinsatz darf nicht negativ sein.");
+    }
+    if (eingabe.umsatzsteuerSatz < 0) {
+      throw new AssistentFehler("Der Vorsteuersatz darf nicht negativ sein.");
+    }
+  }
   const nachId = new Map(eintraege.map((eintrag) => [eintrag.id, eintrag]));
+  const umsatzplanung = plan.umsatzplanung.map((linie) => {
+    const eingabe = nachId.get(linie.id);
+    if (!eingabe) return linie;
+    if (eingabe.quote == null) return { ...linie, wareneinsatz: { art: "keiner" as const } };
+    return {
+      ...linie,
+      wareneinsatz: {
+        art: "prozent_vom_umsatz" as const,
+        quote: eingabe.quote,
+        umsatzsteuerSatz: eingabe.umsatzsteuerSatz,
+      },
+    };
+  });
+  const offene = (plan.assistent?.offeneUmsaetze ?? []).flatMap((eintrag) =>
+    offenenWareneinsatz(eintrag, nachId.get(eintrag.id), umsatzplanung),
+  );
   return {
     ...plan,
-    umsatzplanung: plan.umsatzplanung.map((linie) => {
-      const eingabe = nachId.get(linie.id);
-      if (!eingabe) return linie;
-      if (eingabe.quote == null) return { ...linie, wareneinsatz: { art: "keiner" } };
-      if (eingabe.quote < 0) throw new AssistentFehler("Der Wareneinsatz darf nicht negativ sein.");
-      if (eingabe.umsatzsteuerSatz < 0) {
-        throw new AssistentFehler("Der Vorsteuersatz darf nicht negativ sein.");
-      }
-      return {
-        ...linie,
-        wareneinsatz: {
-          art: "prozent_vom_umsatz",
-          quote: eingabe.quote,
-          umsatzsteuerSatz: eingabe.umsatzsteuerSatz,
-        },
-      };
-    }),
+    umsatzplanung,
+    assistent: schreibeAssistent(plan, "offeneUmsaetze", offene),
   };
 }
 
 export function setzePersonal(plan: Finanzplan, stellen: readonly StelleEingabe[]): Finanzplan {
-  return { ...plan, personal: stellen.map((stelle) => stelleAus(stelle)) };
+  const bekannt = new Set((plan.assistent?.offeneStellen ?? []).map((stelle) => stelle.id));
+  const fertig: Personalstelle[] = [];
+  const offen: OffeneStelle[] = [];
+  for (const stelle of stellen) {
+    if (stelle.betragOffen || (bekannt.has(stelle.id) && !isIsoMonth(stelle.eintritt))) {
+      offen.push(offeneStelleAus(stelle));
+    } else fertig.push(stelleAus(stelle));
+  }
+  return {
+    ...plan,
+    personal: fertig,
+    assistent: schreibeAssistent(plan, "offeneStellen", offen),
+  };
 }
 
 export function setzeKosten(plan: Finanzplan, posten: readonly KostenEingabe[]): Finanzplan {
-  return { ...plan, laufendeKosten: posten.map((eintrag) => kostenAus(eintrag)) };
+  const fertig: Kostenposition[] = [];
+  const offen: OffeneKosten[] = [];
+  for (const eintrag of posten) {
+    if (eintrag.art === "fix" && eintrag.betragOffen) offen.push(offeneKostenAus(eintrag, plan));
+    else fertig.push(kostenAus(eintrag));
+  }
+  return {
+    ...plan,
+    laufendeKosten: fertig,
+    assistent: schreibeAssistent(plan, "offeneKosten", offen),
+  };
 }
 
 export function setzeInvestitionen(
@@ -529,14 +602,27 @@ export function setzeInvestitionen(
     anlaufkosten: readonly EinmalEingabe[];
   },
 ): Finanzplan {
+  const bekannt = new Set((plan.assistent?.offeneInvestitionen ?? []).map((posten) => posten.id));
+  const fertig: Investition[] = [];
+  const offen: OffeneInvestition[] = [];
+  for (const posten of eingabe.posten) {
+    const monatFehlt = !isIsoMonth(posten.anschaffungsmonat);
+    if (posten.betragOffen || (bekannt.has(posten.id) && monatFehlt)) {
+      if (!posten.betragOffen && posten.nettoCents === 0) {
+        throw new AssistentFehler("Eine Investition braucht einen Betrag über 0.");
+      }
+      offen.push(offeneInvestitionAus(posten, plan));
+    } else fertig.push(baueInvestition(posten, plan.parameter.steuer));
+  }
   return {
     ...plan,
     kapitalbedarf: {
       ...plan.kapitalbedarf,
-      investitionen: eingabe.posten.map((posten) => baueInvestition(posten, plan.parameter.steuer)),
+      investitionen: fertig,
       gruendungskosten: eingabe.gruendungskosten.map((posten) => einmalAus(posten)),
       anlaufkosten: eingabe.anlaufkosten.map((posten) => einmalAus(posten)),
     },
+    assistent: schreibeAssistent(plan, "offeneInvestitionen", offen),
   };
 }
 
@@ -719,7 +805,9 @@ export function pruefeUmsatz(linien: readonly UmsatzEingabe[]): string[] {
       meldungen.push("Der Umsatzsteuersatz muss zwischen 0 % und 100 % liegen.");
     }
     if (linie.modus === "monat") {
-      if (linie.basisCents < 0) meldungen.push("Der Umsatz darf nicht negativ sein.");
+      if (linie.betragOffen) {
+        meldungen.push(`Der Umsatz „${linie.bezeichnung || "Leistung"}“ braucht einen Betrag.`);
+      } else if (linie.basisCents < 0) meldungen.push("Der Umsatz darf nicht negativ sein.");
       if (linie.wachstum && !(linie.wachstum.jahresrate > -1)) {
         meldungen.push("Die Wachstumsrate muss über −100 % liegen.");
       }
@@ -728,6 +816,39 @@ export function pruefeUmsatz(linien: readonly UmsatzEingabe[]): string[] {
       }
     } else if (linie.jahresCents.some((wert) => wert < 0)) {
       meldungen.push("Jahreswerte dürfen nicht negativ sein.");
+    }
+  }
+  return meldungen;
+}
+
+export function pruefePersonal(stellen: readonly StelleEingabe[]): string[] {
+  const meldungen: string[] = [];
+  for (const stelle of stellen) {
+    const name = stelle.bezeichnung || "Stelle";
+    if (stelle.betragOffen) meldungen.push(`Das Gehalt der Stelle „${name}“ fehlt.`);
+    else if (!isIsoMonth(stelle.eintritt))
+      meldungen.push(`Der Eintritt der Stelle „${name}“ fehlt.`);
+  }
+  return meldungen;
+}
+
+export function pruefeKosten(posten: readonly KostenEingabe[]): string[] {
+  const meldungen: string[] = [];
+  for (const eintrag of posten) {
+    if (eintrag.art === "fix" && eintrag.betragOffen) {
+      meldungen.push(`Der Betrag von „${eintrag.bezeichnung || "Kosten"}“ fehlt.`);
+    }
+  }
+  return meldungen;
+}
+
+export function pruefeInvestitionen(posten: readonly InvestitionEingabe[]): string[] {
+  const meldungen: string[] = [];
+  for (const eintrag of posten) {
+    const name = eintrag.bezeichnung || "Investition";
+    if (eintrag.betragOffen) meldungen.push(`Der Nettopreis von „${name}“ fehlt.`);
+    else if (!isIsoMonth(eintrag.anschaffungsmonat)) {
+      meldungen.push(`Der Kaufmonat von „${name}“ fehlt.`);
     }
   }
   return meldungen;
@@ -820,12 +941,130 @@ function zuschuesseMit(plan: Finanzplan, zuschuss: GruendungszuschussEingabe | n
   ];
 }
 
-function umsatzAus(plan: Finanzplan, eingabe: UmsatzEingabe): Umsatzposition {
+function schreibeAssistent<
+  K extends "offeneUmsaetze" | "offeneStellen" | "offeneKosten" | "offeneInvestitionen",
+>(
+  plan: Finanzplan,
+  schluessel: K,
+  werte: NonNullable<AssistentFortschritt[K]>,
+): Finanzplan["assistent"] {
+  if (!plan.assistent && werte.length === 0) return undefined;
+  const basis: AssistentFortschritt = {
+    ...(plan.assistent ?? { station: "vorhaben", erledigt: [] }),
+  };
+  if (werte.length === 0) delete basis[schluessel];
+  else basis[schluessel] = werte;
+  return basis;
+}
+
+function offenerUmsatzAus(linie: UmsatzEingabe, alt: OffenerUmsatz | undefined): OffenerUmsatz {
+  const eintrag: OffenerUmsatz = { id: linie.id, bezeichnung: linie.bezeichnung };
+  if (alt?.material) eintrag.material = alt.material;
+  if (alt?.materialQuote != null) {
+    eintrag.materialQuote = alt.materialQuote;
+    if (alt.materialUmsatzsteuerSatz != null) {
+      eintrag.materialUmsatzsteuerSatz = alt.materialUmsatzsteuerSatz;
+    }
+  }
+  return eintrag;
+}
+
+function wareneinsatzAusOffen(
+  alt: OffenerUmsatz | undefined,
+  fallbackSatz: number,
+): Wareneinsatz | undefined {
+  if (alt?.materialQuote == null) return undefined;
+  return {
+    art: "prozent_vom_umsatz",
+    quote: alt.materialQuote,
+    umsatzsteuerSatz: alt.materialUmsatzsteuerSatz ?? fallbackSatz,
+  };
+}
+
+function offenenWareneinsatz(
+  eintrag: OffenerUmsatz,
+  eingabe: WareneinsatzEingabe | undefined,
+  umsatzplanung: readonly Umsatzposition[],
+): OffenerUmsatz[] {
+  const imPlan = umsatzplanung.some((linie) => linie.id === eintrag.id);
+  if (!eingabe) return imPlan || !eintrag.nurMaterial ? [eintrag] : [];
+  if (eingabe.quote == null) {
+    if (!eintrag.material) return imPlan ? [] : [eintrag];
+    const naechster: OffenerUmsatz = {
+      id: eintrag.id,
+      bezeichnung: eintrag.bezeichnung,
+      material: eintrag.material,
+    };
+    if (imPlan) naechster.nurMaterial = true;
+    return [naechster];
+  }
+  if (imPlan) return [];
+  const naechster: OffenerUmsatz = {
+    id: eintrag.id,
+    bezeichnung: eintrag.bezeichnung,
+    materialQuote: eingabe.quote,
+    materialUmsatzsteuerSatz: eingabe.umsatzsteuerSatz,
+  };
+  if (eintrag.material) naechster.material = eintrag.material;
+  return [naechster];
+}
+
+function offeneStelleAus(stelle: StelleEingabe): OffeneStelle {
+  const eintrag: OffeneStelle = {
+    id: stelle.id,
+    bezeichnung: stelle.bezeichnung,
+    rolle: stelle.rolle,
+  };
+  if (stelle.name) eintrag.name = stelle.name;
+  if (!stelle.betragOffen) eintrag.bruttoCents = stelle.brutto.basisCents;
+  if (isIsoMonth(stelle.eintritt)) eintrag.eintritt = stelle.eintritt;
+  if (stelle.agNebenkostenSatz !== 0) eintrag.agNebenkostenSatz = stelle.agNebenkostenSatz;
+  if (stelle.wochenstunden != null) eintrag.wochenstunden = stelle.wochenstunden;
+  return eintrag;
+}
+
+function offeneKostenAus(eingabe: KostenEingabe & { art: "fix" }, plan: Finanzplan): OffeneKosten {
+  const eintrag: OffeneKosten = {
+    id: eingabe.id,
+    bezeichnung: eingabe.bezeichnung,
+    kategorie: eingabe.kategorie,
+  };
+  if (eingabe.umsatzsteuerSatz !== plan.parameter.steuer.umsatzsteuerRegelsatz) {
+    eintrag.umsatzsteuerSatz = eingabe.umsatzsteuerSatz;
+  }
+  if (eingabe.zahlungszielTage !== 0) eintrag.zahlungszielTage = eingabe.zahlungszielTage;
+  return eintrag;
+}
+
+function offeneInvestitionAus(posten: InvestitionEingabe, plan: Finanzplan): OffeneInvestition {
+  const eintrag: OffeneInvestition = {
+    id: posten.id,
+    bezeichnung: posten.bezeichnung,
+    kategorie: posten.kategorie,
+  };
+  if (!posten.betragOffen && posten.nettoCents > 0) eintrag.nettoCents = posten.nettoCents;
+  if (isIsoMonth(posten.anschaffungsmonat)) eintrag.anschaffungsmonat = posten.anschaffungsmonat;
+  if (posten.umsatzsteuerSatz !== plan.parameter.steuer.umsatzsteuerRegelsatz) {
+    eintrag.umsatzsteuerSatz = posten.umsatzsteuerSatz;
+  }
+  if (posten.zahlungszielTage !== 0) eintrag.zahlungszielTage = posten.zahlungszielTage;
+  if (posten.methode) eintrag.methode = posten.methode;
+  if (posten.nutzungsdauerMonate != null && posten.nutzungsdauerMonate > 0) {
+    eintrag.nutzungsdauerMonate = posten.nutzungsdauerMonate;
+  }
+  return eintrag;
+}
+
+function umsatzAus(
+  plan: Finanzplan,
+  eingabe: UmsatzEingabe,
+  vorgegeben?: Wareneinsatz,
+): Umsatzposition {
   if (eingabe.umsatzsteuerSatz < 0) {
     throw new AssistentFehler("Der Umsatzsteuersatz darf nicht negativ sein.");
   }
   const bisher = plan.umsatzplanung.find((linie) => linie.id === eingabe.id);
-  const wareneinsatz = bisher?.wareneinsatz ?? { art: "keiner" as const };
+  const wareneinsatz = vorgegeben ?? bisher?.wareneinsatz ?? { art: "keiner" as const };
   const monatsumsatz =
     eingabe.modus === "jahre"
       ? jahreswert(plan, eingabe.jahresCents)

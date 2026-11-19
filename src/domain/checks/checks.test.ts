@@ -467,7 +467,7 @@ describe("Export und Migration", () => {
     roh.schemaVersion = 9;
     delete roh.pruefung;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(14);
+    expect(migriert.schemaVersion).toBe(15);
     expect(migriert.pruefung.schwellen).toEqual(standardSchwellen());
     expect(migriert).toEqual(beispielElektro);
   });
