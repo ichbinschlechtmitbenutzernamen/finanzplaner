@@ -212,7 +212,7 @@ describe("Schemaregeln", () => {
 
 describe("Migration und Datei-Import", () => {
   it("hebt Version 1 auf den Parametersatz und lehnt Monats-Wareneinsatz ab", () => {
-    expect(SCHEMA_VERSION).toBe(13);
+    expect(SCHEMA_VERSION).toBe(14);
     expect(typeof migrations[1]).toBe("function");
     expect(typeof migrations[2]).toBe("function");
     expect(typeof migrations[3]).toBe("function");

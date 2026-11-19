@@ -3,6 +3,7 @@ import { beispielCafe } from "../../fixtures/beispiel-cafe.ts";
 import { beispielEinzelunternehmen } from "../../fixtures/beispiel-einzelunternehmen.ts";
 import { beispielElektro } from "../../fixtures/beispiel-elektro.ts";
 import { createDraftFinanzplan, createEmptyFinanzplan } from "../empty-plan.ts";
+import { lebensbedarfMit } from "../privat.ts";
 import type { Finanzplan, Investition } from "../types.ts";
 import { berechnePlan, BerechnungError, summeCents } from "./berechnen.ts";
 
@@ -448,13 +449,16 @@ describe("Finanzierung, Zuschuss und Lebensbedarf", () => {
     const basis = plan();
     const person = basis.stammdaten.personen[0];
     if (!person) throw new Error("Person fehlt");
-    person.lebensbedarf = {
-      lebenshaltung: { basisCents: 100_000 },
-      krankenversicherung: { basisCents: 0 },
-      pflegeversicherung: { basisCents: 0 },
-      altersvorsorge: { basisCents: 0 },
-      sonstigeVersicherungen: { basisCents: 0 },
-    };
+    person.lebensbedarf = lebensbedarfMit(
+      person.id,
+      { alltag: 100_000 },
+      {
+        krankenversicherung: "privat",
+        privatbeitragCents: 0,
+        rentenversicherung: "nein",
+        arbeitslosenversicherung: false,
+      },
+    );
     expect(berechnePlan(basis).entnahmen.entnahmeCents[0]).toBe(100_000);
     basis.stammdaten.rechtsform = "gmbh";
     const gmbh = berechnePlan(basis);

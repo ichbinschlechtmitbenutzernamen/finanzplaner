@@ -28,6 +28,8 @@ import type {
   Kostenposition,
   MonatFaktoren,
   MonatswertVorgabe,
+  Privatblock,
+  SozialversicherungEingabe,
   OffeneEinlage,
   OffenesDarlehen,
   Person,
@@ -90,11 +92,9 @@ export interface VorhabenEingabe {
 
 export interface LebensbedarfEingabe {
   personId: string;
-  lebenshaltung: MonatswertVorgabe;
-  krankenversicherung: MonatswertVorgabe;
-  pflegeversicherung: MonatswertVorgabe;
-  altersvorsorge: MonatswertVorgabe;
-  sonstigeVersicherungen: MonatswertVorgabe;
+  bloecke: Privatblock[];
+  sozialversicherung: SozialversicherungEingabe;
+  notizen?: string;
   kirchensteuer: boolean;
   splitting?: boolean;
   kinderfreibetraege?: number;
@@ -450,9 +450,7 @@ export function setzePersoenlich(
   zuschuss: GruendungszuschussEingabe | null,
 ): Finanzplan {
   if (istKapitalgesellschaft(plan.stammdaten.rechtsform)) return plan;
-  for (const person of personen) {
-    for (const [feld, vorgabe] of lebensFelder(person)) verlangeCents(vorgabe.basisCents, feld);
-  }
+  for (const person of personen) pruefeLebensbedarf(person);
   const nachId = new Map(personen.map((person) => [person.personId, person]));
   const naechstePersonen = plan.stammdaten.personen.map((person) => {
     const eingabe = nachId.get(person.id);
@@ -461,12 +459,9 @@ export function setzePersoenlich(
       ...person,
       steuerprofil: steuerprofilAus(person, eingabe),
       lebensbedarf: {
-        lebenshaltung: eingabe.lebenshaltung,
-        krankenversicherung: eingabe.krankenversicherung,
-        pflegeversicherung: eingabe.pflegeversicherung,
-        altersvorsorge: eingabe.altersvorsorge,
-        sonstigeVersicherungen: eingabe.sonstigeVersicherungen,
-        ...(person.lebensbedarf?.notizen ? { notizen: person.lebensbedarf.notizen } : {}),
+        bloecke: eingabe.bloecke,
+        sozialversicherung: eingabe.sozialversicherung,
+        ...(eingabe.notizen ? { notizen: eingabe.notizen } : {}),
       },
     };
   });
@@ -728,8 +723,8 @@ export function pruefeUmsatz(linien: readonly UmsatzEingabe[]): string[] {
       if (linie.wachstum && !(linie.wachstum.jahresrate > -1)) {
         meldungen.push("Die Wachstumsrate muss über −100 % liegen.");
       }
-      if (linie.saison?.some((faktor) => faktor < 0 || faktor > 10)) {
-        meldungen.push("Saisonfaktoren müssen zwischen 0 und 10 liegen.");
+      if (linie.saison?.some((faktor) => faktor < 0 || !Number.isFinite(faktor))) {
+        meldungen.push("Monatsfaktoren müssen mindestens 0 sein. Eine Obergrenze gibt es nicht.");
       }
     } else if (linie.jahresCents.some((wert) => wert < 0)) {
       meldungen.push("Jahreswerte dürfen nicht negativ sein.");
@@ -774,14 +769,22 @@ function steuerprofilAus(person: Person, eingabe: LebensbedarfEingabe): Person["
   return profil;
 }
 
-function lebensFelder(person: LebensbedarfEingabe): [string, MonatswertVorgabe][] {
-  return [
-    ["Lebenshaltung", person.lebenshaltung],
-    ["Krankenversicherung", person.krankenversicherung],
-    ["Pflegeversicherung", person.pflegeversicherung],
-    ["Altersvorsorge", person.altersvorsorge],
-    ["Sonstige Versicherungen", person.sonstigeVersicherungen],
-  ];
+function pruefeLebensbedarf(person: LebensbedarfEingabe): void {
+  for (const block of person.bloecke) {
+    if (block.bezeichnung.trim() === "") {
+      throw new AssistentFehler("Ein Block braucht eine Bezeichnung.");
+    }
+    if (block.faktorJahr2 < 0 || block.faktorJahr3 < 0) {
+      throw new AssistentFehler("Die Faktoren für Planjahr 2 und 3 dürfen nicht negativ sein.");
+    }
+    for (const posten of block.posten) {
+      if (posten.bezeichnung.trim() === "") {
+        throw new AssistentFehler("Ein Posten braucht eine Bezeichnung.");
+      }
+      verlangeCents(posten.betrag.basisCents, posten.bezeichnung);
+    }
+  }
+  verlangeCents(person.sozialversicherung.privatbeitragCents, "Privater Krankenversicherungsbeitrag");
 }
 
 function zuschuesseMit(plan: Finanzplan, zuschuss: GruendungszuschussEingabe | null) {

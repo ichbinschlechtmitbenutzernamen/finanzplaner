@@ -9,7 +9,7 @@
  * Die spätere Rechnung erzeugt GuV, Liquidität und Kennzahlen daraus.
  */
 
-export const SCHEMA_VERSION = 13 as const;
+export const SCHEMA_VERSION = 14 as const;
 
 /** Kalendermonat der Abschlusszahlung für die Steuer des ersten Planjahres. September. */
 export const ABSCHLUSSZAHLUNG_MONAT_STANDARD = 9 as const;
@@ -186,18 +186,73 @@ export interface Steuerprofil {
   weitereEinkuenfteJahrCents?: EuroCents;
 }
 
+export const PRIVATBLOCK_SCHLUESSEL = [
+  "wohnen",
+  "lebenshaltung",
+  "versicherungen",
+  "mobilitaet",
+  "sonstiges",
+  "eigen",
+] as const;
+
+export type PrivatblockSchluessel = (typeof PRIVATBLOCK_SCHLUESSEL)[number];
+
+/** Ein Monatsbetrag innerhalb eines privaten Kostenblocks. */
+export interface Privatposten {
+  id: Id;
+  bezeichnung: string;
+  /** Schlüssel der Vorlage. Eigene Posten tragen `eigen`. */
+  schluessel: string;
+  betrag: MonatswertVorgabe;
+}
+
+/**
+ * Privater Kostenblock. Planjahr 1 bleibt unverändert.
+ * `faktorJahr2` und `faktorJahr3` gelten für die Planjahre ab dem Gründungsmonat.
+ */
+export interface Privatblock {
+  id: Id;
+  bezeichnung: string;
+  schluessel: PrivatblockSchluessel;
+  posten: Privatposten[];
+  /** Standard 1. Multipliziert jeden Monatsbetrag des Blocks im Planjahr 2. */
+  faktorJahr2: number;
+  /** Standard 1. Multipliziert jeden Monatsbetrag des Blocks im Planjahr 3. */
+  faktorJahr3: number;
+}
+
+export const KRANKENVERSICHERUNG_ARTEN = ["gesetzlich", "privat"] as const;
+export type KrankenversicherungArt = (typeof KRANKENVERSICHERUNG_ARTEN)[number];
+
+export const RENTENVERSICHERUNG_ARTEN = ["nein", "pflicht", "freiwillig"] as const;
+export type RentenversicherungArt = (typeof RENTENVERSICHERUNG_ARTEN)[number];
+
+/**
+ * Annahmen für den gerechneten Block Abgaben und Steuern.
+ * Die Beträge selbst stehen nicht im Plan.
+ */
+export interface SozialversicherungEingabe {
+  krankenversicherung: KrankenversicherungArt;
+  /** true = allgemeiner Beitragssatz mit Krankengeld, false = ermäßigter Satz. Nur gesetzlich. */
+  krankengeldanspruch: boolean;
+  /** false = Kinderlosenzuschlag zur Pflegeversicherung. Nur gesetzlich. */
+  kinder: boolean;
+  /** Monatsbeitrag der privaten Kranken- und Pflegeversicherung, nur bei privat. */
+  privatbeitragCents: EuroCents;
+  rentenversicherung: RentenversicherungArt;
+  /** Antragspflichtversicherung nach § 28a SGB III. */
+  arbeitslosenversicherung: boolean;
+}
+
 /**
  * Privater Lebensbedarf einer Person.
- * Bei Einzelunternehmen und Personengesellschaften ist das Liquidität
- * (Entnahme), keine Betriebsausgabe. Bei GmbH/UG dient er nur dem späteren
- * Abgleich, ob das Geschäftsführergehalt den Lebensunterhalt trägt.
+ * Die Blöcke 1 bis 5 sind Eingaben. Block 6 wird gerechnet.
+ * Bei Einzelunternehmen, Freiberuf und Personengesellschaften ist das eine Entnahme.
+ * Bei GmbH und UG dient er nur dem Vergleich mit dem Geschäftsführergehalt.
  */
 export interface PrivaterLebensbedarf {
-  lebenshaltung: MonatswertVorgabe;
-  krankenversicherung: MonatswertVorgabe;
-  pflegeversicherung: MonatswertVorgabe;
-  altersvorsorge: MonatswertVorgabe;
-  sonstigeVersicherungen: MonatswertVorgabe;
+  bloecke: Privatblock[];
+  sozialversicherung: SozialversicherungEingabe;
   notizen?: string;
 }
 
@@ -702,6 +757,42 @@ export interface Darlehensvorlage {
 }
 
 /**
+ * Beitragssätze und Grenzen der Sozialversicherung, mit dem Plan eingefroren.
+ * Die Werte für 2026 und die Quellen stehen in docs/vorsorge.md.
+ */
+export interface SozialversicherungParameter {
+  quelle: string;
+  /** Allgemeiner Beitragssatz mit Krankengeld, ohne Zusatzbeitrag. 0,146 = 14,6 %. */
+  kvAllgemeinSatz: Satz;
+  /** Ermäßigter Beitragssatz ohne Krankengeld, ohne Zusatzbeitrag. 0,14 = 14,0 %. */
+  kvErmaessigtSatz: Satz;
+  /** Durchschnittlicher Zusatzbeitrag. Selbständige tragen ihn voll. */
+  kvZusatzbeitragSatz: Satz;
+  /** Pflegeversicherung ohne Kinderlosenzuschlag. 0,036 = 3,6 %. */
+  pvSatz: Satz;
+  /** Zuschlag für Kinderlose, 0,006 = 0,6 Prozentpunkte. */
+  pvKinderlosZuschlagSatz: Satz;
+  /** Mindestbemessung freiwillig Versicherte, Cent je Monat. */
+  kvMindestbemessungMonatCents: EuroCents;
+  /** Beitragsbemessungsgrenze Kranken- und Pflegeversicherung, Cent je Monat. */
+  kvHoechstbemessungMonatCents: EuroCents;
+  /** Beitragssatz der allgemeinen Rentenversicherung. 0,186 = 18,6 %. */
+  rvSatz: Satz;
+  /** Bezugsgröße, Cent je Monat. */
+  bezugsGroesseMonatCents: EuroCents;
+  /** Mindestbemessung der Rentenversicherung, Cent je Monat. */
+  rvMindestbemessungMonatCents: EuroCents;
+  /** Beitragsbemessungsgrenze der allgemeinen Rentenversicherung, Cent je Monat. */
+  rvHoechstbemessungMonatCents: EuroCents;
+  /** Voller Beitragssatz der Arbeitslosenversicherung, allein vom Versicherten getragen. */
+  avSatz: Satz;
+  /** Höchstbetrag der Altersvorsorgeaufwendungen bei Einzelveranlagung, Cent je Jahr. */
+  altersvorsorgeHoechstbetragCents: EuroCents;
+  /** Höchstbetrag der sonstigen Vorsorgeaufwendungen für Selbständige, Cent je Jahr. */
+  sonstigeVorsorgeHoechstbetragCents: EuroCents;
+}
+
+/**
  * Mit der Anlage des Plans eingefrorene Sätze, Freibeträge und Fördervorlagen.
  * Eine spätere Änderung des Rechts ändert abgeschlossene Pläne nicht.
  */
@@ -710,6 +801,7 @@ export interface Planparameter {
   bezeichnung: string;
   hinweis?: string;
   steuer: Steuerparameter;
+  sozialversicherung: SozialversicherungParameter;
   darlehensvorlagen: Darlehensvorlage[];
 }
 

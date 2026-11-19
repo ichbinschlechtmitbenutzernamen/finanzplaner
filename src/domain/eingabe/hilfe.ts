@@ -239,8 +239,10 @@ function wachstumAnwenden(
 }
 
 function saisonAnwenden(stand: Stand, faktoren: MonatFaktoren): Stand {
-  if (faktoren.length !== 12 || faktoren.some((faktor) => faktor < 0 || faktor > MAX_RATE)) {
-    throw new EingabeFehler("Saison braucht zwölf Faktoren zwischen 0 und 10.");
+  if (faktoren.length !== 12 || faktoren.some((faktor) => faktor < 0 || !Number.isFinite(faktor))) {
+    throw new EingabeFehler(
+      "Der Monatsfaktor braucht zwölf Werte, jeder mindestens 0. Eine Obergrenze gibt es nicht.",
+    );
   }
   return { ...stand, saison: { faktoren: [...faktoren] as MonatFaktoren }, overrides: [] };
 }

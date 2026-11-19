@@ -563,8 +563,9 @@ function Tragfaehigkeit({
         erste(ausBewegung([person.gewinnNachSteuern], false)),
         `${person.name}: Gewinn nach Steuern`,
       ),
-      mitName(erste(ausBewegung([person.lebenshaltung], false)), `${person.name}: Lebenshaltung`),
-      mitName(erste(ausBewegung([person.vorsorge], false)), `${person.name}: Vorsorge`),
+      ...person.bloecke.flatMap((block) =>
+        ausBewegung([block], true).map((zeile) => mitName(zeile, `${person.name}: ${zeile.bezeichnung}`)),
+      ),
       mitName(
         erste(ausBewegung([person.verfuegbaresEinkommen], false)),
         `${person.name}: verfügbar`,
@@ -585,6 +586,11 @@ function Tragfaehigkeit({
       <Text style={stil.h1}>Tragfähigkeit mit Lebenshaltung</Text>
       <Text style={stil.absatz}>{berichte.tragfaehigkeit.hinweis}</Text>
       <EinfacheTabelle kopf={kopfzeilen} zeilen={personen} breiten={[180, 80, 140, 120]} />
+      {berichte.tragfaehigkeit.personen.map((person) => (
+        <Text key={person.personId} style={stil.absatz}>
+          {person.name}: {person.herleitung.join(" ")}
+        </Text>
+      ))}
     </Blatt>,
     ...monatsSeiten(
       `${abschnitt.id}-trag-monat`,

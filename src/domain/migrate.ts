@@ -3,6 +3,7 @@ import { standardExcelExport } from "./excel/blaetter.ts";
 import { standardPdfExport } from "./pdf/kapitel.ts";
 import { finanzplanSchema } from "./schema.ts";
 import { createParameterSnapshot, PARAMETER_DE_2026 } from "./parameter.ts";
+import { standardLebensbedarf } from "./privat.ts";
 import { standardPlanSzenarien } from "./szenarien/standard.ts";
 import { ABSCHLUSSZAHLUNG_MONAT_STANDARD, SCHEMA_VERSION, type Finanzplan } from "./types.ts";
 
@@ -33,6 +34,7 @@ export const migrations: Record<number, Migration> = {
   10: migrateV10ToV11,
   11: migrateV11ToV12,
   12: migrateV12ToV13,
+  13: migrateV13ToV14,
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -249,6 +251,65 @@ export function migrateV12ToV13(data: Record<string, unknown>): Record<string, u
   }
   plan.schemaVersion = 13;
   return plan;
+}
+
+/**
+ * Version 14 gliedert den Lebensbedarf in Blöcke.
+ * Die bisherige Lebenshaltungspauschale (Wohnen, Essen und Alltag in einem Betrag)
+ * landet im Posten Lebensmittel/Kleidung/Drogerie/Apotheke, weil eine Aufteilung nicht gespeichert war.
+ * Altersvorsorge wird die private Altersvorsorge, sonstige Versicherungen werden „Andere Versicherungen“.
+ * Kranken- und Pflegeversicherung entfallen als Eingabe. Block 6 rechnet sie.
+ * Die Faktoren für Planjahr 2 und 3 starten bei 1. Die Renten- und Arbeitslosenversicherung starten bei nein,
+ * damit ein alter Vorsorgebetrag nicht doppelt gezählt wird.
+ */
+export function migrateV13ToV14(data: Record<string, unknown>): Record<string, unknown> {
+  const plan = structuredClone(data);
+  const parameter = plan.parameter;
+  if (isRecord(parameter) && parameter.sozialversicherung == null) {
+    parameter.sozialversicherung = structuredClone(PARAMETER_DE_2026.sozialversicherung);
+  }
+  const stamm = plan.stammdaten;
+  if (isRecord(stamm) && Array.isArray(stamm.personen)) {
+    for (const person of stamm.personen) {
+      if (!isRecord(person)) continue;
+      const id = typeof person.id === "string" ? person.id : "person";
+      const bedarf = person.lebensbedarf;
+      if (!isRecord(bedarf) || Array.isArray(bedarf.bloecke)) continue;
+      const profil = isRecord(person.steuerprofil) ? person.steuerprofil : undefined;
+      const kinder = typeof profil?.kinderfreibetraege === "number" && profil.kinderfreibetraege > 0;
+      person.lebensbedarf = lebensbedarfAusAlt(id, bedarf, kinder);
+    }
+  }
+  plan.schemaVersion = 14;
+  return plan;
+}
+
+function lebensbedarfAusAlt(
+  personId: string,
+  alt: Record<string, unknown>,
+  kinder: boolean,
+): Record<string, unknown> {
+  const neu = standardLebensbedarf(personId, kinder);
+  const finden = (schluessel: string) => {
+    for (const block of neu.bloecke) {
+      const posten = block.posten.find((eintrag) => eintrag.schluessel === schluessel);
+      if (posten) return posten;
+    }
+    return undefined;
+  };
+  const alltag = finden("alltag");
+  const alter = finden("altersvorsorge");
+  const weitere = finden("weitere_versicherungen");
+  if (alltag && isRecord(alt.lebenshaltung)) alltag.betrag = alt.lebenshaltung as typeof alltag.betrag;
+  if (alter && isRecord(alt.altersvorsorge)) alter.betrag = alt.altersvorsorge as typeof alter.betrag;
+  if (weitere && isRecord(alt.sonstigeVersicherungen)) {
+    weitere.betrag = alt.sonstigeVersicherungen as typeof weitere.betrag;
+  }
+  return {
+    bloecke: neu.bloecke,
+    sozialversicherung: neu.sozialversicherung,
+    ...(typeof alt.notizen === "string" ? { notizen: alt.notizen } : {}),
+  };
 }
 
 export function readSchemaVersion(data: unknown): number {

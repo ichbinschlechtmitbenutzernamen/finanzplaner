@@ -1,7 +1,5 @@
 import { useState } from "react";
 import {
-  leseGruendungszuschuss,
-  leseLebensbedarf,
   leseUmsatz,
   leseVorhaben,
   leseWareneinsatz,
@@ -10,7 +8,6 @@ import {
 import { parseDeutschZahl } from "../../domain/eingabe/zahlen.ts";
 import { neueId, standardRollen } from "../../domain/assistent/stationen.ts";
 import {
-  setzePersoenlich,
   setzeUmsatz,
   setzeVorhaben,
   monateDesPlans,
@@ -20,7 +17,7 @@ import {
   type UmsatzEingabe,
   type VorhabenEingabe,
 } from "../../domain/assistent/schreiben.ts";
-import { istKapitalgesellschaft, planjahreVon } from "../../domain/reports/planjahr.ts";
+import { planjahreVon } from "../../domain/reports/planjahr.ts";
 import { BUNDESLAENDER, PLAN_ZWECKE, RECHTSFORMEN } from "../../domain/types.ts";
 import type { Finanzplan, MonatFaktoren, Rechtsform, Wachstumsbezug } from "../../domain/types.ts";
 import { PLAN_ZWECK_LABEL, RECHTSFORM_LABEL } from "../../domain/labels.ts";
@@ -305,229 +302,7 @@ function Personen({
   );
 }
 
-export function PersoenlichStation({
-  plan,
-  onAendern,
-}: {
-  plan: Finanzplan;
-  onAendern: PlanAendern;
-}) {
-  if (istKapitalgesellschaft(plan.stammdaten.rechtsform)) {
-    return (
-      <section className="assistent-station" aria-labelledby="station-persoenlich">
-        <h2 id="station-persoenlich">Persönliches</h2>
-        <p className="hinweis">
-          Bei GmbH und UG entfällt diese Station. Lebenshaltung und Gründungszuschuss sind keine
-          Entnahme. Das Gehalt der Geschäftsführung wird beim Personal erfasst.
-        </p>
-      </section>
-    );
-  }
-  const personen = leseLebensbedarf(plan);
-  const zuschuss = leseGruendungszuschuss(plan);
-  function schreibePersonen(naechste: typeof personen) {
-    onAendern((aktuell) => setzePersoenlich(aktuell, naechste, leseGruendungszuschuss(aktuell)));
-  }
-  return (
-    <section className="assistent-station" aria-labelledby="station-persoenlich">
-      <h2 id="station-persoenlich">Persönliches</h2>
-      <p className="hinweis">
-        Bei Personenunternehmen ist der Lebensbedarf eine Entnahme, keine Betriebsausgabe.
-      </p>
-      {plan.stammdaten.personen.map((person) => {
-        const leben =
-          personen.find((eintrag) => eintrag.personId === person.id) ?? leerLeben(person.id);
-        function setze(teil: Partial<typeof leben>) {
-          const andere = personen.filter((eintrag) => eintrag.personId !== person.id);
-          schreibePersonen([...andere, { ...leben, ...teil }]);
-        }
-        return (
-          <fieldset key={person.id} className="feld-gruppe">
-            <legend>{person.name || "Person"}</legend>
-            <div className="feld-raster">
-              <PruefBlock feld={`leben-${person.id}-lebenshaltung`}>
-                <EuroFeld
-                  label="Lebenshaltung"
-                  hilfe="Wohnen, Essen und der übrige Alltag, ohne die Versicherungsbeiträge daneben."
-                  cents={leben.lebenshaltung.basisCents}
-                  onChange={(basisCents) => setze({ lebenshaltung: { basisCents } })}
-                />
-              </PruefBlock>
-              <PruefBlock feld={`leben-${person.id}-vorsorge`}>
-                <EuroFeld
-                  label="Krankenversicherung"
-                  hilfe="Monatlicher Beitrag zur Krankenversicherung, privat gezahlt."
-                  cents={leben.krankenversicherung.basisCents}
-                  onChange={(basisCents) => setze({ krankenversicherung: { basisCents } })}
-                />
-                <EuroFeld
-                  label="Pflegeversicherung"
-                  hilfe="Monatlicher Beitrag zur Pflegeversicherung."
-                  cents={leben.pflegeversicherung.basisCents}
-                  onChange={(basisCents) => setze({ pflegeversicherung: { basisCents } })}
-                />
-                <EuroFeld
-                  label="Altersvorsorge"
-                  hilfe="Monatlicher Beitrag zur Altersvorsorge."
-                  cents={leben.altersvorsorge.basisCents}
-                  onChange={(basisCents) => setze({ altersvorsorge: { basisCents } })}
-                />
-                <EuroFeld
-                  label="Sonstige Vorsorge"
-                  hilfe="Weitere private Versicherungen, etwa Haftpflicht oder Berufsunfähigkeit."
-                  cents={leben.sonstigeVersicherungen.basisCents}
-                  onChange={(basisCents) => setze({ sonstigeVersicherungen: { basisCents } })}
-                />
-              </PruefBlock>
-            </div>
-            <Feld
-              label="Kirchensteuer"
-              hilfe="Ob die Person kirchensteuerpflichtig ist. Der Satz folgt dem Bundesland."
-            >
-              <input
-                type="checkbox"
-                checked={leben.kirchensteuer}
-                onChange={(event) => setze({ kirchensteuer: event.target.checked })}
-              />
-            </Feld>
-          </fieldset>
-        );
-      })}
-      <fieldset className="feld-gruppe">
-        <legend>Gründungszuschuss</legend>
-        <p className="feld-hilfe">
-          Steuerfreier Zuschuss. Er steht in der Liquidität, nicht in der Gewinnrechnung.
-        </p>
-        <label className="check">
-          <input
-            type="checkbox"
-            checked={zuschuss != null}
-            onChange={(event) => {
-              onAendern((aktuell) =>
-                setzePersoenlich(
-                  aktuell,
-                  leseLebensbedarf(aktuell),
-                  event.target.checked
-                    ? {
-                        id: neueId("zuschuss"),
-                        alg1MonatlichCents: 0,
-                        phase1Monate: 6,
-                        pauschaleCents: 0,
-                        phase2Geplant: false,
-                        phase2Monate: 0,
-                        startMonat: aktuell.startMonat ?? aktuell.stammdaten.gruendungsmonat ?? "",
-                      }
-                    : null,
-                ),
-              );
-            }}
-          />
-          Gründungszuschuss geplant
-        </label>
-        {zuschuss ? (
-          <div className="feld-raster">
-            <EuroFeld
-              label="Arbeitslosengeld I je Monat"
-              hilfe="Betrag, der in Phase 1 zusätzlich zur Pauschale gezahlt wird."
-              cents={zuschuss.alg1MonatlichCents}
-              onChange={(alg1MonatlichCents) =>
-                onAendern((aktuell) =>
-                  setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
-                    ...zuschuss,
-                    alg1MonatlichCents,
-                  }),
-                )
-              }
-            />
-            <ZahlFeld
-              label="Monate Phase 1"
-              hilfe="Dauer der ersten Phase, in der Arbeitslosengeld und Pauschale zusammenlaufen."
-              wert={zuschuss.phase1Monate}
-              ganzzahlig
-              onChange={(phase1Monate) => {
-                if (phase1Monate == null || phase1Monate < 1) return;
-                onAendern((aktuell) =>
-                  setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
-                    ...zuschuss,
-                    phase1Monate,
-                  }),
-                );
-              }}
-            />
-            <EuroFeld
-              label="Monatliche Pauschale"
-              hilfe="Pauschale, die in beiden Phasen gezahlt werden kann."
-              cents={zuschuss.pauschaleCents}
-              onChange={(pauschaleCents) =>
-                onAendern((aktuell) =>
-                  setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
-                    ...zuschuss,
-                    pauschaleCents,
-                  }),
-                )
-              }
-            />
-            <MonatFeld
-              label="Erster Monat"
-              hilfe="Start des Zuschusses. Alle Monate müssen im Planhorizont liegen."
-              value={zuschuss.startMonat}
-              onChange={(startMonat) =>
-                onAendern((aktuell) =>
-                  setzePersoenlich(aktuell, leseLebensbedarf(aktuell), { ...zuschuss, startMonat }),
-                )
-              }
-            />
-            <Feld label="Phase 2" hilfe="Anschlussphase nur mit Pauschale, ohne Arbeitslosengeld.">
-              <input
-                type="checkbox"
-                checked={zuschuss.phase2Geplant}
-                onChange={(event) =>
-                  onAendern((aktuell) =>
-                    setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
-                      ...zuschuss,
-                      phase2Geplant: event.target.checked,
-                      phase2Monate: event.target.checked ? Math.max(zuschuss.phase2Monate, 1) : 0,
-                    }),
-                  )
-                }
-              />
-            </Feld>
-            {zuschuss.phase2Geplant ? (
-              <ZahlFeld
-                label="Monate Phase 2"
-                hilfe="Dauer der zweiten Phase."
-                wert={zuschuss.phase2Monate}
-                ganzzahlig
-                onChange={(phase2Monate) => {
-                  if (phase2Monate == null) return;
-                  onAendern((aktuell) =>
-                    setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
-                      ...zuschuss,
-                      phase2Monate,
-                    }),
-                  );
-                }}
-              />
-            ) : null}
-          </div>
-        ) : null}
-      </fieldset>
-    </section>
-  );
-}
-
-function leerLeben(personId: string) {
-  const nullWert = { basisCents: 0 };
-  return {
-    personId,
-    lebenshaltung: nullWert,
-    krankenversicherung: nullWert,
-    pflegeversicherung: nullWert,
-    altersvorsorge: nullWert,
-    sonstigeVersicherungen: nullWert,
-    kirchensteuer: false,
-  };
-}
+export { PersoenlichStation } from "./station-persoenlich.tsx";
 
 export function UmsatzStation({ plan, onAendern }: { plan: Finanzplan; onAendern: PlanAendern }) {
   const linien = leseUmsatz(plan);
@@ -788,16 +563,18 @@ function SaisonFaktoren({
 }) {
   return (
     <fieldset className="feld-gruppe">
-      <legend>Saisonfaktoren</legend>
+      <legend>Monatsfaktor oder Menge</legend>
       <p className="feld-hilfe">
-        Zwölf Faktoren für Januar bis Dezember. 1 lässt den Monat unverändert, 0 setzt ihn auf null.
+        Zwölf Werte für Januar bis Dezember. 1 lässt einen Monatsbetrag unverändert, 0 setzt ihn auf
+        null. Der Wert kann auch eine Menge sein, zum Beispiel 80 Stunden mal einem Stundenpreis.
+        Es gibt keine Obergrenze. Derselbe Kalendermonat gilt in jedem Planjahr.
       </p>
       <div className="saison-raster">
         {KALENDER_KURZ.map((monat, index) => (
           <ZahlFeld
             key={monat}
             label={monat}
-            hilfe={`Faktor für ${monat}.`}
+            hilfe={`Faktor oder Menge für ${monat}. Mindestens 0, ohne Obergrenze.`}
             wert={faktoren[index] ?? 1}
             onChange={(wert) => {
               if (wert == null) return;

@@ -5,7 +5,8 @@ import { beispielCafe } from "../../fixtures/beispiel-cafe.ts";
 import { beispielEinzelunternehmen } from "../../fixtures/beispiel-einzelunternehmen.ts";
 import { beispielElektro } from "../../fixtures/beispiel-elektro.ts";
 import { beispielGmbh } from "../../fixtures/beispiel-gmbh.ts";
-import type { Finanzplan, MonatswertVorgabe } from "../types.ts";
+import { lebensbedarfMit } from "../privat.ts";
+import type { Finanzplan } from "../types.ts";
 import { erstelleBerichte } from "./berichte.ts";
 import {
   BREAK_EVEN_DEFINITION,
@@ -410,14 +411,14 @@ function gbr(): Finanzplan {
       name: "Ada",
       rollen: ["gesellschafter"],
       anteil: 0.6,
-      lebensbedarf: lebensbedarf(120_000, 40_000),
+      lebensbedarf: lebensbedarf("person-a", 120_000, 40_000),
     },
     {
       id: "person-b",
       name: "Ben",
       rollen: ["gesellschafter"],
       anteil: 0.4,
-      lebensbedarf: lebensbedarf(90_000, 30_000),
+      lebensbedarf: lebensbedarf("person-b", 90_000, 30_000),
     },
   ];
   plan.umsatzplanung = [
@@ -434,13 +435,15 @@ function gbr(): Finanzplan {
   return plan;
 }
 
-function lebensbedarf(lebenshaltungCents: number, vorsorgeCents: number) {
-  const monat = (basisCents: number): MonatswertVorgabe => ({ basisCents });
-  return {
-    lebenshaltung: monat(lebenshaltungCents),
-    krankenversicherung: monat(vorsorgeCents),
-    pflegeversicherung: monat(0),
-    altersvorsorge: monat(0),
-    sonstigeVersicherungen: monat(0),
-  };
+function lebensbedarf(personId: string, lebenshaltungCents: number, vorsorgeCents: number) {
+  return lebensbedarfMit(
+    personId,
+    { alltag: lebenshaltungCents, haftpflicht: vorsorgeCents },
+    {
+      krankenversicherung: "privat",
+      privatbeitragCents: 0,
+      rentenversicherung: "nein",
+      arbeitslosenversicherung: false,
+    },
+  );
 }

@@ -44,7 +44,7 @@ export const PARAMETER_DE_2026: Planparameter = {
   version: "de-2026",
   bezeichnung: "Steuer- und Förderparameter Deutschland, Stand 2026",
   hinweis:
-    "Mit der Plananlage eingefroren, damit eine bei der Bank abgegebene Fassung stabil bleibt. Enthalten ist die Tarifformel § 32a EStG 2026 einschließlich Solidaritätszuschlag mit Gleitzone.",
+    "Mit der Plananlage eingefroren, damit eine bei der Bank abgegebene Fassung stabil bleibt. Enthalten ist die Tarifformel § 32a EStG 2026 einschließlich Solidaritätszuschlag mit Gleitzone und die Sozialversicherungsrechengrößen 2026.",
   steuer: {
     umsatzsteuerRegelsatz: 0.19,
     umsatzsteuerErmaessigt: 0.07,
@@ -84,6 +84,24 @@ export const PARAMETER_DE_2026: Planparameter = {
     gwgSofortMaxNettoCents: 80_000,
     sammelpostenMinNettoCents: 25_001,
     sammelpostenMaxNettoCents: 100_000,
+  },
+  sozialversicherung: {
+    quelle:
+      "GKV-Spitzenverband, Rechengrößen 2026; SVBezGrV 2026; BMG, Beiträge 2026; Deutsche Rentenversicherung, Werte 2026; Bundesagentur für Arbeit, Antragspflichtversicherung 2026; § 345b SGB III; § 10 EStG.",
+    kvAllgemeinSatz: 0.146,
+    kvErmaessigtSatz: 0.14,
+    kvZusatzbeitragSatz: 0.029,
+    pvSatz: 0.036,
+    pvKinderlosZuschlagSatz: 0.006,
+    kvMindestbemessungMonatCents: 131_833,
+    kvHoechstbemessungMonatCents: 581_250,
+    rvSatz: 0.186,
+    bezugsGroesseMonatCents: 395_500,
+    rvMindestbemessungMonatCents: 60_300,
+    rvHoechstbemessungMonatCents: 845_000,
+    avSatz: 0.026,
+    altersvorsorgeHoechstbetragCents: 3_082_600,
+    sonstigeVorsorgeHoechstbetragCents: 280_000,
   },
   darlehensvorlagen: [TAB_MIKRODARLEHEN_VORLAGE],
 };

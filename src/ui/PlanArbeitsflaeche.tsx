@@ -556,7 +556,9 @@ function zeilenFuer(
     reiter === "szenarien"
   )
     return [];
-  if (reiter === "eingaben") return eingabeZeilen(plan, monate, jahre);
+  if (reiter === "eingaben") {
+    return eingabeZeilen(plan, monate, jahre, berichte?.tragfaehigkeit ?? null);
+  }
   if (!berichte) return [];
   return berichtZeilen(berichte, reiter);
 }

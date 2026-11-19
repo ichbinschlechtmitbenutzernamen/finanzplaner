@@ -193,6 +193,36 @@ export interface UmsatzsteuerBlock {
   umsatzsteuerNachHorizontCents: number;
 }
 
+export interface JahresVorsorge {
+  jahr: number;
+  kvCents: number;
+  pvCents: number;
+  rvCents: number;
+  avCents: number;
+}
+
+export interface VorsorgePerson {
+  personId: string;
+  name: string;
+  kvCents: number[];
+  pvCents: number[];
+  rvCents: number[];
+  avCents: number[];
+  /** ESt, Solidaritätszuschlag und Kirchensteuer als monatliche Rücklage. Kein Zahlungsstrom. */
+  estRuecklageCents: number[];
+  /** Monatsbemessung vor Mindest- und Höchstgrenze. */
+  bemessungCents: number[];
+  bemessungArt: "gewinn" | "gehalt";
+  /** Gesetzliche Krankenversicherung und Bemessung unter der Mindestbemessung. */
+  mindestbeitrag: boolean;
+  herleitung: string[];
+  jahre: JahresVorsorge[];
+}
+
+export interface VorsorgeBlock {
+  personen: VorsorgePerson[];
+}
+
 export interface EntnahmeBlock {
   lebensbedarfCents: number[];
   /** Bei GmbH und UG 0. Der Lebensbedarf bleibt zum Vergleich in `lebensbedarfCents`. */
@@ -267,6 +297,14 @@ export interface SteuerPersonJahr {
   einkommensteuerCents: number;
   solidaritaetszuschlagCents: number;
   kirchensteuerCents: number;
+  /** Abziehbare Basis-Kranken- und Pflegeversicherung aus Block 6. */
+  vorsorgeKrankenPflegeCents: number;
+  /** Abziehbare gesetzliche Rentenversicherung, gedeckelt. */
+  vorsorgeRenteCents: number;
+  /** Abziehbare Arbeitslosenversicherung im Rest des sonstigen Höchstbetrags. */
+  vorsorgeArbeitslosCents: number;
+  /** Summe der drei Abzüge, schon im zu versteuernden Einkommen enthalten. */
+  vorsorgeAbzugCents: number;
 }
 
 export interface SteuerJahr {
@@ -345,6 +383,7 @@ export interface Planberechnung {
   finanzierung: FinanzierungsBlock;
   umsatzsteuer: UmsatzsteuerBlock;
   entnahmen: EntnahmeBlock;
+  vorsorge: VorsorgeBlock;
   steuern: SteuerBlock;
   uebersicht: UebersichtBlock;
   liquiditaetsreserveCents: number;

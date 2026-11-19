@@ -3,6 +3,7 @@ import { standardExcelExport } from "../domain/excel/blaetter.ts";
 import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026, TAB_MIKRODARLEHEN_ID } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
+import { lebensbedarfMit } from "../domain/privat.ts";
 import type { Finanzplan } from "../domain/types.ts";
 
 /**
@@ -12,7 +13,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielElektro = {
   id: "plan-beispiel-blitzweg-elektro",
-  schemaVersion: 13,
+  schemaVersion: 14,
   status: "vollstaendig",
   erstelltAm: "2026-04-02T08:00:00.000Z",
   geaendertAm: "2026-04-20T08:00:00.000Z",
@@ -44,13 +45,37 @@ export const beispielElektro = {
         rollen: ["inhaber"],
         anteil: 1,
         steuerprofil: { kirchensteuer: false, splitting: false, kinderfreibetraege: 0 },
-        lebensbedarf: {
-          lebenshaltung: { basisCents: 160_000 },
-          krankenversicherung: { basisCents: 45_000 },
-          pflegeversicherung: { basisCents: 9_000 },
-          altersvorsorge: { basisCents: 20_000 },
-          sonstigeVersicherungen: { basisCents: 5_000 },
-        },
+        lebensbedarf: lebensbedarfMit(
+          "person-jonas-heller",
+          {
+            miete: 72_000,
+            energie: 14_000,
+            alltag: 42_000,
+            telefon: 4_500,
+            medien: 2_800,
+            freizeit: 6_000,
+            haftpflicht: 2_200,
+            altersvorsorge: 15_000,
+            weitere_versicherungen: 4_500,
+            kfz_steuer: 6_500,
+            tanken: 14_000,
+            reparatur: 4_000,
+            mobilitaet_sonstiges: 1_500,
+            urlaub: 8_000,
+            anschaffungen: 3_500,
+          },
+          {
+            krankenversicherung: "gesetzlich",
+            krankengeldanspruch: true,
+            kinder: false,
+            rentenversicherung: "pflicht",
+            arbeitslosenversicherung: true,
+          },
+          {
+            wohnen: { jahr2: 1.03, jahr3: 1.06 },
+            lebenshaltung: { jahr2: 1.03, jahr3: 1.06 },
+          },
+        ),
       },
     ],
     zwecke: ["bank_kfw", "eigene_planung"],

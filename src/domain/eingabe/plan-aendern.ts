@@ -20,19 +20,12 @@ import {
   wachstumMonatswert,
 } from "./hilfe.ts";
 
-export type LebensbedarfFeld =
-  | "lebenshaltung"
-  | "krankenversicherung"
-  | "pflegeversicherung"
-  | "altersvorsorge"
-  | "sonstigeVersicherungen";
-
 export type MonatswertZiel =
   | { art: "umsatz"; id: string }
   | { art: "preis"; id: string }
   | { art: "personal"; id: string }
   | { art: "kosten"; id: string }
-  | { art: "leben"; personId: string; feld: LebensbedarfFeld };
+  | { art: "leben"; personId: string; postenId: string };
 
 export type MengenZiel = { art: "menge"; id: string };
 
@@ -255,7 +248,11 @@ function findeMonatswert(plan: Finanzplan, ziel: MonatswertZiel): MonatswertVorg
     }
     case "leben": {
       const person = plan.stammdaten.personen.find((eintrag) => eintrag.id === ziel.personId);
-      return person?.lebensbedarf?.[ziel.feld] ?? null;
+      for (const block of person?.lebensbedarf?.bloecke ?? []) {
+        const posten = block.posten.find((eintrag) => eintrag.id === ziel.postenId);
+        if (posten) return posten.betrag;
+      }
+      return null;
     }
     default: {
       const unerreichbar: never = ziel;

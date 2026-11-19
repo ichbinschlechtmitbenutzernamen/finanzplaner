@@ -74,7 +74,7 @@ export function Hilfeleiste({
           : "Pfeile bewegen, Enter bearbeitet, Tab springt weiter, Strg+Z macht rückgängig."}{" "}
         Aus Excel einfügen: Zellen kopieren und hier mit Strg+V ablegen. Deutsche Zahlen wie
         1.234,56 € werden erkannt. Fortschreiben und Wachstum schreiben monatliche Überschreibungen.
-        Die Saison setzt die zwölf Kalenderfaktoren und entfernt Überschreibungen dieser Zeile.
+        Der Faktor gilt je Kalendermonat und kann eine Menge sein, etwa Stunden. Es gibt keine Obergrenze. Überschreibungen dieser Zeile entfallen.
       </p>
     </div>
   );
@@ -167,12 +167,12 @@ function SaisonForm({
         }
       }}
     >
-      <span className="saison-titel">Saison</span>
+      <span className="saison-titel">Faktor oder Menge</span>
       {KALENDER_KURZ.map((name, index) => (
         <label key={name}>
           {name}
           <input
-            aria-label={`Saisonfaktor ${name}`}
+            aria-label={`Monatsfaktor ${name}`}
             value={texte[index] ?? ""}
             inputMode="decimal"
             onChange={(event) => {
