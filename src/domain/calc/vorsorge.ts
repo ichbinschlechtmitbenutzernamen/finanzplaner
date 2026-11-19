@@ -1,6 +1,7 @@
-import { parseIsoMonth, type IsoMonth } from "../months.ts";
+import { parseIsoMonth } from "../months.ts";
 import type {
   Finanzplan,
+  IsoMonth,
   Person,
   SozialversicherungEingabe,
   SozialversicherungParameter,
@@ -111,8 +112,7 @@ function personVorsorge(
   const eingabe = person.lebensbedarf?.sozialversicherung;
   const gehalt = gehaltJeMonat(plan, person.id, personal);
   const art = gehalt ? "gehalt" : "gewinn";
-  const roh =
-    art === "gehalt" ? gehalt : durchschnitt(monate, gewinn.get(person.id) ?? leer(monate.length));
+  const roh = gehalt ?? durchschnitt(monate, gewinn.get(person.id) ?? leer(monate.length));
   const kv = leer(monate.length);
   const pv = leer(monate.length);
   const rv = leer(monate.length);
@@ -228,7 +228,9 @@ function gewinnJePerson(
 ): Map<string, number[]> {
   const personen = plan.stammdaten.personen.filter((person) => person.anteil > 0);
   const anteile = personen.map((person) => person.anteil);
-  const reihen = new Map<string, number[]>(personen.map((person) => [person.id, leer(monate.length)]));
+  const reihen = new Map<string, number[]>(
+    personen.map((person) => [person.id, leer(monate.length)]),
+  );
   betriebsergebnisCents.forEach((gewinn, index) => {
     const teile = verteileNachAnteilen(gewinn, anteile);
     personen.forEach((person, personIndex) => {
@@ -239,7 +241,11 @@ function gewinnJePerson(
   return reihen;
 }
 
-function gehaltJeMonat(plan: Finanzplan, personId: string, personal: PersonalBlock): number[] | null {
+function gehaltJeMonat(
+  plan: Finanzplan,
+  personId: string,
+  personal: PersonalBlock,
+): number[] | null {
   const stellen = plan.personal.filter(
     (stelle) => stelle.personId === personId && stelle.rolle === "geschaeftsfuehrer",
   );

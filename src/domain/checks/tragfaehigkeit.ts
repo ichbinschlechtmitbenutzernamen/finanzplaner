@@ -78,7 +78,8 @@ function personMeldungen(
       stufe: "hinweis",
       kategorie: "tragfaehigkeit",
       text: `Bei ${person.name} greift der Mindestbeitrag der Krankenversicherung.`,
-      begruendung: `${person.name}: die Bemessung liegt unter der Mindestbemessung 2026 von 1.318,33 € im Monat. Der Beitrag wird auf dieser Grundlage gerechnet. ${person.herleitung.find((zeile) => zeile.includes("Mindestbeitrag")) ?? ""}`.trim(),
+      begruendung:
+        `${person.name}: die Bemessung liegt unter der Mindestbemessung 2026 von 1.318,33 € im Monat. Der Beitrag wird auf dieser Grundlage gerechnet. ${person.herleitung.find((zeile) => zeile.includes("Mindestbeitrag")) ?? ""}`.trim(),
       ziel: {
         tabelle: { ansicht: "tragfaehigkeit", zeileId: `kv-${person.personId}` },
         assistent: { station: "persoenlich", feld: `leben-${person.personId}-abgaben` },

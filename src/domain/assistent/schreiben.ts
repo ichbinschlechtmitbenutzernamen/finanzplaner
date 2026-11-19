@@ -784,7 +784,10 @@ function pruefeLebensbedarf(person: LebensbedarfEingabe): void {
       verlangeCents(posten.betrag.basisCents, posten.bezeichnung);
     }
   }
-  verlangeCents(person.sozialversicherung.privatbeitragCents, "Privater Krankenversicherungsbeitrag");
+  verlangeCents(
+    person.sozialversicherung.privatbeitragCents,
+    "Privater Krankenversicherungsbeitrag",
+  );
 }
 
 function zuschuesseMit(plan: Finanzplan, zuschuss: GruendungszuschussEingabe | null) {

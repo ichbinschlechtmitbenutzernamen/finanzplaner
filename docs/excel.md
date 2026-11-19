@@ -11,7 +11,7 @@ Im Dialog sind die Blätter an- und abwählbar. Standardmäßig sind alle an. Di
 Das Eingabeblatt und die Hilfsblätter sind immer in der Datei, sobald ein Rechenblatt gewählt ist, auch wenn die Eingaben im Dialog abgewählt wurden. Prüfung und Szenarienvergleich allein brauchen sie nicht.
 
 - Übersicht: Kennzahlen. Hat das Szenario mindestens einen Fehler, steht ein Vermerk mit der Anzahl. Warnungen allein lösen ihn nicht aus.
-- Eingaben: Stammdaten, Rechtsform, Personen, Hebel, Steuerparameter, Umsatz, Personal, laufende Kosten, Investitionen, Finanzierung, Lebenshaltung und Vorsorge. Gelbe Zellen mit blauer Schrift sind Eingaben.
+- Eingaben: Stammdaten, Rechtsform, Personen, Hebel, Steuerparameter, Sozialversicherungsrechengrößen, Umsatz, Personal, laufende Kosten, Investitionen, Finanzierung, private Blöcke mit Posten und Planjahrfaktoren, die Annahmen für Block 6. Gelbe Zellen mit blauer Schrift sind Eingaben. Blocksummen, Faktoren und Block 6 sind Formeln.
 - Kapitalbedarf und Finanzierung
 - Investitionen und AfA, dazu die Darlehen. Der Reiter im Dialog heißt „Investitionen und Abschreibungen“. Der Blattname ist kürzer, weil Excel höchstens 31 Zeichen zulässt.
 - Umsatz und Kosten
@@ -55,7 +55,7 @@ Die Toleranz, die der Export zulässt, ist 1 Euro. Die Beispiele bleiben darunte
 - Neue Zeilen lassen sich in Excel nicht anfügen. Die Formeln folgen den Zeilen des exportierten Plans. Beträge, Sätze und Hebel bleiben änderbar.
 - Formelzellen sind nicht geschützt.
 - Prüfung und Szenarienvergleich sind Werte, keine Formeln.
-- Was der Rechenkern auslässt, lässt auch die Mappe aus: Verlustvortrag, Ausschüttungsbesteuerung, Hinzurechnungen und Kürzungen beim Gewerbeertrag, Sonderausgaben.
+- Was der Rechenkern auslässt, lässt auch die Mappe aus: Verlustvortrag, Ausschüttungsbesteuerung, Hinzurechnungen und Kürzungen beim Gewerbeertrag, den Sonderausgaben-Pauschbetrag. Die Vorsorge aus Block 6 zieht die Mappe wie der Steuerkern ab.
 
 ## Dateiname
 

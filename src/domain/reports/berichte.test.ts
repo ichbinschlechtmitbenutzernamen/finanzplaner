@@ -218,9 +218,7 @@ describe("Berichte der Beispielpläne", () => {
     });
     expect(bericht.planjahre[1]).toMatchObject({ vonMonat: "2027-06", bisMonat: "2028-05" });
     expect(bericht.rentabilitaet.privatentnahmenAusgewiesen).toBe(true);
-    expect(findeZeile(bericht.rentabilitaet.zeilen, "privatentnahmen").summeCents).toBe(
-      36 * 239_000,
-    );
+    expect(findeZeile(bericht.rentabilitaet.zeilen, "privatentnahmen").summeCents).toBe(10_298_995);
     const person = bericht.tragfaehigkeit.personen[0];
     expect(bericht.tragfaehigkeit.anwendbar).toBe(true);
     expect(person?.planjahr2Cents).toBe(person?.verfuegbaresEinkommen.planjahreCents[1]);

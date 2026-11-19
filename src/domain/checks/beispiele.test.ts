@@ -23,6 +23,12 @@ const ERWARTET: Record<string, { id: string; stufe: string; kategorie: string; t
       text: `Verfügbares Einkommen von Jonas Heller (fiktiv) im Planjahr 2 liegt unter ${NULL_EURO}.`,
     },
     {
+      id: "tragfaehigkeit-kv-mindest-person-jonas-heller",
+      stufe: "hinweis",
+      kategorie: "tragfaehigkeit",
+      text: "Bei Jonas Heller (fiktiv) greift der Mindestbeitrag der Krankenversicherung.",
+    },
+    {
       id: "umsatz-anlauf",
       stufe: "hinweis",
       kategorie: "umsatz",

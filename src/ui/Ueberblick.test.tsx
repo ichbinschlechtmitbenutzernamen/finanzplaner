@@ -37,14 +37,14 @@ describe("Überblick", () => {
 
     expect(screen.getByRole("tab", { name: "Überblick", selected: true })).toBeTruthy();
     expect(text("Break-even-Monat")).toContain("Juni 2026");
-    expect(text("Niedrigster Kontostand")).toMatch(/14\.391,06/);
+    expect(text("Niedrigster Kontostand")).toMatch(/24\.655,01/);
     expect(text("Tragfähigkeit")).toContain("nicht tragfähig");
-    expect(text("Tragfähigkeit")).toMatch(/26\.227,34/);
+    expect(text("Tragfähigkeit")).toMatch(/29\.032,81/);
 
     await user.click(screen.getByRole("button", { name: "Café Leseecke" }));
     expect(text("Break-even-Monat")).toContain("September 2026");
     expect(screen.getByText("tragfähig", { exact: true })).toBeTruthy();
-    expect(text("Tragfähigkeit")).toMatch(/25\.361,31/);
+    expect(text("Tragfähigkeit")).toMatch(/6\.439,29/);
 
     await user.click(screen.getByRole("button", { name: "Hafenlicht GmbH" }));
     expect(text("Break-even-Monat")).toContain("Januar 2026");

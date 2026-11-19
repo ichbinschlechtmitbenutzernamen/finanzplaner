@@ -276,7 +276,8 @@ export function migrateV13ToV14(data: Record<string, unknown>): Record<string, u
       const bedarf = person.lebensbedarf;
       if (!isRecord(bedarf) || Array.isArray(bedarf.bloecke)) continue;
       const profil = isRecord(person.steuerprofil) ? person.steuerprofil : undefined;
-      const kinder = typeof profil?.kinderfreibetraege === "number" && profil.kinderfreibetraege > 0;
+      const kinder =
+        typeof profil?.kinderfreibetraege === "number" && profil.kinderfreibetraege > 0;
       person.lebensbedarf = lebensbedarfAusAlt(id, bedarf, kinder);
     }
   }
@@ -300,10 +301,14 @@ function lebensbedarfAusAlt(
   const alltag = finden("alltag");
   const alter = finden("altersvorsorge");
   const weitere = finden("weitere_versicherungen");
-  if (alltag && isRecord(alt.lebenshaltung)) alltag.betrag = alt.lebenshaltung as typeof alltag.betrag;
-  if (alter && isRecord(alt.altersvorsorge)) alter.betrag = alt.altersvorsorge as typeof alter.betrag;
+  if (alltag && isRecord(alt.lebenshaltung)) {
+    alltag.betrag = alt.lebenshaltung as unknown as typeof alltag.betrag;
+  }
+  if (alter && isRecord(alt.altersvorsorge)) {
+    alter.betrag = alt.altersvorsorge as unknown as typeof alter.betrag;
+  }
   if (weitere && isRecord(alt.sonstigeVersicherungen)) {
-    weitere.betrag = alt.sonstigeVersicherungen as typeof weitere.betrag;
+    weitere.betrag = alt.sonstigeVersicherungen as unknown as typeof weitere.betrag;
   }
   return {
     bloecke: neu.bloecke,

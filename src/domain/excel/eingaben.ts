@@ -48,12 +48,37 @@ export interface UmsatzZellen {
 
 export interface PersonalZellen {
   bezeichnung: string;
+  personId: string;
+  rolle: string;
   geld: GeldZellen;
   neben: string;
   eintritt: string;
   austritt: string;
   faktor: string;
   sonder: { index: string; betrag: string }[];
+}
+
+export interface PrivatPostenZellen {
+  bezeichnung: string;
+  geld: GeldZellen;
+}
+
+export interface PrivatBlockZellen {
+  bezeichnung: string;
+  schluessel: string;
+  faktorJahr2: string;
+  faktorJahr3: string;
+  posten: PrivatPostenZellen[];
+}
+
+export interface SozialZellen {
+  gesetzlich: string;
+  krankengeld: string;
+  kinder: string;
+  privat: string;
+  /** 0 = nein, 1 = pflichtig, 2 = freiwillig. */
+  rente: string;
+  arbeitslos: string;
 }
 
 export interface KostenZellen {
@@ -131,17 +156,15 @@ export interface ZuschussZellen {
 }
 
 export interface PersonZellen {
+  id: string;
   name: string;
   anteil: string;
   weitere: string;
   kinder: string;
   splitting: string;
   kirchensteuer: string;
-  lebenshaltung?: GeldZellen;
-  kranken?: GeldZellen;
-  pflege?: GeldZellen;
-  alter?: GeldZellen;
-  sonstige?: GeldZellen;
+  bloecke: PrivatBlockZellen[];
+  sozial?: SozialZellen;
 }
 
 export interface Skalare {
@@ -197,6 +220,21 @@ export interface Skalare {
   zone5Abzug: string;
   kistBayern: string;
   kistUebrige: string;
+  gruendungsjahr: string;
+  kvAllgemein: string;
+  kvErmaessigt: string;
+  kvZusatz: string;
+  pvSatz: string;
+  pvKinderlos: string;
+  kvMin: string;
+  kvMax: string;
+  rvSatz: string;
+  bezugsGroesse: string;
+  rvMin: string;
+  rvMax: string;
+  avSatz: string;
+  altersvorsorgeHoechst: string;
+  sonstigeHoechst: string;
 }
 
 export interface EingabeModell {
@@ -372,6 +410,7 @@ export function baueEingaben(
       steuer.kirchensteuerSatzUebrigeLaender,
       "prozent",
     ),
+    ...sozialSkalare(plan, zahl, euro),
   };
 
   blatt.zeile({ text: "Personen", stil: "abschnitt" });
@@ -505,46 +544,119 @@ function personZellen(
   );
   const basis = (spalte: number) => blatt.ref(zeile, spalte);
   const bedarf = person.lebensbedarf;
+  const bloecke = (bedarf?.bloecke ?? []).map((block) => {
+    const faktoren = blatt.zeile(
+      { text: `${person.name} ${block.bezeichnung}: Faktor Planjahr 2 und 3` },
+      { zahl: block.faktorJahr2, format: "faktor", stil: "eingabe" },
+      { zahl: block.faktorJahr3, format: "faktor", stil: "eingabe" },
+    );
+    return {
+      bezeichnung: block.bezeichnung,
+      schluessel: block.schluessel === "eigen" ? block.id : block.schluessel,
+      faktorJahr2: blatt.ref(faktoren, 2),
+      faktorJahr3: blatt.ref(faktoren, 3),
+      posten: block.posten.map((posten) => ({
+        bezeichnung: posten.bezeichnung,
+        geld: legeGeld(
+          blatt,
+          `${person.name} ${block.bezeichnung}: ${posten.bezeichnung}`,
+          posten.betrag,
+          start,
+          "euro",
+        ),
+      })),
+    };
+  });
+  const sozial = bedarf?.sozialversicherung;
+  const sozialZellen = sozial
+    ? {
+        gesetzlich: zahlZelle(
+          blatt,
+          `${person.name}: gesetzlich versichert (1 = ja)`,
+          sozial.krankenversicherung === "gesetzlich" ? 1 : 0,
+        ),
+        krankengeld: zahlZelle(
+          blatt,
+          `${person.name}: Krankengeldanspruch (1 = ja)`,
+          sozial.krankengeldanspruch ? 1 : 0,
+        ),
+        kinder: zahlZelle(blatt, `${person.name}: Kinder (1 = ja)`, sozial.kinder ? 1 : 0),
+        privat: euroZelle(
+          blatt,
+          `${person.name}: privater KV-Beitrag je Monat`,
+          sozial.privatbeitragCents,
+        ),
+        rente: zahlZelle(
+          blatt,
+          `${person.name}: Rentenversicherung (0 nein, 1 pflicht, 2 freiwillig)`,
+          sozial.rentenversicherung === "pflicht"
+            ? 1
+            : sozial.rentenversicherung === "freiwillig"
+              ? 2
+              : 0,
+        ),
+        arbeitslos: zahlZelle(
+          blatt,
+          `${person.name}: Arbeitslosenversicherung auf Antrag (1 = ja)`,
+          sozial.arbeitslosenversicherung ? 1 : 0,
+        ),
+      }
+    : undefined;
   return {
+    id: person.id,
     name: person.name,
     anteil: basis(2),
     weitere: basis(3),
     kinder: basis(4),
     splitting: basis(5),
     kirchensteuer: basis(6),
-    lebenshaltung: bedarf
-      ? legeGeld(blatt, `${person.name} Lebenshaltung`, bedarf.lebenshaltung, start, "euro")
-      : undefined,
-    kranken: bedarf
-      ? legeGeld(
-          blatt,
-          `${person.name} Krankenversicherung`,
-          bedarf.krankenversicherung,
-          start,
-          "euro",
-        )
-      : undefined,
-    pflege: bedarf
-      ? legeGeld(
-          blatt,
-          `${person.name} Pflegeversicherung`,
-          bedarf.pflegeversicherung,
-          start,
-          "euro",
-        )
-      : undefined,
-    alter: bedarf
-      ? legeGeld(blatt, `${person.name} Altersvorsorge`, bedarf.altersvorsorge, start, "euro")
-      : undefined,
-    sonstige: bedarf
-      ? legeGeld(
-          blatt,
-          `${person.name} sonstige Vorsorge`,
-          bedarf.sonstigeVersicherungen,
-          start,
-          "euro",
-        )
-      : undefined,
+    bloecke,
+    sozial: sozialZellen,
+  };
+}
+
+function zahlZelle(blatt: Blatt, label: string, wert: number): string {
+  const zeile = blatt.zeile({ text: label }, { zahl: wert, format: "ganzzahl", stil: "eingabe" });
+  return blatt.ref(zeile, 2);
+}
+
+function euroZelle(blatt: Blatt, label: string, cent: number): string {
+  const zeile = blatt.zeile({ text: label }, { zahl: cent / 100, format: "euro", stil: "eingabe" });
+  return blatt.ref(zeile, 2);
+}
+
+function sozialSkalare(
+  plan: Finanzplan,
+  zahl: (
+    label: string,
+    wert: number,
+    format?: "zahl" | "ganzzahl" | "prozent" | "faktor",
+  ) => string,
+  euro: (label: string, cent: number) => string,
+) {
+  const sv = plan.parameter.sozialversicherung;
+  const gründungsjahr = Number(
+    (plan.stammdaten.gruendungsmonat ?? plan.startMonat ?? "2026-01").slice(0, 4),
+  );
+  return {
+    gruendungsjahr: zahl("Gründungsjahr", gründungsjahr, "ganzzahl"),
+    kvAllgemein: zahl("KV allgemeiner Satz", sv.kvAllgemeinSatz, "prozent"),
+    kvErmaessigt: zahl("KV ermäßigter Satz", sv.kvErmaessigtSatz, "prozent"),
+    kvZusatz: zahl("KV Zusatzbeitrag, Durchschnitt", sv.kvZusatzbeitragSatz, "prozent"),
+    pvSatz: zahl("PV-Satz", sv.pvSatz, "prozent"),
+    pvKinderlos: zahl("PV Kinderlosenzuschlag", sv.pvKinderlosZuschlagSatz, "prozent"),
+    kvMin: euro("KV Mindestbemessung je Monat", sv.kvMindestbemessungMonatCents),
+    kvMax: euro("KV Höchstbemessung je Monat", sv.kvHoechstbemessungMonatCents),
+    rvSatz: zahl("RV-Beitragssatz", sv.rvSatz, "prozent"),
+    bezugsGroesse: euro("Bezugsgröße je Monat", sv.bezugsGroesseMonatCents),
+    rvMin: euro("RV Mindestbemessung je Monat", sv.rvMindestbemessungMonatCents),
+    rvMax: euro("RV Höchstbemessung je Monat", sv.rvHoechstbemessungMonatCents),
+    avSatz: zahl("AV-Beitragssatz", sv.avSatz, "prozent"),
+    altersvorsorgeHoechst: euro(
+      "Höchstbetrag Altersvorsorge, Einzelveranlagung",
+      sv.altersvorsorgeHoechstbetragCents,
+    ),
+    sonstigeHoechst: euro("Höchstbetrag sonstige Vorsorge", sv.sonstigeVorsorgeHoechstbetragCents),
   };
 }
 
@@ -661,6 +773,8 @@ function personalZellen(
   });
   return {
     bezeichnung: stelle.bezeichnung,
+    personId: stelle.personId ?? "",
+    rolle: stelle.rolle,
     geld: legeGeld(blatt, `${stelle.bezeichnung} Brutto`, stelle.brutto, start, "euro"),
     neben: blatt.ref(nebenZeile, 2),
     eintritt: blatt.ref(fenster, 2),

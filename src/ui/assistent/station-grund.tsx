@@ -566,8 +566,8 @@ function SaisonFaktoren({
       <legend>Monatsfaktor oder Menge</legend>
       <p className="feld-hilfe">
         Zwölf Werte für Januar bis Dezember. 1 lässt einen Monatsbetrag unverändert, 0 setzt ihn auf
-        null. Der Wert kann auch eine Menge sein, zum Beispiel 80 Stunden mal einem Stundenpreis.
-        Es gibt keine Obergrenze. Derselbe Kalendermonat gilt in jedem Planjahr.
+        null. Der Wert kann auch eine Menge sein, zum Beispiel 80 Stunden mal einem Stundenpreis. Es
+        gibt keine Obergrenze. Derselbe Kalendermonat gilt in jedem Planjahr.
       </p>
       <div className="saison-raster">
         {KALENDER_KURZ.map((monat, index) => (

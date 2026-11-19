@@ -18,7 +18,7 @@ Ein Verlustjahr führt zu null Steuer. Ein Verlustvortrag oder Verlustrücktrag 
 
 ## Einkommensteuer
 
-Grundlage je Person ist ihr Gewinnanteil nach dem Anteil im Plan, plus die weiteren jährlichen Einkünfte aus dem Steuerprofil, minus Kinderfreibetrag und BEA-Freibetrag. Ein halber Kinderfreibetrag ist ein Elternteil: 3.414 Euro Kinderfreibetrag plus 1.464 Euro BEA, zusammen 4.878 Euro. Ein ganzer Kinderfreibetrag ist das Doppelte. Eine Günstigerprüfung gegen das Kindergeld gibt es nicht, weil das Kindergeld nicht im Plan steht. Wer den Freibetrag nicht nutzen will, lässt die Anzahl auf null. Sonderausgaben, Vorsorgeaufwendungen und der Sonderausgaben-Pauschbetrag werden nicht abgezogen. Die Kirchensteuer wird nicht als Sonderausgabe zurückgerechnet, damit keine Schleife entsteht.
+Grundlage je Person ist ihr Gewinnanteil nach dem Anteil im Plan, plus die weiteren jährlichen Einkünfte aus dem Steuerprofil, minus Kinderfreibetrag und BEA-Freibetrag. Ein halber Kinderfreibetrag ist ein Elternteil: 3.414 Euro Kinderfreibetrag plus 1.464 Euro BEA, zusammen 4.878 Euro. Ein ganzer Kinderfreibetrag ist das Doppelte. Eine Günstigerprüfung gegen das Kindergeld gibt es nicht, weil das Kindergeld nicht im Plan steht. Wer den Freibetrag nicht nutzen will, lässt die Anzahl auf null. Vorsorgeaufwendungen aus Block 6 werden abgezogen, bevor der Tarif gilt. Das sind die gerechnete Basis-Kranken- und Pflegeversicherung in voller Höhe, die gesetzliche Rentenversicherung bis zum Höchstbetrag 30.826 Euro (beim Splitting das Doppelte) und die Arbeitslosenversicherung nur im Rest des sonstigen Höchstbetrags von 2.800 Euro. Der Sonderausgaben-Pauschbetrag wird nicht abgezogen. Die Kirchensteuer wird nicht als Sonderausgabe zurückgerechnet, damit keine Schleife entsteht. Die Beiträge selbst hängen am Gewinn vor diesem Abzug, nicht an der Steuer. Die Einzelheiten und die Quellen stehen in [vorsorge.md](vorsorge.md).
 
 Das zu versteuernde Einkommen wird auf volle Euro abgerundet. Negativ heißt: Steuer null.
 
@@ -116,7 +116,8 @@ Der kumulierte Stand zählt die Empfehlungen von Beginn des Plans an. Er wird ni
 - Ausschüttungsbesteuerung bei GmbH und UG
 - Verlustvortrag und Verlustrücktrag
 - Hinzurechnungen und Kürzungen beim Gewerbeertrag
-- Sonderausgaben, Vorsorge, Kindergeld und die Günstigerprüfung
+- den Sonderausgaben-Pauschbetrag, Kindergeld und die Günstigerprüfung
+- weitere Vorsorge außer den Beiträgen aus Block 6
 - Kirchensteuer als Sonderausgabe
 - eine Hochrechnung des letzten Rumpfjahres
 - den Progressionsvorbehalt. Der Gründungszuschuss ist steuerfrei und steht nicht in § 32b EStG

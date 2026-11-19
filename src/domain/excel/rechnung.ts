@@ -1,4 +1,5 @@
 import { parseIsoMonth } from "../months.ts";
+import { blockMonatCents, postenMonatCents } from "../privat.ts";
 import type { Planberechnung } from "../calc/types.ts";
 import { annuitaetCents, roundCents, verteilteRaten } from "../calc/round.ts";
 import type { Finanzplan, IsoMonth } from "../types.ts";
@@ -9,6 +10,7 @@ import type {
   GeldZellen,
   KostenZellen,
   PersonalZellen,
+  PersonZellen,
   Skalare,
   UmsatzZellen,
   ZuschussZellen,
@@ -19,6 +21,8 @@ import {
   fCent,
   fEinkommensteuerCent,
   fKirchensteuer,
+  fMax,
+  fMin,
   fRund,
   fSatz,
   fSatzKlemme,
@@ -53,13 +57,22 @@ export interface DarlehenReihe {
   auszahlung: Reihe;
 }
 
+export interface BlockReihe {
+  name: string;
+  summe: Reihe;
+  posten: { name: string; reihe: Reihe }[];
+}
+
 export interface PersonReihe {
   name: string;
   anteil: number;
   gewinn: Reihe;
   steuer: Reihe;
-  lebenshaltung: Reihe;
-  vorsorge: Reihe;
+  bloecke: BlockReihe[];
+  kv: Reihe;
+  rv: Reihe;
+  av: Reihe;
+  est: Reihe;
 }
 
 export interface Rechenmodell {
@@ -383,7 +396,7 @@ export function baueRechnung(
 
   ctx.betrieb = betrieb;
   const steuer = baueSteuer(ctx, betrieb);
-  const entnahmen = entnahmeReihe(ctx);
+  const entnahmen = entnahmeReihe(ctx, steuer.personen);
   const auszahlungKosten = summe(
     ctx,
     "Auszahlung Kosten gesamt",
@@ -1303,23 +1316,15 @@ function ustZahlungen(ctx: Ctx, zahllast: Reihe, cents: number[]): Reihe {
   );
 }
 
-function entnahmeReihe(ctx: Ctx): Reihe {
+function entnahmeReihe(ctx: Ctx, personen: PersonReihe[]): Reihe {
   const kapital = `OR(${ctx.skalare.rechtsform}="gmbh",${ctx.skalare.rechtsform}="ug")`;
   const formeln = Array.from({ length: N }, (_, index) => {
-    const teile = ctx.eingabe.personen.flatMap((person) =>
-      [person.lebenshaltung, person.kranken, person.pflege, person.alter, person.sonstige]
-        .filter((geld): geld is GeldZellen => geld != null)
-        .map((geld) =>
-          geldFormel(
-            geld,
-            index,
-            monat(ctx, index),
-            fCent(geld.basis),
-            geld.overrides[index] ?? "",
-            fCent(geld.overrides[index] ?? ""),
-          ),
-        ),
-    );
+    const teile = personen.flatMap((person) => [
+      ...person.bloecke.map((block) => zelle(block.summe, index)),
+      zelle(person.kv, index),
+      zelle(person.rv, index),
+      zelle(person.av, index),
+    ]);
     const summeBedarf = teile.length ? teile.join("+") : "0";
     return fWenn(kapital, "0", summeBedarf);
   });
@@ -1559,8 +1564,11 @@ function baueSteuer(ctx: Ctx, betrieb: Reihe): SteuerErgebnis {
       jahre.map((jahr) => jahr.jahrZelle),
       person.summeCents,
     ),
-    lebenshaltung: person.lebenshaltung,
-    vorsorge: person.vorsorge,
+    bloecke: person.bloecke,
+    kv: person.kv,
+    rv: person.rv,
+    av: person.av,
+    est: person.estRuecklage,
   }));
 
   void est;
@@ -1585,14 +1593,17 @@ interface PersonSteuer {
   summeCents: number[];
   gewinnMonat: (index: number) => string;
   gewinnCents: number[];
-  lebenshaltung: Reihe;
-  vorsorge: Reihe;
+  bloecke: BlockReihe[];
+  kv: Reihe;
+  rv: Reihe;
+  av: Reihe;
+  estRuecklage: Reihe;
 }
 
 function personSteuer(
   ctx: Ctx,
   blatt: Blatt,
-  jahre: { jahrZelle: string; gewinn: string; messbetrag: string; gewst: string }[],
+  jahre: { jahrZelle: string; monate: string; gewinn: string; messbetrag: string; gewst: string }[],
   tarif: TarifParameter,
   kapital: string,
   gewerbe: string,
@@ -1664,7 +1675,12 @@ function personSteuer(
     const kist: string[] = [];
     const summeJahr: string[] = [];
     const summeCents: number[] = [];
-    jahre.forEach((_jahr, jahrIndex) => {
+    const sozial = sozialReihen(ctx, person, jahre, gewinnJahr);
+    const jahrBereich = zeilenBereich(
+      ctx.parameter.ref(ctx.jahrZeile, 2),
+      ctx.parameter.ref(ctx.jahrZeile, 37),
+    );
+    jahre.forEach((jahr, jahrIndex) => {
       const engine = ctx.ergebnis.steuern.jahre[jahrIndex]?.personen[personIndex];
       const weitere = fCent(person.weitere);
       const kinder = fWenn(
@@ -1672,7 +1688,8 @@ function personSteuer(
         "0",
         `ROUND((${person.kinder})*2,0)*((${fCent(ctx.skalare.kinderFreibetrag)})+(${fCent(ctx.skalare.bea)}))`,
       );
-      const zvE = `(${gewinnJahr[jahrIndex]})+(${weitere})-(${kinder})`;
+      const abzug = vorsorgeAbzugFormel(ctx, person, jahrBereich, jahr.jahrZelle, sozial);
+      const zvE = `(${gewinnJahr[jahrIndex]})+(${weitere})-(${kinder})-(${abzug})`;
       const zvEEuro = fWenn(`(${zvE})>0`, `INT((${zvE})/100)`, "0");
       const tarifCent = fEinkommensteuerCent(zvEEuro, person.splitting, tarif);
       const tarifZelle = skalar(
@@ -1752,17 +1769,27 @@ function personSteuer(
       );
       return teile[personIndex] ?? 0;
     });
-    const lebenshaltung = geldSumme(
-      ctx,
-      `${person.name} Lebenshaltung`,
-      [person.lebenshaltung].filter((geld): geld is GeldZellen => geld != null),
-    );
-    const vorsorge = geldSumme(
-      ctx,
-      `${person.name} Vorsorge`,
-      [person.kranken, person.pflege, person.alter, person.sonstige].filter(
-        (geld): geld is GeldZellen => geld != null,
+    const bloecke = blockReihen(ctx, person);
+    const estReihe = monatsCent(
+      ctx.rechnung,
+      `${person.name} Einkommensteuerrücklage`,
+      Array.from({ length: N }, (_, index) =>
+        jahre
+          .map((jahr, jahrIndex) =>
+            fWenn(
+              `${jahrZelle(ctx, index)}=${jahr.jahrZelle}`,
+              ruecklageMonat(
+                `(${est[jahrIndex] ?? "0"})+(${soli[jahrIndex] ?? "0"})+(${kist[jahrIndex] ?? "0"})`,
+                jahr.monate,
+                monat(ctx, index),
+              ),
+              "0",
+            ),
+          )
+          .join("+"),
       ),
+      ctx.ergebnis.vorsorge.personen.find((eintrag) => eintrag.personId === person.id)
+        ?.estRuecklageCents ?? leer(),
     );
     void enginePersonen;
     return {
@@ -1773,6 +1800,11 @@ function personSteuer(
       kist,
       summeJahr,
       summeCents,
+      bloecke,
+      kv: sozial.kv,
+      rv: sozial.rv,
+      av: sozial.av,
+      estRuecklage: estReihe,
       gewinnMonat: (index) =>
         fWenn(
           kapital,
@@ -1787,10 +1819,218 @@ function personSteuer(
             : fAnteil(zelleBetrieb(ctx, index), skaliert[personIndex] ?? "0", null),
         ),
       gewinnCents,
-      lebenshaltung,
-      vorsorge,
     };
   });
+}
+
+function sozialReihen(
+  ctx: Ctx,
+  person: PersonZellen,
+  jahre: { jahrZelle: string; monate: string }[],
+  gewinnJahr: string[],
+): { kv: Reihe; rv: Reihe; av: Reihe } {
+  const gefunden = ctx.ergebnis.vorsorge.personen.find((eintrag) => eintrag.personId === person.id);
+  const sozial = person.sozial;
+  const formeln = Array.from({ length: N }, (_, index) => {
+    if (!sozial) return { kv: "0", rv: "0", av: "0" };
+    const bemessung = bemessungFormel(ctx, person.id, index, jahre, gewinnJahr);
+    return {
+      kv: kvPvFormel(ctx, sozial, bemessung),
+      rv: rvFormel(ctx, sozial, bemessung),
+      av: avFormel(ctx, sozial, index),
+    };
+  });
+  return {
+    kv: monatsCent(
+      ctx.rechnung,
+      `${person.name} Kranken- und Pflegeversicherung`,
+      formeln.map((formel) => formel.kv),
+      (gefunden?.kvCents ?? leer()).map((wert, index) => wert + (gefunden?.pvCents[index] ?? 0)),
+    ),
+    rv: monatsCent(
+      ctx.rechnung,
+      `${person.name} Rentenversicherung`,
+      formeln.map((formel) => formel.rv),
+      gefunden?.rvCents ?? leer(),
+    ),
+    av: monatsCent(
+      ctx.rechnung,
+      `${person.name} Arbeitslosenversicherung`,
+      formeln.map((formel) => formel.av),
+      gefunden?.avCents ?? leer(),
+    ),
+  };
+}
+
+function bemessungFormel(
+  ctx: Ctx,
+  personId: string,
+  index: number,
+  jahre: { jahrZelle: string; monate: string }[],
+  gewinnJahr: string[],
+): string {
+  const gehalt = gfBrutto(ctx, personId, index);
+  if (gehalt) return gehalt;
+  return (
+    jahre
+      .map((jahr, jahrIndex) =>
+        fWenn(
+          `${jahrZelle(ctx, index)}=${jahr.jahrZelle}`,
+          fWenn(
+            `(${jahr.monate})=0`,
+            "0",
+            fRund(`(${gewinnJahr[jahrIndex] ?? "0"})/(${jahr.monate})`),
+          ),
+          "0",
+        ),
+      )
+      .join("+") || "0"
+  );
+}
+
+function kvPvFormel(
+  ctx: Ctx,
+  sozial: NonNullable<PersonZellen["sozial"]>,
+  bemessung: string,
+): string {
+  const basis = fMin(fMax(bemessung, fCent(ctx.skalare.kvMin)), fCent(ctx.skalare.kvMax));
+  const kvSatz = fWenn(
+    `${sozial.krankengeld}=1`,
+    `(${ctx.skalare.kvAllgemein})+(${ctx.skalare.kvZusatz})`,
+    `(${ctx.skalare.kvErmaessigt})+(${ctx.skalare.kvZusatz})`,
+  );
+  const pvSatz = fWenn(
+    `${sozial.kinder}=1`,
+    ctx.skalare.pvSatz,
+    `(${ctx.skalare.pvSatz})+(${ctx.skalare.pvKinderlos})`,
+  );
+  return fWenn(
+    `${sozial.gesetzlich}=1`,
+    `(${fSatz(basis, kvSatz)})+(${fSatz(basis, pvSatz)})`,
+    fCent(sozial.privat),
+  );
+}
+
+function rvFormel(
+  ctx: Ctx,
+  sozial: NonNullable<PersonZellen["sozial"]>,
+  bemessung: string,
+): string {
+  const regel = fSatz(fCent(ctx.skalare.bezugsGroesse), ctx.skalare.rvSatz);
+  const basis = fMin(fMax(bemessung, fCent(ctx.skalare.rvMin)), fCent(ctx.skalare.rvMax));
+  const pflicht = fSatz(basis, ctx.skalare.rvSatz);
+  return fWenn(`${sozial.rente}=0`, "0", fWenn(`${sozial.rente}=2`, regel, pflicht));
+}
+
+function avFormel(ctx: Ctx, sozial: NonNullable<PersonZellen["sozial"]>, index: number): string {
+  const bezugs = fCent(ctx.skalare.bezugsGroesse);
+  const jahr = jahrZelle(ctx, index);
+  const basis = fWenn(
+    `OR(${jahr}=${ctx.skalare.gruendungsjahr},${jahr}=(${ctx.skalare.gruendungsjahr})+1)`,
+    fRund(`(${bezugs})/2`),
+    bezugs,
+  );
+  return fWenn(`${sozial.arbeitslos}=1`, fSatz(basis, ctx.skalare.avSatz), "0");
+}
+
+function vorsorgeAbzugFormel(
+  ctx: Ctx,
+  person: PersonZellen,
+  jahrBereich: string,
+  jahrZelleRef: string,
+  sozial: { kv: Reihe; rv: Reihe; av: Reihe },
+): string {
+  if (!person.sozial) return "0";
+  const summe = (reihe: Reihe) =>
+    `SUMIF(${jahrBereich},${jahrZelleRef},${zeilenBereich(
+      ctx.rechnung.ref(reihe.zeile, 2),
+      ctx.rechnung.ref(reihe.zeile, 37),
+    )})`;
+  const kvJahr = summe(sozial.kv);
+  const rvJahr = summe(sozial.rv);
+  const avJahr = summe(sozial.av);
+  const deckel = fWenn(
+    `${person.splitting}=1`,
+    `(${fCent(ctx.skalare.altersvorsorgeHoechst)})*2`,
+    fCent(ctx.skalare.altersvorsorgeHoechst),
+  );
+  const rvAbzug = `MIN(${rvJahr},${deckel})`;
+  const rest = `MAX(0,${fCent(ctx.skalare.sonstigeHoechst)}-(${kvJahr}))`;
+  const avAbzug = `MIN(${avJahr},${rest})`;
+  return `(${kvJahr})+(${rvAbzug})+(${avAbzug})`;
+}
+
+function blockReihen(ctx: Ctx, person: PersonZellen): BlockReihe[] {
+  const planPerson = ctx.plan.stammdaten.personen.find((eintrag) => eintrag.id === person.id);
+  const start = ctx.ergebnis.startMonat;
+  return person.bloecke.map((block, blockIndex) => {
+    const planBlock = planPerson?.lebensbedarf?.bloecke[blockIndex];
+    const posten = block.posten.map((eintrag, postenIndex) => {
+      const planPosten = planBlock?.posten[postenIndex];
+      const cents = ctx.ergebnis.monate.map((monat, index) =>
+        planPosten && planBlock ? postenMonatCents(planPosten, planBlock, monat, start, index) : 0,
+      );
+      return {
+        name: eintrag.bezeichnung,
+        reihe: monatsCent(
+          ctx.rechnung,
+          `${person.name} ${eintrag.bezeichnung}`,
+          Array.from({ length: N }, (_, index) => {
+            const faktor = fWenn(
+              `${index}<12`,
+              "1",
+              fWenn(`${index}<24`, block.faktorJahr2, block.faktorJahr3),
+            );
+            const basis = geldFormel(
+              eintrag.geld,
+              index,
+              monat(ctx, index),
+              fCent(eintrag.geld.basis),
+              eintrag.geld.overrides[index] ?? "",
+              fCent(eintrag.geld.overrides[index] ?? ""),
+            );
+            return fRund(`(${basis})*(${faktor})`);
+          }),
+          cents,
+        ),
+      };
+    });
+    const summe = monatsCent(
+      ctx.rechnung,
+      `${person.name} ${block.bezeichnung}`,
+      Array.from({ length: N }, (_, index) =>
+        posten.length ? posten.map((eintrag) => zelle(eintrag.reihe, index)).join("+") : "0",
+      ),
+      ctx.ergebnis.monate.map((monat, index) =>
+        planBlock ? blockMonatCents(planBlock, monat, start, index) : 0,
+      ),
+    );
+    return { name: block.bezeichnung, summe, posten };
+  });
+}
+
+function gfBrutto(ctx: Ctx, personId: string, index: number): string | null {
+  const stellen = ctx.eingabe.personal.filter(
+    (stelle) => stelle.personId === personId && stelle.rolle === "geschaeftsfuehrer",
+  );
+  if (stellen.length === 0) return null;
+  return stellen.map((stelle) => personalBrutto(ctx, stelle, index)).join("+");
+}
+
+function personalBrutto(ctx: Ctx, stelle: PersonalZellen, index: number): string {
+  const faktor = fWenn(`${stelle.faktor}=""`, ctx.skalare.personalGlobal, stelle.faktor);
+  const aktiv = fAktiv(stelle.eintritt, stelle.austritt, index);
+  const brutto = fRund(
+    `(${skaliertesGeld(stelle.geld, ctx.skalare.personalHebel, index, monat(ctx, index))})*(${faktor})`,
+  );
+  const sonderRoh =
+    stelle.sonder
+      .map((sonder) => fWenn(`${sonder.index}=${index}`, fCent(sonder.betrag), "0"))
+      .join("+") || "0";
+  const sonder = fRund(
+    `(${fWenn(`${ctx.skalare.personalHebel}<>1`, fRund(`(${sonderRoh})*(${ctx.skalare.personalHebel})`), sonderRoh)})*(${faktor})`,
+  );
+  return fWenn(aktiv, `(${brutto})+(${sonder})`, "0");
 }
 
 function anteilEuro(
@@ -1949,30 +2189,6 @@ function tarifParameter(skalare: Skalare): TarifParameter {
     spitzen: skalare.spitzen,
     reichen: skalare.reichen,
   };
-}
-
-function geldSumme(ctx: Ctx, label: string, gelder: GeldZellen[]): Reihe {
-  return monatsCent(
-    ctx.rechnung,
-    label,
-    Array.from(
-      { length: N },
-      (_, index) =>
-        gelder
-          .map((geld) =>
-            geldFormel(
-              geld,
-              index,
-              monat(ctx, index),
-              fCent(geld.basis),
-              geld.overrides[index] ?? "",
-              fCent(geld.overrides[index] ?? ""),
-            ),
-          )
-          .join("+") || "0",
-    ),
-    leer(),
-  );
 }
 
 function kapitalAusAnlagen(ctx: Ctx, label: string, anlagen: AnlageReihe[]): Reihe {

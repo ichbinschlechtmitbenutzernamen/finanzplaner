@@ -1,12 +1,12 @@
 import { monatsbetragCents } from "./calc/monatswert.ts";
 import { roundRate } from "./calc/round.ts";
-import type { IsoMonth } from "./months.ts";
 import type {
   Privatblock,
   PrivatblockSchluessel,
   PrivaterLebensbedarf,
   Privatposten,
   SozialversicherungEingabe,
+  IsoMonth,
 } from "./types.ts";
 
 export const STANDARD_PRIVAT: readonly {

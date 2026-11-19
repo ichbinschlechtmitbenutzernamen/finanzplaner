@@ -116,7 +116,9 @@ export function PersoenlichStation({
                         label="Name des Blocks"
                         hilfe="Eigener Block, zum Beispiel eine besondere Ausgabe."
                         value={block.bezeichnung}
-                        onChange={(bezeichnung) => setze(benenneBlock(leben, block.id, bezeichnung))}
+                        onChange={(bezeichnung) =>
+                          setze(benenneBlock(leben, block.id, bezeichnung))
+                        }
                       />
                       <button type="button" onClick={() => setze(entferneBlock(leben, block.id))}>
                         Block entfernen
@@ -228,7 +230,8 @@ function Abgaben({
         onChange={(rentenversicherung) =>
           onChange({
             ...sozial,
-            rentenversicherung: rentenversicherung as SozialversicherungEingabe["rentenversicherung"],
+            rentenversicherung:
+              rentenversicherung as SozialversicherungEingabe["rentenversicherung"],
           })
         }
       >
@@ -336,7 +339,10 @@ function Gruendungszuschuss({
             cents={zuschuss.pauschaleCents}
             onChange={(pauschaleCents) =>
               onAendern((aktuell) =>
-                setzePersoenlich(aktuell, leseLebensbedarf(aktuell), { ...zuschuss, pauschaleCents }),
+                setzePersoenlich(aktuell, leseLebensbedarf(aktuell), {
+                  ...zuschuss,
+                  pauschaleCents,
+                }),
               )
             }
           />

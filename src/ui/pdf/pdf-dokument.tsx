@@ -564,7 +564,9 @@ function Tragfaehigkeit({
         `${person.name}: Gewinn nach Steuern`,
       ),
       ...person.bloecke.flatMap((block) =>
-        ausBewegung([block], true).map((zeile) => mitName(zeile, `${person.name}: ${zeile.bezeichnung}`)),
+        ausBewegung([block], true).map((zeile) =>
+          mitName(zeile, `${person.name}: ${zeile.bezeichnung}`),
+        ),
       ),
       mitName(
         erste(ausBewegung([person.verfuegbaresEinkommen], false)),

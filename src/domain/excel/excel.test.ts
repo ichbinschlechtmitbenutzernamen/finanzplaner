@@ -160,7 +160,22 @@ describe("Excel-Export", () => {
     expect(texte.some((text) => text.includes("Fehler"))).toBe(false);
 
     const elektro = await mappeVon(beispielElektro);
-    expect(elektro.workbook.getWorksheet("Tragfähigkeit")).toBeTruthy();
+    const tragfaehigkeit = elektro.workbook.getWorksheet("Tragfähigkeit");
+    expect(tragfaehigkeit).toBeTruthy();
+    const zeilen = tragfaehigkeit!
+      .getColumn(1)
+      .values.map((wert) => (typeof wert === "string" ? wert : ""));
+    expect(zeilen).toContain("Wohnen");
+    expect(zeilen).toContain("Miete/Kreditrate inkl. Nebenkosten");
+    expect(zeilen).toContain("Kranken- und Pflegeversicherung");
+    expect(zeilen).toContain("Einkommensteuerrücklage");
+    const eingaben = elektro.workbook.getWorksheet("Eingaben")!;
+    const faktorZeile = eingaben
+      .getColumn(1)
+      .values.findIndex(
+        (wert) => typeof wert === "string" && wert.includes("Faktor Planjahr 2 und 3"),
+      );
+    expect(faktorZeile).toBeGreaterThan(0);
     const fehler = meldungenFuerExport(
       beispielElektro,
       erstelleBerichte(beispielElektro, berechnePlan(beispielElektro)),
@@ -183,7 +198,7 @@ describe("Excel-Export", () => {
     roh.schemaVersion = 12;
     delete roh.excelExport;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(13);
+    expect(migriert.schemaVersion).toBe(14);
     expect(migriert.excelExport).toEqual(standardExcelExport());
     expect(migriert.excelExport.blaetter).toEqual([...EXCEL_BLAETTER]);
 
@@ -191,7 +206,7 @@ describe("Excel-Export", () => {
     behalten.schemaVersion = 12;
     (behalten.excelExport as { blaetter: string[] }).blaetter = ["pruefung"];
     const mitAuswahl = migratePlan(behalten);
-    expect(mitAuswahl.schemaVersion).toBe(13);
+    expect(mitAuswahl.schemaVersion).toBe(14);
     expect(mitAuswahl.excelExport.blaetter).toEqual(["pruefung"]);
   });
 });

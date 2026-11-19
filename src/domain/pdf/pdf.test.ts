@@ -96,6 +96,19 @@ describe("PDF-Datenmodell", () => {
     const elektro = erstellePdfDokument(beispielElektro, DATUM);
     expect(elektro.szenarien[0]?.kapitel).toContain("tragfaehigkeit");
     expect(elektro.szenarien[0]?.berichte?.tragfaehigkeit.anwendbar).toBe(true);
+    const bloecke = elektro.szenarien[0]?.berichte?.tragfaehigkeit.personen[0]?.bloecke ?? [];
+    expect(bloecke.map((block) => block.bezeichnung)).toEqual([
+      "Wohnen",
+      "Lebenshaltung",
+      "Sonstige Versicherungen",
+      "KFZ/Mobilität",
+      "Sonstiges",
+      "Abgaben und Steuern",
+    ]);
+    expect(bloecke[0]?.unterzeilen?.map((zeile) => zeile.bezeichnung)).toEqual([
+      "Miete/Kreditrate inkl. Nebenkosten",
+      "Strom/Heizung",
+    ]);
   });
 
   it("führt nur das gewählte Szenario vollständig und die übrigen im Vergleich", () => {
@@ -175,7 +188,7 @@ describe("Migration auf Schema 12", () => {
     roh.schemaVersion = 11;
     delete roh.pdfExport;
     const migriert = migratePlan(roh);
-    expect(migriert.schemaVersion).toBe(13);
+    expect(migriert.schemaVersion).toBe(14);
     expect(migriert.pdfExport).toEqual(standardPdfExport());
     expect(migriert.finanzierung).toEqual(beispielElektro.finanzierung);
     expect(migriert.planSzenarien).toEqual(beispielElektro.planSzenarien);
@@ -184,7 +197,7 @@ describe("Migration auf Schema 12", () => {
     behalten.schemaVersion = 11;
     (behalten.pdfExport as { kapitel: string[] }).kapitel = ["deckblatt", "pruefung"];
     const mitAuswahl = migratePlan(behalten);
-    expect(mitAuswahl.schemaVersion).toBe(13);
+    expect(mitAuswahl.schemaVersion).toBe(14);
     expect(mitAuswahl.pdfExport.kapitel).toEqual(["deckblatt", "pruefung"]);
   });
 });

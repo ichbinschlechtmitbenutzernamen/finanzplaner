@@ -107,12 +107,7 @@ export function berechnePlan(
     umsatzsteuer,
     leerEntnahme,
   );
-  const vorsorge = berechneVorsorge(
-    plan,
-    monate,
-    vorergebnis.betriebsergebnisCents,
-    personal,
-  );
+  const vorsorge = berechneVorsorge(plan, monate, vorergebnis.betriebsergebnisCents, personal);
   const entnahmen = berechneEntnahmen(plan, monate, vorsorge);
   const uebersicht = baueUebersicht(
     umsatz,

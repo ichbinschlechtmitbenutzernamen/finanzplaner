@@ -529,13 +529,13 @@ describe("Blitzweg Elektrotechnik", () => {
     expect(real.uebersicht.betriebsergebnisCents[0]).toBe(365_050);
     // Kunde zahlt 8.895,25. Einlage 15.000, Darlehen 25.000.
     // Auszahlungen: Ware 1.956,96, Kosten 842,60, Gründung 65, Anlauf 476, Anlagen 27.548,50,
-    // Lebensbedarf 2.390,00. Saldo 15.616,19 Euro.
+    // private Blöcke und gerechnete Beiträge 3.608,04. Saldo 14.398,15 Euro.
     expect(real.uebersicht.einzahlungenKundenCents[0]).toBe(889_525);
     expect(real.uebersicht.auszahlungenInvestitionenCents[0]).toBe(2_754_850);
-    expect(real.entnahmen.entnahmeCents[0]).toBe(239_000);
-    expect(real.uebersicht.zahlungssaldoCents[0]).toBe(1_561_619);
+    expect(real.entnahmen.entnahmeCents[0]).toBe(360_804);
+    expect(real.uebersicht.zahlungssaldoCents[0]).toBe(1_439_815);
     // Juli: Erstattung 3.469,31 plus Kundengeld 8.536,36, abzüglich Ware, Kosten, Zins, Entnahme.
-    expect(real.uebersicht.zahlungssaldoCents[1]).toBe(684_507);
+    expect(real.uebersicht.zahlungssaldoCents[1]).toBe(562_703);
   });
 
   it("legt Best und Worst nur auf den Umsatz und lässt den Real Case auf der Basis", () => {

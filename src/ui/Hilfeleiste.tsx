@@ -74,7 +74,8 @@ export function Hilfeleiste({
           : "Pfeile bewegen, Enter bearbeitet, Tab springt weiter, Strg+Z macht rückgängig."}{" "}
         Aus Excel einfügen: Zellen kopieren und hier mit Strg+V ablegen. Deutsche Zahlen wie
         1.234,56 € werden erkannt. Fortschreiben und Wachstum schreiben monatliche Überschreibungen.
-        Der Faktor gilt je Kalendermonat und kann eine Menge sein, etwa Stunden. Es gibt keine Obergrenze. Überschreibungen dieser Zeile entfallen.
+        Der Faktor gilt je Kalendermonat und kann eine Menge sein, etwa Stunden. Es gibt keine
+        Obergrenze. Überschreibungen dieser Zeile entfallen.
       </p>
     </div>
   );
@@ -201,6 +202,6 @@ function faktorenVon(plan: Finanzplan, zeile: TabellenZeile | null): number[] {
 }
 
 function zielSchluessel(ziel: NonNullable<TabellenZeile["serie"]>): string {
-  if (ziel.art === "leben") return `${ziel.art}:${ziel.personId}:${ziel.feld}`;
+  if (ziel.art === "leben") return `${ziel.art}:${ziel.personId}:${ziel.postenId}`;
   return `${ziel.art}:${ziel.id}`;
 }
