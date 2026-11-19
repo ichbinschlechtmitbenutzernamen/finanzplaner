@@ -16,7 +16,14 @@ import { darlehenImPlan, summiereDarlehen } from "./darlehen.ts";
 import { istAktiv, mengeImMonat, monatsbetragCents } from "./monatswert.ts";
 import { addiere, leereReihe, setzen, summe } from "./reihe.ts";
 import { roundCents, roundRate } from "./round.ts";
-import { berechneErtragsteuer } from "./steuer.ts";
+import { berechneErtragsteuer, type PersonenVorsorgeAbzug } from "./steuer.ts";
+import {
+  berechneVorsorge,
+  ergaenzeSteuerruecklage,
+  vorsorgeAbzugCents,
+  vorsorgeNachJahr,
+} from "./vorsorge.ts";
+import { blockMonatCents } from "../privat.ts";
 import { kostenFaktor, personalFaktor, szenarioFaktoren, umsatzFaktor } from "./szenario.ts";
 import type {
   BerechnungHinweis,
@@ -87,7 +94,21 @@ export function berechnePlan(
   const investitionen = berechneInvestitionen(plan, monate, steuer);
   const finanzierung = berechneFinanzierung(plan, monate);
   const umsatzsteuer = berechneUmsatzsteuer(plan, monate, umsatz, kosten, investitionen);
-  const entnahmen = berechneEntnahmen(plan, monate);
+  const leerEntnahme = {
+    lebensbedarfCents: leereReihe(monate.length),
+    entnahmeCents: leereReihe(monate.length),
+  };
+  const vorergebnis = baueUebersicht(
+    umsatz,
+    personal,
+    kosten,
+    investitionen,
+    finanzierung,
+    umsatzsteuer,
+    leerEntnahme,
+  );
+  const vorsorge = berechneVorsorge(plan, monate, vorergebnis.betriebsergebnisCents, personal);
+  const entnahmen = berechneEntnahmen(plan, monate, vorsorge);
   const uebersicht = baueUebersicht(
     umsatz,
     personal,
@@ -97,7 +118,13 @@ export function berechnePlan(
     umsatzsteuer,
     entnahmen,
   );
-  const steuern = berechneErtragsteuer(plan, monate, uebersicht.betriebsergebnisCents);
+  const steuern = berechneErtragsteuer(
+    plan,
+    monate,
+    uebersicht.betriebsergebnisCents,
+    vorsorgeAbzuege(plan, monate, vorsorge),
+  );
+  ergaenzeSteuerruecklage(vorsorge, monate, steuern);
   for (let index = 0; index < monate.length; index += 1) {
     const monat = steuern.monate[index];
     uebersicht.steuerEinkommenZahlungCents[index] = monat?.einkommensteuerZahlungCents ?? 0;
@@ -129,6 +156,7 @@ export function berechnePlan(
     finanzierung,
     umsatzsteuer,
     entnahmen,
+    vorsorge,
     steuern,
     uebersicht,
     liquiditaetsreserveCents: plan.kapitalbedarf.betriebsmittel.liquiditaetsreserveCents,
@@ -683,28 +711,31 @@ function berechneUmsatzsteuer(
   };
 }
 
-function berechneEntnahmen(plan: Finanzplan, monate: readonly IsoMonth[]): EntnahmeBlock {
+function berechneEntnahmen(
+  plan: Finanzplan,
+  monate: readonly IsoMonth[],
+  vorsorge: ReturnType<typeof berechneVorsorge>,
+): EntnahmeBlock {
   const start = monate[0];
   if (!start) throw new BerechnungError("Der Plan hat keinen Monat.");
   const lebensbedarfCents = leereReihe(monate.length);
   for (const person of plan.stammdaten.personen) {
     const bedarf = person.lebensbedarf;
-    if (!bedarf) continue;
-    const teile = [
-      bedarf.lebenshaltung,
-      bedarf.krankenversicherung,
-      bedarf.pflegeversicherung,
-      bedarf.altersvorsorge,
-      bedarf.sonstigeVersicherungen,
-    ];
+    const sozial = vorsorge.personen.find((eintrag) => eintrag.personId === person.id);
     for (let index = 0; index < monate.length; index += 1) {
       const monat = monate[index];
       if (!monat) continue;
-      const betrag = teile.reduce(
-        (total, vorgabe) => total + monatsbetragCents(vorgabe, monat, start),
-        0,
-      );
-      lebensbedarfCents[index] = (lebensbedarfCents[index] ?? 0) + betrag;
+      const bloecke =
+        bedarf?.bloecke.reduce(
+          (total, block) => total + blockMonatCents(block, monat, start, index),
+          0,
+        ) ?? 0;
+      const abgaben =
+        (sozial?.kvCents[index] ?? 0) +
+        (sozial?.pvCents[index] ?? 0) +
+        (sozial?.rvCents[index] ?? 0) +
+        (sozial?.avCents[index] ?? 0);
+      lebensbedarfCents[index] = (lebensbedarfCents[index] ?? 0) + bloecke + abgaben;
     }
   }
   const kapitalgesellschaft =
@@ -713,6 +744,27 @@ function berechneEntnahmen(plan: Finanzplan, monate: readonly IsoMonth[]): Entna
     lebensbedarfCents,
     entnahmeCents: kapitalgesellschaft ? leereReihe(monate.length) : lebensbedarfCents.slice(),
   };
+}
+
+function vorsorgeAbzuege(
+  plan: Finanzplan,
+  monate: readonly IsoMonth[],
+  vorsorge: ReturnType<typeof berechneVorsorge>,
+): PersonenVorsorgeAbzug[] {
+  const abzuege: PersonenVorsorgeAbzug[] = [];
+  for (const person of vorsorge.personen) {
+    const splitting =
+      plan.stammdaten.personen.find((eintrag) => eintrag.id === person.personId)?.steuerprofil
+        ?.splitting ?? false;
+    for (const jahr of vorsorgeNachJahr(person, monate).values()) {
+      abzuege.push({
+        personId: person.personId,
+        jahr: jahr.jahr,
+        ...vorsorgeAbzugCents(jahr, splitting, plan.parameter.sozialversicherung),
+      });
+    }
+  }
+  return abzuege;
 }
 
 function baueUebersicht(

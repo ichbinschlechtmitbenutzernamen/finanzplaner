@@ -3,6 +3,7 @@ import { standardExcelExport } from "../domain/excel/blaetter.ts";
 import { standardPdfExport } from "../domain/pdf/kapitel.ts";
 import { PARAMETER_DE_2026 } from "../domain/parameter.ts";
 import { standardPlanSzenarien } from "../domain/szenarien/standard.ts";
+import { lebensbedarfMit } from "../domain/privat.ts";
 import type { Finanzplan } from "../domain/types.ts";
 
 /**
@@ -12,7 +13,7 @@ import type { Finanzplan } from "../domain/types.ts";
  */
 export const beispielGmbh = {
   id: "plan-beispiel-hafenlicht-gmbh",
-  schemaVersion: 13,
+  schemaVersion: 14,
   status: "vollstaendig",
   erstelltAm: "2026-01-08T09:00:00.000Z",
   geaendertAm: "2026-01-20T09:00:00.000Z",
@@ -46,13 +47,33 @@ export const beispielGmbh = {
         rollen: ["gesellschafter", "geschaeftsfuehrer"],
         anteil: 1,
         steuerprofil: { kirchensteuer: false, splitting: false, kinderfreibetraege: 0 },
-        lebensbedarf: {
-          lebenshaltung: { basisCents: 180_000 },
-          krankenversicherung: { basisCents: 42_000 },
-          pflegeversicherung: { basisCents: 8_000 },
-          altersvorsorge: { basisCents: 15_000 },
-          sonstigeVersicherungen: { basisCents: 5_000 },
-        },
+        lebensbedarf: lebensbedarfMit(
+          "person-mira-kolb",
+          {
+            miete: 110_000,
+            energie: 15_000,
+            alltag: 50_000,
+            telefon: 5_000,
+            medien: 3_000,
+            freizeit: 8_000,
+            haftpflicht: 2_500,
+            altersvorsorge: 20_000,
+            weitere_versicherungen: 5_000,
+            kfz_steuer: 8_000,
+            tanken: 15_000,
+            reparatur: 5_000,
+            mobilitaet_sonstiges: 2_000,
+            urlaub: 15_000,
+            anschaffungen: 5_000,
+          },
+          {
+            krankenversicherung: "gesetzlich",
+            krankengeldanspruch: true,
+            kinder: false,
+            rentenversicherung: "nein",
+            arbeitslosenversicherung: false,
+          },
+        ),
       },
     ],
     zwecke: ["eigene_planung", "bank_kfw"],

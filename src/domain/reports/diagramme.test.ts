@@ -56,25 +56,25 @@ describe("Überblick-Kennzahlen", () => {
     expect(blitzweg.kontokorrentbedarfCents).toBe(
       bericht("Blitzweg").kennzahlen.kontokorrentbedarfCents,
     );
-    expect(blitzweg.kontokorrentbedarfCents).toBe(1_439_106);
-    expect(Math.round(blitzweg.kontokorrentbedarfCents / 100)).toBe(14_391);
-    expect(blitzweg.tiefsterKontostandCents).toBe(-1_439_106);
+    expect(blitzweg.kontokorrentbedarfCents).toBe(2_465_501);
+    expect(Math.round(blitzweg.kontokorrentbedarfCents / 100)).toBe(24_655);
+    expect(blitzweg.tiefsterKontostandCents).toBe(-2_465_501);
 
     expect(blitzweg.tragfaehigkeit.anwendbar).toBe(true);
     expect(blitzweg.tragfaehigkeit.personen[0]).toMatchObject({
-      planjahr2Cents: -2_622_734,
+      planjahr2Cents: -2_903_281,
       tragfaehig: false,
     });
     expect(Math.round((blitzweg.tragfaehigkeit.personen[0]?.planjahr2Cents ?? 0) / 100)).toBe(
-      -26_227,
+      -29_033,
     );
 
     expect(cafe.tragfaehigkeit.anwendbar).toBe(true);
     expect(cafe.tragfaehigkeit.personen[0]).toMatchObject({
-      planjahr2Cents: 2_536_131,
+      planjahr2Cents: 643_929,
       tragfaehig: true,
     });
-    expect(Math.round((cafe.tragfaehigkeit.personen[0]?.planjahr2Cents ?? 0) / 100)).toBe(25_361);
+    expect(Math.round((cafe.tragfaehigkeit.personen[0]?.planjahr2Cents ?? 0) / 100)).toBe(6_439);
     expect(cafe.tragfaehigkeit.alleTragfaehig).toBe(true);
 
     expect(hafenlicht.tragfaehigkeit.anwendbar).toBe(false);

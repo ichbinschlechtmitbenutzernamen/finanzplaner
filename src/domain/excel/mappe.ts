@@ -366,8 +366,25 @@ function blattTragfaehigkeit(
     const steuer = person.gewinnNachSteuern.unterzeilen?.find((zeile) => zeile.id === "steuern");
     if (gewinn) reihe.gewinn.cents = [...gewinn.monateCents];
     if (steuer) reihe.steuer.cents = [...steuer.monateCents];
-    reihe.lebenshaltung.cents = [...person.lebenshaltung.monateCents];
-    reihe.vorsorge.cents = [...person.vorsorge.monateCents];
+    const blockBericht = person.bloecke.filter((block) => !block.id.endsWith("-abgaben"));
+    blockBericht.forEach((block, blockIndex) => {
+      const ziel = reihe.bloecke[blockIndex];
+      if (!ziel) return;
+      ziel.summe.cents = [...block.monateCents];
+      block.unterzeilen?.forEach((posten, postenIndex) => {
+        const zielPosten = ziel.posten[postenIndex];
+        if (zielPosten) zielPosten.reihe.cents = [...posten.monateCents];
+      });
+    });
+    const abgaben = person.bloecke.find((block) => block.id.endsWith("-abgaben"));
+    const kv = abgaben?.unterzeilen?.find((zeile) => zeile.id.startsWith("kv-"));
+    const rv = abgaben?.unterzeilen?.find((zeile) => zeile.id.startsWith("rv-"));
+    const av = abgaben?.unterzeilen?.find((zeile) => zeile.id.startsWith("av-"));
+    const est = abgaben?.unterzeilen?.find((zeile) => zeile.id.startsWith("est-"));
+    if (kv) reihe.kv.cents = [...kv.monateCents];
+    if (rv) reihe.rv.cents = [...rv.monateCents];
+    if (av) reihe.av.cents = [...av.monateCents];
+    if (est) reihe.est.cents = [...est.monateCents];
     blatt.zeile({ text: person.name, stil: "abschnitt" });
     euroZeile(blatt, "Gewinnanteil vor Steuern", reihe.gewinn, "bewegung", "normal");
     euroZeile(blatt, "Steuern", reihe.steuer, "bewegung", "normal");
@@ -378,15 +395,30 @@ function blattTragfaehigkeit(
       reihe.steuer,
       reihe.gewinn.cents.map((wert, monat) => wert - (reihe.steuer.cents[monat] ?? 0)),
     );
-    euroZeile(blatt, "Lebenshaltung", reihe.lebenshaltung, "bewegung", "normal");
-    euroZeile(blatt, "Vorsorge", reihe.vorsorge, "bewegung", "normal");
-    const verfuegbar = reihe.gewinn.cents.map(
-      (wert, monat) =>
+    reihe.bloecke.forEach((block) => {
+      euroZeile(blatt, block.name, block.summe, "bewegung", "ergebnis");
+      block.posten.forEach((posten) =>
+        euroZeile(blatt, posten.name, posten.reihe, "bewegung", "normal"),
+      );
+    });
+    euroZeile(blatt, "Kranken- und Pflegeversicherung", reihe.kv, "bewegung", "normal");
+    euroZeile(blatt, "Gesetzliche Rentenversicherung", reihe.rv, "bewegung", "normal");
+    euroZeile(blatt, "Arbeitslosenversicherung", reihe.av, "bewegung", "normal");
+    euroZeile(blatt, "Einkommensteuerrücklage", reihe.est, "bewegung", "hinweis");
+    const verfuegbar = reihe.gewinn.cents.map((wert, monat) => {
+      const bloecke = reihe.bloecke.reduce(
+        (summe, block) => summe + (block.summe.cents[monat] ?? 0),
+        0,
+      );
+      return (
         wert -
         (reihe.steuer.cents[monat] ?? 0) -
-        (reihe.lebenshaltung.cents[monat] ?? 0) -
-        (reihe.vorsorge.cents[monat] ?? 0),
-    );
+        bloecke -
+        (reihe.kv.cents[monat] ?? 0) -
+        (reihe.rv.cents[monat] ?? 0) -
+        (reihe.av.cents[monat] ?? 0)
+      );
+    });
     const zeile = summenAnzeige(blatt, "Verfügbares Einkommen", verfuegbar, "ergebnis");
     const planjahr2 = verfuegbar.slice(12, 24).reduce((summe, wert) => summe + wert, 0);
     blatt.zeile(

@@ -3,9 +3,9 @@
 exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`] = `
 {
   "endbestand": [
-    3973700,
-    844358,
-    -1439106,
+    2983987,
+    -15717,
+    -2465501,
   ],
   "firma": "Blitzweg Elektrotechnik",
   "guv": [
@@ -92,29 +92,29 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
     },
     {
       "planjahre": [
-        430260,
-        123140,
+        75475,
+        7525,
         0,
       ],
-      "summe": 553400,
+      "summe": 83000,
       "zeile": "Steuern",
     },
     {
       "planjahre": [
-        4266958,
-        245266,
+        4621743,
+        360881,
         633831,
       ],
-      "summe": 5146055,
+      "summe": 5616455,
       "zeile": "Ergebnis nach Steuern",
     },
     {
       "planjahre": [
-        2868000,
-        2868000,
-        2868000,
+        3925813,
+        3264162,
+        3109020,
       ],
-      "summe": 8604000,
+      "summe": 10298995,
       "zeile": "Privatentnahmen",
     },
   ],
@@ -169,19 +169,19 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
     "eigenkapitalquote": 0.375,
     "kapitaldienst": [
       {
-        "cashflow": 1853958,
+        "cashflow": 1150930,
         "dienst": 55000,
-        "quote": 33.708327272727274,
+        "quote": 20.926,
       },
       {
-        "cashflow": -2232734,
+        "cashflow": -2513281,
         "dienst": 438123,
-        "quote": -5.096135103612456,
+        "quote": -5.736473547382813,
       },
       {
-        "cashflow": -1844169,
+        "cashflow": -2085189,
         "dienst": 462914,
-        "quote": -3.983826369476836,
+        "quote": -4.504484634294923,
       },
     ],
     "planmonat": 1,
@@ -191,8 +191,8 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
       0.7799997346333014,
     ],
     "umsatzrendite": [
-      0.5419048186315493,
-      0.02995081548216324,
+      0.5869626094694703,
+      0.044069215635345105,
       0.07442373449145936,
     ],
   },
@@ -212,8 +212,8 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
     },
   ],
   "tiefster": {
-    "betrag": -1439106,
-    "kontokorrent": 1439106,
+    "betrag": -2465501,
+    "kontokorrent": 2465501,
     "monat": "2029-05",
   },
   "tragfaehigkeit": {
@@ -221,12 +221,12 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
     "personen": [
       {
         "name": "Jonas Heller (fiktiv)",
-        "planjahr2": -2622734,
+        "planjahr2": -2903281,
         "tragfaehig": false,
         "verfuegbar": [
-          1398958,
-          -2622734,
-          -2234169,
+          695930,
+          -2903281,
+          -2475189,
         ],
       },
     ],
@@ -237,9 +237,9 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Blitzweg 1`]
 exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseecke 1`] = `
 {
   "endbestand": [
-    5880140,
-    8695928,
-    10897602,
+    4115833,
+    4919307,
+    5315859,
   ],
   "firma": "Café Leseecke",
   "guv": [
@@ -326,29 +326,29 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseec
     },
     {
       "planjahre": [
-        390894,
-        758237,
-        527069,
+        296744,
+        557525,
+        431731,
       ],
-      "summe": 1676200,
+      "summe": 1286000,
       "zeile": "Steuern",
     },
     {
       "planjahre": [
-        3748361,
-        5149731,
-        5908389,
+        3842511,
+        5350443,
+        6003727,
       ],
-      "summe": 14806481,
+      "summe": 15196681,
       "zeile": "Ergebnis nach Steuern",
     },
     {
       "planjahre": [
-        2613600,
-        2613600,
-        2613600,
+        4377907,
+        4706514,
+        4775322,
       ],
-      "summe": 7840800,
+      "summe": 13859743,
       "zeile": "Privatentnahmen",
     },
   ],
@@ -403,19 +403,19 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseec
     "eigenkapitalquote": 0.3333333333333333,
     "kapitaldienst": [
       {
-        "cashflow": 2034407,
+        "cashflow": 364250,
         "dienst": 831102,
-        "quote": 2.447842743730613,
+        "quote": 0.43827352118031243,
       },
       {
-        "cashflow": 3457563,
+        "cashflow": 1565361,
         "dienst": 1466640,
-        "quote": 2.3574721813123873,
+        "quote": 1.0673109965635739,
       },
       {
-        "cashflow": 4216221,
+        "cashflow": 2149837,
         "dienst": 1466640,
-        "quote": 2.8747484045164455,
+        "quote": 1.4658246059019255,
       },
     ],
     "planmonat": 2,
@@ -425,9 +425,9 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseec
       0.6800000220664969,
     ],
     "umsatzrendite": [
-      0.18771898230052597,
-      0.22508769699917514,
-      0.25072586044061024,
+      0.19243404101114497,
+      0.2338605439381897,
+      0.2547715829011129,
     ],
   },
   "planjahre": [
@@ -446,7 +446,7 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseec
     },
   ],
   "tiefster": {
-    "betrag": 1770127,
+    "betrag": 1533939,
     "kontokorrent": 0,
     "monat": "2026-09",
   },
@@ -455,12 +455,12 @@ exports[`Berichte der Beispielpläne > schreibt einen Snapshot für Café Leseec
     "personen": [
       {
         "name": "Mara Sommer (fiktiv)",
-        "planjahr2": 2536131,
+        "planjahr2": 643929,
         "tragfaehig": true,
         "verfuegbar": [
-          1134761,
-          2536131,
-          3294789,
+          -535396,
+          643929,
+          1228405,
         ],
       },
     ],

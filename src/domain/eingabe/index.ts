@@ -24,7 +24,6 @@ export {
   setzeSerieZelle,
   wachstumSerie,
   type EinmalZiel,
-  type LebensbedarfFeld,
   type MengenZiel,
   type MonatswertZiel,
   type SerieZiel,

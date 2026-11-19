@@ -173,7 +173,9 @@ function Station({
   onUeberblick: () => void;
 }) {
   if (station === "vorhaben") return <VorhabenStation plan={plan} onAendern={onAendern} />;
-  if (station === "persoenlich") return <PersoenlichStation plan={plan} onAendern={onAendern} />;
+  if (station === "persoenlich") {
+    return <PersoenlichStation plan={plan} berichte={berichte} onAendern={onAendern} />;
+  }
   if (station === "umsatz") return <UmsatzStation plan={plan} onAendern={onAendern} />;
   if (station === "wareneinsatz") return <WareneinsatzStation plan={plan} onAendern={onAendern} />;
   if (station === "personal") return <PersonalStation plan={plan} onAendern={onAendern} />;

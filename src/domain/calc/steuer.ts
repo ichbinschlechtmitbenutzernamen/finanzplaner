@@ -19,6 +19,16 @@ import type {
 } from "./types.ts";
 import { einkommensteuerCents, kirchensteuerCents, solidaritaetszuschlagCents } from "./tarif.ts";
 
+/** Schon gerechneter Sonderausgabenabzug aus Block 6, je Person und Kalenderjahr. */
+export interface PersonenVorsorgeAbzug {
+  personId: string;
+  jahr: number;
+  kvPvCents: number;
+  renteCents: number;
+  arbeitslosCents: number;
+  abzugCents: number;
+}
+
 /**
  * Ertragsteuern eines Plans.
  * Gewerbesteuer und Körperschaftsteuer sind keine Betriebsausgaben.
@@ -44,6 +54,7 @@ export function berechneErtragsteuer(
   plan: Finanzplan,
   monate: readonly IsoMonth[],
   betriebsergebnisCents: readonly number[],
+  vorsorge: readonly PersonenVorsorgeAbzug[] = [],
 ): SteuerBlock {
   const abschlusszahlungMonat =
     plan.steuerplanung?.abschlusszahlungMonat ?? ABSCHLUSSZAHLUNG_MONAT_STANDARD;
@@ -67,7 +78,15 @@ export function berechneErtragsteuer(
 
   const art = istKapitalgesellschaft(rechtsform) ? "koerperschaftsteuer" : "einkommensteuer";
   const jahre = gruppiereJahre(monate).map((gruppe) =>
-    steuerJahr(plan, rechtsform, gruppe.jahr, gruppe.indizes, monate, betriebsergebnisCents),
+    steuerJahr(
+      plan,
+      rechtsform,
+      gruppe.jahr,
+      gruppe.indizes,
+      monate,
+      betriebsergebnisCents,
+      vorsorge,
+    ),
   );
 
   const zahlung = baueZahlungen(jahre, monate, abschlusszahlungMonat);
@@ -162,6 +181,7 @@ function steuerJahr(
   indizes: number[],
   monate: readonly IsoMonth[],
   betriebsergebnisCents: readonly number[],
+  vorsorge: readonly PersonenVorsorgeAbzug[],
 ): SteuerJahr {
   const parameter = plan.parameter.steuer;
   const gewinnCents = summe(indizes.map((index) => betriebsergebnisCents[index] ?? 0));
@@ -176,7 +196,9 @@ function steuerJahr(
     : gewerbesteuer(0, parameter, null, 0);
 
   const kst = kapital ? koerperschaftsteuer(gewinnCents, parameter) : { kstCents: 0, soliCents: 0 };
-  const personen = kapital ? [] : personenDesJahres(plan, gewinnCents, gesellschaft, gewerbe);
+  const personen = kapital
+    ? []
+    : personenDesJahres(plan, gewinnCents, gesellschaft, gewerbe, jahr, vorsorge);
 
   const einkommensteuerCents = summe(personen.map((person) => person.einkommensteuerCents));
   const soliPersonen = summe(personen.map((person) => person.solidaritaetszuschlagCents));
@@ -222,6 +244,8 @@ function personenDesJahres(
   gewinnCents: number,
   gesellschaft: GesellschaftSteuer,
   gewerbe: boolean,
+  jahr: number,
+  vorsorge: readonly PersonenVorsorgeAbzug[],
 ): SteuerPersonJahr[] {
   const personen = plan.stammdaten.personen.filter((person) => person.anteil > 0);
   if (personen.length === 0) return [];
@@ -246,6 +270,14 @@ function personenDesJahres(
       messAnteile[index] ?? 0,
       gewstAnteile[index] ?? 0,
       gewerbe,
+      vorsorge.find((eintrag) => eintrag.personId === person.id && eintrag.jahr === jahr) ?? {
+        personId: person.id,
+        jahr,
+        kvPvCents: 0,
+        renteCents: 0,
+        arbeitslosCents: 0,
+        abzugCents: 0,
+      },
     ),
   );
 }
@@ -258,12 +290,13 @@ function personJahr(
   messbetragAnteilCents: number,
   gewerbesteuerAnteilCents: number,
   gewerbe: boolean,
+  vorsorge: PersonenVorsorgeAbzug,
 ): SteuerPersonJahr {
   const profil = person.steuerprofil;
   const weitere = profil?.weitereEinkuenfteJahrCents ?? 0;
   const kinderabzugCents = kinderAbzug(profil, parameter);
   const summeEinkuenfteCents = gewinnanteilCents + weitere;
-  const zvECents = summeEinkuenfteCents - kinderabzugCents;
+  const zvECents = summeEinkuenfteCents - kinderabzugCents - vorsorge.abzugCents;
   const zvEEuro = zvECents > 0 ? Math.floor(zvECents / 100) : 0;
   const splitting = profil?.splitting ?? false;
   const tarif = einkommensteuerCents({
@@ -310,6 +343,10 @@ function personJahr(
     solidaritaetszuschlagCents: soli,
     // § 51a Abs. 2 EStG: Kirchensteuer ohne die Anrechnung nach § 35.
     kirchensteuerCents: kirchensteuerCents(tarif.tariflicheEinkommensteuerCents, satz),
+    vorsorgeKrankenPflegeCents: vorsorge.kvPvCents,
+    vorsorgeRenteCents: vorsorge.renteCents,
+    vorsorgeArbeitslosCents: vorsorge.arbeitslosCents,
+    vorsorgeAbzugCents: vorsorge.abzugCents,
   };
 }
 

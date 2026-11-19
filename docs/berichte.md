@@ -125,7 +125,7 @@ Die Vorsorge ist Krankenversicherung, Pflegeversicherung, Altersvorsorge und son
 
 Der Gewinnanteil eines Monats ist der Anteil am Betriebsergebnis dieses Monats. Die letzte Person erhält den Cent-Rest, dieselbe Teilung wie in der Steuerrechnung. Bei einer Person mit 100 Prozent ist der Gewinn nach Steuern das Ergebnis nach Steuern des Betriebs. Bei mehreren Personen kann die Summe der Monatsanteile in einem einzelnen Monat um wenige Cent vom Jahresgewinnanteil abweichen, weil die Steuer am Jahresgewinn hängt und die Anteile je Monat gerundet werden. Über alle 36 Monate gleichen sich Gewinn und Steuer aus.
 
-Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindestens 0 ist. Ausgewiesen werden das Ja oder Nein und der Betrag. Fehlt der Lebensbedarf, sind Lebenshaltung und Vorsorge 0. Die Tragfähigkeit prüft dann nur den Gewinn nach Steuern.
+Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindestens 0 ist. Ausgewiesen werden das Ja oder Nein, der Betrag und die privaten Blöcke mit ihren Posten. Verfügbares Einkommen ist der Gewinnanteil nach Steuern, minus die Blöcke 1 bis 5, minus die gerechneten Beiträge. Die Einkommensteuerrücklage steht nur nachrichtlich, weil die festgesetzte Steuer schon abgezogen ist. Fehlt der Lebensbedarf, sind die Blöcke 0.
 
 ## Kennzahlen
 
@@ -145,7 +145,7 @@ Tragfähig ist eine Person, wenn ihr verfügbares Einkommen im Planjahr 2 mindes
 
 - Planjahre statt Kalenderjahre in den Berichten. Die Veranlagung bleibt das Kalenderjahr.
 - Betriebsmittelbedarf nur als Eingabe, Standard 0. Keine Ableitung aus dem Zahlungssaldo.
-- Lebenshaltung und Vorsorge waren schon je Person im Plan. Dafür gibt es keine neue Migration.
+- Die privaten Blöcke und die Faktoren stehen im Lebensbedarf. Die Migration von Version 13 ist in [vorsorge.md](vorsorge.md) beschrieben.
 - Der Waren-Erstbestand ist eine eigene Zeile im Kapitalbedarf.
 - Raumkosten sind nur Miete und Nebenkosten.
 - Der Break-even ist der erste Planmonat mit Ergebnis nach Steuern größer als 0.
