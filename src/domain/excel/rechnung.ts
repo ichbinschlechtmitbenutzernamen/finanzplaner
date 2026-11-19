@@ -1906,9 +1906,14 @@ function kvPvFormel(
   );
   return fWenn(
     `${sozial.gesetzlich}=1`,
-    `(${fSatz(basis, kvSatz)})+(${fSatz(basis, pvSatz)})`,
+    `(${fBeitrag(basis, kvSatz)})+(${fBeitrag(basis, pvSatz)})`,
     fCent(sozial.privat),
   );
+}
+
+/** Cent mal Satz, der Satz auf vier Nachkommastellen gerastert. Entspricht dem Steuerkern. */
+function fBeitrag(cent: string, satz: string): string {
+  return fRund(`(${cent})*ROUND((${satz})*10000,0)/10000`);
 }
 
 function rvFormel(
@@ -1916,9 +1921,9 @@ function rvFormel(
   sozial: NonNullable<PersonZellen["sozial"]>,
   bemessung: string,
 ): string {
-  const regel = fSatz(fCent(ctx.skalare.bezugsGroesse), ctx.skalare.rvSatz);
+  const regel = fBeitrag(fCent(ctx.skalare.bezugsGroesse), ctx.skalare.rvSatz);
   const basis = fMin(fMax(bemessung, fCent(ctx.skalare.rvMin)), fCent(ctx.skalare.rvMax));
-  const pflicht = fSatz(basis, ctx.skalare.rvSatz);
+  const pflicht = fBeitrag(basis, ctx.skalare.rvSatz);
   return fWenn(`${sozial.rente}=0`, "0", fWenn(`${sozial.rente}=2`, regel, pflicht));
 }
 
@@ -1930,7 +1935,7 @@ function avFormel(ctx: Ctx, sozial: NonNullable<PersonZellen["sozial"]>, index: 
     fRund(`(${bezugs})/2`),
     bezugs,
   );
-  return fWenn(`${sozial.arbeitslos}=1`, fSatz(basis, ctx.skalare.avSatz), "0");
+  return fWenn(`${sozial.arbeitslos}=1`, fBeitrag(basis, ctx.skalare.avSatz), "0");
 }
 
 function vorsorgeAbzugFormel(
