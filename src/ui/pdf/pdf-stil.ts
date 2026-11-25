@@ -1,4 +1,5 @@
 import { StyleSheet } from "@react-pdf/renderer";
+import { farben } from "../design-tokens.ts";
 
 export const HOCH_BREITE = 520;
 export const QUER_BREITE = 784;
@@ -16,10 +17,11 @@ export const NUTZ_QUER = A4_KURZ - RAND_QUER.oben - RAND_QUER.unten;
 export const BREITE_HOCH = A4_KURZ - RAND_HOCH.seite * 2;
 export const BREITE_QUER = A4_LANG - RAND_QUER.seite * 2;
 
+/** Roboto, eingebettet als „Finanz“. Überschriften und Tabellenköpfe sind fett und in der Akzentfarbe. */
 const seite = {
   fontFamily: "Finanz",
   fontSize: 9,
-  color: "#1c2430",
+  color: farben.text,
   paddingTop: RAND_HOCH.oben,
   paddingBottom: RAND_HOCH.unten,
   paddingHorizontal: RAND_HOCH.seite,
@@ -39,8 +41,8 @@ export const stil = StyleSheet.create({
     left: 36,
     right: 36,
     fontSize: 8,
-    color: "#5e6872",
-    borderBottom: "0.6pt solid #e4ddd2",
+    color: farben.textGedaempft,
+    borderBottom: `0.6pt solid ${farben.linie}`,
     paddingBottom: 3,
   },
   kopfQuer: {
@@ -49,8 +51,8 @@ export const stil = StyleSheet.create({
     left: 28,
     right: 28,
     fontSize: 8,
-    color: "#5e6872",
-    borderBottom: "0.6pt solid #e4ddd2",
+    color: farben.textGedaempft,
+    borderBottom: `0.6pt solid ${farben.linie}`,
     paddingBottom: 3,
   },
   fuss: {
@@ -59,7 +61,7 @@ export const stil = StyleSheet.create({
     left: 36,
     right: 36,
     fontSize: 8,
-    color: "#5e6872",
+    color: farben.textGedaempft,
     textAlign: "center",
   },
   fussQuer: {
@@ -68,18 +70,19 @@ export const stil = StyleSheet.create({
     left: 28,
     right: 28,
     fontSize: 8,
-    color: "#5e6872",
+    color: farben.textGedaempft,
     textAlign: "center",
   },
   h1: {
     fontSize: 16,
     fontWeight: 700,
-    color: "#1f4d45",
+    color: farben.akzent,
     marginBottom: 6,
   },
   h2: {
     fontSize: 11,
     fontWeight: 700,
+    color: farben.akzent,
     marginBottom: 4,
     marginTop: 8,
   },
@@ -90,31 +93,31 @@ export const stil = StyleSheet.create({
   },
   meta: {
     fontSize: 9,
-    color: "#5e6872",
+    color: farben.textGedaempft,
     marginBottom: 2,
   },
   hinweis: {
     fontSize: 8,
-    color: "#5e6872",
+    color: farben.textGedaempft,
     marginTop: 8,
     lineHeight: 1.35,
   },
   legende: {
     fontSize: 7.5,
-    color: "#5e6872",
+    color: farben.textGedaempft,
     marginBottom: 4,
   },
   warnung: {
     marginTop: 10,
     marginBottom: 8,
     padding: 8,
-    backgroundColor: "#f8ecdf",
-    border: "1.5pt solid #9f1d1d",
+    backgroundColor: farben.warnungHintergrund,
+    border: `1.5pt solid ${farben.fehler}`,
   },
   warnungTitel: {
     fontSize: 11,
     fontWeight: 700,
-    color: "#9f1d1d",
+    color: farben.fehler,
     marginBottom: 3,
   },
   block: {
@@ -122,12 +125,12 @@ export const stil = StyleSheet.create({
   },
   tabelle: {
     marginTop: 4,
-    borderTop: "0.4pt solid #d9d0c4",
-    borderLeft: "0.4pt solid #d9d0c4",
+    borderTop: `0.4pt solid ${farben.linie}`,
+    borderLeft: `0.4pt solid ${farben.linie}`,
   },
   kopfzeile: {
     flexDirection: "row",
-    backgroundColor: "#1f4d45",
+    backgroundColor: farben.akzent,
   },
   zeile: {
     flexDirection: "row",
@@ -173,6 +176,6 @@ export const stil = StyleSheet.create({
   },
   legendText: {
     fontSize: 7.5,
-    color: "#5e6872",
+    color: farben.textGedaempft,
   },
 });

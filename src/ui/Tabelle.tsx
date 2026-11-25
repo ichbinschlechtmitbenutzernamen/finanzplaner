@@ -268,7 +268,7 @@ export function Tabelle({
               <tr
                 key={zeile.id}
                 role="row"
-                className={zeilenKlasse(zeile, marke?.stufe)}
+                className={zeilenKlasse(zeile, eintrag.index, marke?.stufe)}
                 style={{ height: 36 }}
               >
                 <th
@@ -389,13 +389,16 @@ function zellenLabel(zeile: TabellenZeile, spalte: DatenSpalte, wert: number | n
   return `${zeile.bezeichnung}, ${wann}, ${anzeige(zeile, wert) || "leer"}`;
 }
 
-function zeilenKlasse(zeile: TabellenZeile, stufe?: Pruefmeldung["stufe"]): string {
+function zeilenKlasse(zeile: TabellenZeile, index: number, stufe?: Pruefmeldung["stufe"]): string {
   const teile = ["zeile"];
   if (zeile.kopf) teile.push("kopf");
   if (zeile.rolle === "summe" || zeile.rolle === "ergebnis") teile.push("fett");
+  if (zeile.rolle === "summe") teile.push("summe");
   if (zeile.rolle === "nachricht") teile.push("nachricht");
   if (zeile.rolle === "ergebnis") teile.push("ergebnis");
   if (stufe) teile.push(`pruef-${stufe}`);
+  const ruhig = !zeile.kopf && zeile.rolle !== "summe" && zeile.rolle !== "ergebnis" && !stufe;
+  if (ruhig && index % 2 === 1) teile.push("zebra");
   return teile.join(" ");
 }
 

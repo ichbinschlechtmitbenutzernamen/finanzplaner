@@ -4,6 +4,7 @@ import { Text, View } from "@react-pdf/renderer";
 void React;
 import type { Planjahr } from "../../domain/reports/planjahr.ts";
 import type { IsoMonth } from "../../domain/types.ts";
+import { farben } from "../design-tokens.ts";
 import {
   DICHTE_JAHR,
   DICHTE_MONAT,
@@ -16,10 +17,10 @@ import type { ZellenZeile } from "./zeilen.ts";
 import { euroZahl, monatKurz } from "./zahlen.ts";
 
 function hintergrund(rolle: ZellenZeile["rolle"], kopf: boolean): string {
-  if (kopf) return "#1f4d45";
-  if (rolle === "ergebnis") return "#e7f0ec";
-  if (rolle === "summe") return "#f3eee4";
-  return "#fffcf8";
+  if (kopf) return farben.akzent;
+  if (rolle === "ergebnis") return farben.akzentSanft;
+  if (rolle === "summe") return farben.summe;
+  return farben.flaeche;
 }
 
 function Zelle({
@@ -49,8 +50,8 @@ function Zelle({
         paddingLeft: einzug ? 8 : 2,
         paddingRight: 2,
         backgroundColor: hintergrund(rolle, kopf),
-        borderRight: "0.4pt solid #d9d0c4",
-        borderBottom: "0.4pt solid #d9d0c4",
+        borderRight: `0.4pt solid ${farben.linie}`,
+        borderBottom: `0.4pt solid ${farben.linie}`,
       }}
     >
       <Text
@@ -58,7 +59,7 @@ function Zelle({
           fontSize: dichte.schrift,
           fontWeight: kopf || rolle === "ergebnis" || rolle === "summe" ? 700 : 400,
           textAlign: rechts ? "right" : "left",
-          color: kopf ? "#fffcf8" : negativ ? "#9f1d1d" : "#1c2430",
+          color: kopf ? farben.textAufAkzent : negativ ? farben.fehler : farben.text,
         }}
       >
         {text}
