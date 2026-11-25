@@ -546,6 +546,7 @@ export function PlanArbeitsflaeche({
           }
         />
       ) : null}
+      <footer className="fusszeile">Finanzplaner 1.0</footer>
     </div>
   );
 }

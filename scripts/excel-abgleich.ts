@@ -1,28 +1,95 @@
-import { execFileSync } from "node:child_process";
+import { execFileSync, spawn, type ChildProcess } from "node:child_process";
 import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import ExcelJS from "exceljs";
 import { berechnePlan } from "../src/domain/calc/berechnen.ts";
 import { erstelleArbeitsmappe } from "../src/domain/excel/mappe.ts";
-import { berichtSpalte, jahrSummenSpalte } from "../src/domain/excel/gitter.ts";
+import { berichtSpalte } from "../src/domain/excel/gitter.ts";
 import { erstelleBerichte } from "../src/domain/reports/berichte.ts";
+import type { Berichte } from "../src/domain/reports/typen.ts";
 import { beispielplaene } from "../src/fixtures/index.ts";
 import { arbeitsmappeZuBuffer } from "../src/ui/excel/datei.ts";
 
+const PORT = 2002;
 const datum = new Date("2026-11-13T12:00:00.000Z");
-const zeilen: [string, string, "summe" | "bestand"][] = [
-  ["Rentabilität", "Umsatz", "summe"],
-  ["Rentabilität", "Steuern", "summe"],
-  ["Liquidität", "Kundenzahlungen", "summe"],
-  ["Liquidität", "Darlehensauszahlungen", "summe"],
-  ["Liquidität", "Zinsen", "summe"],
-  ["Liquidität", "Tilgung", "summe"],
-  ["Liquidität", "Investitionen", "summe"],
-  ["Liquidität", "Einzahlungen", "summe"],
-  ["Liquidität", "Auszahlungen", "summe"],
-  ["Liquidität", "Endbestand", "bestand"],
-];
+
+function zeileCents(berichte: Berichte, id: string): number[] {
+  const alle = [
+    ...(berichte.liquiditaet.einzahlungen.unterzeilen ?? []),
+    ...(berichte.liquiditaet.auszahlungen.unterzeilen ?? []),
+  ];
+  const zeile = alle.find((eintrag) => eintrag.id === id);
+  if (!zeile) throw new Error(`Zeile ${id} fehlt.`);
+  return [...zeile.monateCents];
+}
+
+function paareFuer(berichte: Berichte): [string, string, number[]][] {
+  const paare: [string, string, number[]][] = [
+    [
+      "Rentabilität",
+      "Umsatz",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "umsatz")!.monateCents,
+    ],
+    [
+      "Rentabilität",
+      "Wareneinsatz",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "wareneinsatz")!.monateCents,
+    ],
+    [
+      "Rentabilität",
+      "Personal",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "personal")!.monateCents,
+    ],
+    [
+      "Rentabilität",
+      "Ergebnis vor Steuern",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "ergebnis-vor-steuern")!
+        .monateCents,
+    ],
+    [
+      "Rentabilität",
+      "Steuern",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "steuern")!.monateCents,
+    ],
+    [
+      "Rentabilität",
+      "Ergebnis nach Steuern",
+      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "ergebnis-nach-steuern")!
+        .monateCents,
+    ],
+    ["Liquidität", "Kundenzahlungen", zeileCents(berichte, "einzahlung-kunden")],
+    ["Liquidität", "Darlehensauszahlungen", zeileCents(berichte, "einzahlung-darlehen")],
+    ["Liquidität", "Einzahlungen", berichte.liquiditaet.einzahlungen.monateCents],
+    ["Liquidität", "Investitionen", zeileCents(berichte, "auszahlung-investitionen")],
+    ["Liquidität", "Zinsen", zeileCents(berichte, "auszahlung-zinsen")],
+    ["Liquidität", "Tilgung", zeileCents(berichte, "auszahlung-tilgung")],
+    ["Liquidität", "Auszahlungen", berichte.liquiditaet.auszahlungen.monateCents],
+    ["Liquidität", "Endbestand", berichte.liquiditaet.endbestand.monateCents],
+  ];
+  const entnahmen = berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "privatentnahmen");
+  if (entnahmen) paare.push(["Rentabilität", "Privatentnahmen", entnahmen.monateCents]);
+  const person = berichte.tragfaehigkeit.personen[0];
+  if (person) {
+    for (const block of person.bloecke) {
+      if (block.id.endsWith("-abgaben")) continue;
+      paare.push(["Tragfähigkeit", block.bezeichnung, block.monateCents]);
+      for (const posten of block.unterzeilen ?? []) {
+        paare.push(["Tragfähigkeit", posten.bezeichnung, posten.monateCents]);
+      }
+    }
+    const abgaben = person.bloecke.find((block) => block.id.endsWith("-abgaben"));
+    for (const unter of abgaben?.unterzeilen ?? []) {
+      paare.push(["Tragfähigkeit", unter.bezeichnung, unter.monateCents]);
+    }
+    paare.push([
+      "Tragfähigkeit",
+      "Verfügbares Einkommen",
+      person.verfuegbaresEinkommen.monateCents,
+    ]);
+  }
+  return paare;
+}
 
 function zahl(zelle: ExcelJS.Cell): number | null {
   const wert = zelle.value;
@@ -34,15 +101,31 @@ function zahl(zelle: ExcelJS.Cell): number | null {
   return typeof model.result === "number" ? model.result : null;
 }
 
-for (const beispiel of beispielplaene) {
-  const modell = erstelleArbeitsmappe(beispiel.plan, datum);
-  const puffer = await arbeitsmappeZuBuffer(modell);
-  const ordner = mkdtempSync(path.join(tmpdir(), "excel-"));
-  const quelle = path.join(ordner, "plan.xlsx");
-  const ziel = path.join(ordner, "neu");
-  mkdirSync(ziel);
-  writeFileSync(quelle, puffer);
-  const ausgabe = path.join(ziel, "plan.xlsx");
+function warteAufLibreOffice(prozess: ChildProcess): void {
+  for (let versuch = 0; versuch < 40; versuch += 1) {
+    try {
+      execFileSync(
+        "python3",
+        [
+          "-c",
+          `import uno
+local = uno.getComponentContext()
+resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
+resolver.resolve("uno:socket,host=127.0.0.1,port=${PORT};urp;StarOffice.ComponentContext")
+`,
+        ],
+        { stdio: "ignore" },
+      );
+      return;
+    } catch (fehler) {
+      if (prozess.exitCode != null) throw new Error("LibreOffice ist vor dem Abgleich beendet.");
+      if (versuch === 39) throw fehler;
+      execFileSync("sleep", ["0.5"]);
+    }
+  }
+}
+
+function rechneNeu(quelle: string, ausgabe: string): void {
   execFileSync(
     "python3",
     [
@@ -52,7 +135,7 @@ import uno
 from com.sun.star.beans import PropertyValue
 local = uno.getComponentContext()
 resolver = local.ServiceManager.createInstanceWithContext("com.sun.star.bridge.UnoUrlResolver", local)
-ctx = resolver.resolve("uno:socket,host=127.0.0.1,port=2002;urp;StarOffice.ComponentContext")
+ctx = resolver.resolve("uno:socket,host=127.0.0.1,port=${PORT};urp;StarOffice.ComponentContext")
 desktop = ctx.ServiceManager.createInstanceWithContext("com.sun.star.frame.Desktop", ctx)
 hidden = PropertyValue(); hidden.Name = "Hidden"; hidden.Value = True
 doc = desktop.loadComponentFromURL("file://${quelle}", "_blank", 0, (hidden,))
@@ -64,90 +147,62 @@ doc.close(True)
     ],
     { stdio: "pipe" },
   );
-  const workbook = new ExcelJS.Workbook();
-  await workbook.xlsx.readFile(ausgabe);
-  const berichte = erstelleBerichte(beispiel.plan, berechnePlan(beispiel.plan));
-  const erwartet = new Map<string, number[]>([
-    ["Umsatz", berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "umsatz")!.monateCents],
-    [
-      "Wareneinsatz",
-      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "wareneinsatz")!.monateCents,
-    ],
-    [
-      "Personal",
-      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "personal")!.monateCents,
-    ],
-    [
-      "Ergebnis vor Steuern",
-      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "ergebnis-vor-steuern")!
-        .monateCents,
-    ],
-    ["Steuern", berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "steuern")!.monateCents],
-    [
-      "Ergebnis nach Steuern",
-      berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "ergebnis-nach-steuern")!
-        .monateCents,
-    ],
-    ["Endbestand", berichte.liquiditaet.endbestand.monateCents],
-    [
-      "Kundenzahlungen",
-      berichte.liquiditaet.einzahlungen.unterzeilen!.find(
-        (zeile) => zeile.id === "einzahlung-kunden",
-      )!.monateCents,
-    ],
-    [
-      "Darlehensauszahlungen",
-      berichte.liquiditaet.einzahlungen.unterzeilen!.find(
-        (zeile) => zeile.id === "einzahlung-darlehen",
-      )!.monateCents,
-    ],
-    [
-      "Zinsen",
-      berichte.liquiditaet.auszahlungen.unterzeilen!.find(
-        (zeile) => zeile.id === "auszahlung-zinsen",
-      )!.monateCents,
-    ],
-    [
-      "Tilgung",
-      berichte.liquiditaet.auszahlungen.unterzeilen!.find(
-        (zeile) => zeile.id === "auszahlung-tilgung",
-      )!.monateCents,
-    ],
-    [
-      "Investitionen",
-      berichte.liquiditaet.auszahlungen.unterzeilen!.find(
-        (zeile) => zeile.id === "auszahlung-investitionen",
-      )!.monateCents,
-    ],
-    ["Einzahlungen", berichte.liquiditaet.einzahlungen.monateCents],
-    ["Auszahlungen", berichte.liquiditaet.auszahlungen.monateCents],
-  ]);
-  let groesste = 0;
-  let stelle = "";
-  const jeZeile: string[] = [];
-  for (const [blattName, label] of zeilen) {
-    const sheet = workbook.getWorksheet(blattName);
-    let nummer = 0;
-    sheet?.eachRow((row, index) => {
-      if (row.getCell(1).text === label && nummer === 0) nummer = index;
-    });
-    const cents = erwartet.get(label) ?? [];
-    let zeilenMax = 0;
-    for (let index = 0; index < 36; index += 1) {
-      const ist = zahl(sheet!.getRow(nummer).getCell(berichtSpalte(index)));
-      const soll = (cents[index] ?? 0) / 100;
-      const diff = ist == null ? 1_000_000 : Math.abs(ist - soll);
-      if (diff > zeilenMax) zeilenMax = diff;
-      if (diff > groesste) {
-        groesste = diff;
-        stelle = `${blattName} ${label} Monat ${index + 1}: ${ist} statt ${soll}`;
+}
+
+const profil = mkdtempSync(path.join(tmpdir(), "lo-profil-"));
+const prozess = spawn(
+  "soffice",
+  [
+    "--headless",
+    "--norestore",
+    "--nologo",
+    `-env:UserInstallation=file://${profil}`,
+    `--accept=socket,host=127.0.0.1,port=${PORT};urp;`,
+  ],
+  { stdio: "ignore" },
+);
+
+try {
+  warteAufLibreOffice(prozess);
+  for (const beispiel of beispielplaene) {
+    const modell = erstelleArbeitsmappe(beispiel.plan, datum);
+    const puffer = await arbeitsmappeZuBuffer(modell);
+    const ordner = mkdtempSync(path.join(tmpdir(), "excel-"));
+    const quelle = path.join(ordner, "plan.xlsx");
+    const ziel = path.join(ordner, "neu");
+    mkdirSync(ziel);
+    writeFileSync(quelle, puffer);
+    const ausgabe = path.join(ziel, "plan.xlsx");
+    rechneNeu(quelle, ausgabe);
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.readFile(ausgabe);
+    const berichte = erstelleBerichte(beispiel.plan, berechnePlan(beispiel.plan));
+    let groesste = 0;
+    let stelle = "";
+    const stand = new Map<string, number>();
+    for (const [blattName, label, cents] of paareFuer(berichte)) {
+      const sheet = workbook.getWorksheet(blattName);
+      const nach = stand.get(blattName) ?? 0;
+      let nummer = 0;
+      sheet?.eachRow((row, index) => {
+        if (nummer === 0 && index > nach && row.getCell(1).text === label) nummer = index;
+      });
+      stand.set(blattName, nummer);
+      for (let index = 0; index < 36; index += 1) {
+        const ist =
+          nummer > 0 && sheet ? zahl(sheet.getRow(nummer).getCell(berichtSpalte(index))) : null;
+        const soll = (cents[index] ?? 0) / 100;
+        const diff = ist == null ? 1_000_000 : Math.abs(ist - soll);
+        if (diff > groesste) {
+          groesste = diff;
+          stelle = `${blattName} ${label} Monat ${index + 1}: ${ist} statt ${soll}`;
+        }
       }
     }
-    jeZeile.push(`${label} ${zeilenMax.toFixed(2)}`);
+    console.log(
+      `${beispiel.label}: größte Abweichung ${groesste.toFixed(2)} Euro (${stelle || "keine"})`,
+    );
   }
-  console.log("  " + jeZeile.join(", "));
-  console.log(
-    `${beispiel.label}: größte Abweichung ${groesste.toFixed(2)} Euro (${stelle || "keine"})`,
-  );
-  void jahrSummenSpalte;
+} finally {
+  prozess.kill();
 }

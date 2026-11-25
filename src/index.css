@@ -76,6 +76,12 @@ select {
   padding: var(--abstand-lg) var(--abstand-lg) var(--abstand-2xl);
 }
 
+.fusszeile {
+  margin-top: var(--abstand-2xl);
+  color: var(--text-gedaempft);
+  font-size: 0.85rem;
+}
+
 .kopfzeile {
   display: flex;
   flex-wrap: wrap;

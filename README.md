@@ -1,10 +1,24 @@
 # Finanzplaner
 
-Arbeitsname für eine Web-App, mit der Gründerinnen und Gründer in Deutschland einen Finanzplan über 36 Monate selbst erstellen. Der endgültige Name steht noch nicht fest.
+Finanzplan über 36 Monate für Gründerinnen und Gründer in Deutschland. Version 1.0. Die Rechnung läuft im Browser. Eingaben bleiben auf diesem Gerät. Es gibt keinen Server und kein Konto.
 
-Dieser Stand ist **Schritt 13**: im PDF bleiben Tabellen zusammen, und die Oberfläche hat ein ruhiges, neutrales Erscheinungsbild. Passt eine Tabelle nicht mehr auf den Rest der Seite, rückt sie geschlossen weiter. Die Jahresübersichten teilen sich die Seite, die Monate stehen je Planjahr in einer eigenen Tabelle. Der Name der Anwendung ist Finanzplaner, in der Kopfzeile, im Fenstertitel und als schlichtes Monogramm F im Favicon. Es gibt keine Marke und kein Logo eines Unternehmens. Farben, die Systemschrift, Abstände, Radien und Schatten liegen als CSS-Variablen in `src/index.css`. Dieselben Farbwerte stehen in `src/ui/design-tokens.ts` und gelten für Navigation, Kacheln, Tabellen, Assistent, Prüfung, Dialoge und Diagramme. Das PDF übernimmt die Akzentfarbe für fette Überschriften und Tabellenköpfe und behält die eingebettete Roboto. Die privaten Kostenblöcke und die Branchenvorlagen aus Schritt 12 bleiben. Der Assistent gliedert die privaten Kosten in Blöcke mit Posten und Faktoren für Planjahr 2 und 3. Kranken-, Pflege-, Renten- und Arbeitslosenversicherung sowie die Einkommensteuerrücklage werden aus dem Plan gerechnet. Die Werte 2026 stehen in [docs/vorsorge.md](docs/vorsorge.md). Der Monatsfaktor hat keine Obergrenze und kann eine Menge sein, zum Beispiel Stunden. Ein neuer Plan fragt zusätzlich nach einer Vorlage: Ohne Vorlage, Handwerk, Gastronomie oder Einzelhandel. Die Vorlage legt typische Bezeichnungen an, für Umsatz, Wareneinsatz, Personal, laufende Kosten und Investitionen. Beträge bleiben leer. Sie wirkt nur beim Anlegen und lässt sich später nicht nachladen. Die Wahl steht unter `angewendeteVorlage` und `branchenschluessel`. Schema-Version ist 15. Ältere Pläne bleiben ohne Vorlage. Excel und PDF bleiben: die Mappe rechnet per Formel, das PDF entsteht im Browser.
+Die Anwendung: <https://ichbinschlechtmitbenutzernamen.github.io/finanzplaner/>
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die privaten Blöcke in [docs/vorsorge.md](docs/vorsorge.md), die Berichte in [docs/berichte.md](docs/berichte.md), der PDF-Aufbau in [docs/pdf.md](docs/pdf.md), der Excel-Aufbau in [docs/excel.md](docs/excel.md). Schema-Version ist 15. Ein Entwurf darf schon gespeichert werden, bevor Rechtsform, Person und Startmonat feststehen. Der Assistentenfortschritt liegt optional im Plan. Die Schwellen der Prüfung liegen unter `pruefung`. Die Szenarien liegen unter `planSzenarien`. Die Kapitelauswahl liegt unter `pdfExport`. Die Blattauswahl des Excel-Exports liegt unter `excelExport`.
+Die Oberfläche heißt Finanzplaner, in der Kopfzeile, im Fenstertitel und als Monogramm F im Favicon. Farben, Schrift, Abstände und Schatten kommen aus zentralen Design-Tokens. Im PDF bleiben Tabellen zusammen: passt eine Tabelle nicht mehr auf den Rest der Seite, rückt sie geschlossen weiter.
+
+## Kurzanleitung
+
+**Plan anlegen.** „Neuer Plan“ fragt zuerst nach einer Branchenvorlage: Ohne Vorlage, Handwerk, Gastronomie oder Einzelhandel. Die Vorlage setzt typische Bezeichnungen für Umsatz, Wareneinsatz, Personal, laufende Kosten und Investitionen. Beträge bleiben leer und lassen sich später nicht nachladen. Danach die Wahl: Assistent oder Tabelle.
+
+**Assistent und Tabelle.** Der Assistent führt durch die Stationen und schreibt in denselben Plan wie die Tabelle. Bei GmbH und UG entfällt die Station Persönliches. In der Tabelle stehen 36 Monate und je Planjahr eine Summe. Pfeile bewegen die Auswahl, Enter öffnet die Zelle, Tab springt weiter, Strg+Z und Strg+Y machen rückgängig und wiederholen. Oben lassen sich die Beispiele Blitzweg, Café Leseecke, Hafenlicht GmbH und das Grafikstudio laden.
+
+**Szenarien.** Basisplan, Vorsichtig und Optimistisch sind von Anfang an da. Vorsichtig senkt den Umsatz und schiebt den Start. Optimistisch hebt den Umsatz. Ist eine Abweichung aktiv, sind Tabelle und Assistent nur lesend. Der Reiter Szenarien stellt Umsatz, Ergebnis, Kontostand, Kapitalbedarf, Break-even und Tragfähigkeit nebeneinander.
+
+**Prüfung.** Der Reiter Prüfung zeigt die Meldungen des aktiven Szenarios. Ein Klick springt zum Feld in der Tabelle oder im Assistenten. Fehler bleiben exportierbar.
+
+**PDF und Excel.** „PDF erstellen“ und „Excel erstellen“ erzeugen die Datei im Browser. Das PDF übernimmt die Berichte des gewählten Szenarios. Die Excel-Mappe rechnet selbst: gelbe Zellen im Blatt Eingaben sind Eingaben, die Berichte holen sich die Zahlen per Formel.
+
+**Daten.** Änderungen bleiben in diesem Browser, bis der Plan zurückgesetzt wird. PDF und Excel sind die Ausgaben zum Mitnehmen. Eine eigene Datei zum Sichern und Wiedereinlesen gibt es in der Oberfläche nicht.
 
 ## Voraussetzungen
 
@@ -13,7 +27,7 @@ Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswer
 
 TypeScript ist auf Version 6.0.x festgelegt. Die Vite-Vorlage bringt TypeScript 7 mit, `typescript-eslint` erlaubt bisher nur Versionen unter 6.1. Deshalb bleibt das Projekt auf TypeScript 6, solange ESLint das so verlangt.
 
-## Start
+## Entwicklung
 
 ```bash
 npm install
@@ -22,12 +36,6 @@ npm run dev
 
 Der Entwicklungsserver läuft danach auf [http://localhost:5173](http://localhost:5173).
 
-Die Seite öffnet den Überblick. Oben lassen sich die Beispiele Blitzweg, Café Leseecke, Hafenlicht GmbH und das Grafikstudio laden, dazu ein neuer Plan. Daneben steht der Szenario-Umschalter: Basisplan, Vorsichtig und Optimistisch sind von Anfang an da. Vorsichtig senkt den Umsatz um 20 Prozent und schiebt den Umsatzstart um drei Monate. Optimistisch hebt den Umsatz um 20 Prozent. Beide sind Abweichungen und lassen sich umbenennen, ändern und löschen. Ist eine Abweichung aktiv, sind Tabelle und Assistent nur lesend. Eine Kopie bearbeiten Tabelle und Assistent direkt. Der Reiter Szenarien vergleicht Umsatz und Ergebnis nach Steuern je Planjahr, den tiefsten Kontostand, den Kapitalbedarf, den Break-even, die Tragfähigkeit und die Meldungen. Darunter liegt der Kontostand aller Szenarien. Ein neuer Plan fragt zuerst nach der Branchenvorlage und dann: Assistent oder Tabelle. Der Assistent hat neun Stationen. Bei GmbH und UG entfällt Persönliches. Der Reiter Prüfung zeigt die Meldungen des aktiven Szenarios, gruppiert nach Stufe und Kategorie, und den Zähler in der Navigation. Ein Klick springt zum Feld in der Tabelle oder im Assistenten. Fehler bleiben exportierbar. Änderungen bleiben im Browser (`localStorage`) und ersetzen den geladenen Plan so lange, bis zurückgesetzt wird. Der Schalter Monate / Planjahre gilt für die Diagramme. Der Kontostand im Monatsbild zeigt die Nullinie und den tiefsten Stand.
-
-Die Reiter Eingaben, Rentabilitätsvorschau, Liquiditätsplan, Kapitalbedarf und Finanzierung, Investitionen und Darlehen sowie Privatbedarf und Tragfähigkeit nutzen dieselbe Monatstabelle. Nur die Eingaben sind bearbeitbar. Pfeile bewegen die Auswahl, Enter öffnet die Zelle, Tab springt weiter, Strg+Z und Strg+Y machen rückgängig und wiederholen. In der Eingabeleiste lässt sich ein Wert nach rechts fortschreiben, eine Rate je Monat oder je Jahr anwenden und Saisonfaktoren für die Kalendermonate setzen. Kopierte Excel-Zellen (tab-getrennt) werden mit Strg+V eingefügt.
-
-## Prüfen
-
 ```bash
 npm test
 npm run lint
@@ -35,13 +43,15 @@ npm run build
 npm run export:check
 ```
 
-`npm test` prüft das Schema, die Beispielpläne, den Rechenkern, die Berichte, die Kennzahlen und Diagrammdaten, die Eingabehilfen, die Tabelle, den Assistenten, die Plausibilitätschecks, die Szenarien und das PDF-Datenmodell. `npm run export:pdf` schreibt die vier Beispiel-PDFs nach `/opt/cursor/artifacts`.
+`npm test` prüft das Schema, die Beispielpläne, den Rechenkern, die Berichte, die Kennzahlen und Diagrammdaten, die Eingabehilfen, die Tabelle, den Assistenten, die Plausibilitätschecks, die Szenarien, das PDF-Datenmodell und den Excel-Export. Steht LibreOffice bereit, rechnet ein Test die Formeln der vier Beispiele nach. `npm run excel:abgleich` schreibt die größte Abweichung je Beispiel. `npm run export:pdf` schreibt die vier Beispiel-PDFs nach `/opt/cursor/artifacts`.
 
 `npm run export:check` rechnet den fiktiven Elektromeister Blitzweg und schreibt [docs/checkpoints/schritt2-blitzweg.xlsx](docs/checkpoints/schritt2-blitzweg.xlsx). Dieselbe Prüfung schreibt [docs/checkpoints/schritt3-steuern.xlsx](docs/checkpoints/schritt3-steuern.xlsx) mit dem Steuerweg für Blitzweg, das Café Leseecke und die Hafenlicht GmbH und [docs/checkpoints/schritt4-berichte.xlsx](docs/checkpoints/schritt4-berichte.xlsx) mit den Berichten dieser drei Beispiele. `npm run export:berichte` schreibt nur den Berichtsprüfstand.
 
 `npm run lint` ist ESLint und die Formatprüfung mit Prettier. `npm run format` schreibt die Formatierung neu.
 
-`npm run build` erzeugt die statische Seite in `dist/`. `npm run preview` zeigt diese Fassung lokal. Für GitHub Pages setzt der Workflow `VITE_BASE`.
+`npm run build` erzeugt die statische Seite in `dist/`. `npm run preview` zeigt diese Fassung lokal. Für GitHub Pages setzt [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) `VITE_BASE=/finanzplaner/`. Die Basis in `vite.config.ts` ist sonst `/`.
+
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die privaten Blöcke in [docs/vorsorge.md](docs/vorsorge.md), die Berichte in [docs/berichte.md](docs/berichte.md), der PDF-Aufbau in [docs/pdf.md](docs/pdf.md), der Excel-Aufbau in [docs/excel.md](docs/excel.md). Schema-Version ist 15. Was sich von Schritt 1 bis zur Fassung 1.0 geändert hat, steht in [CHANGELOG.md](CHANGELOG.md).
 
 ## Aufbau
 
@@ -61,4 +71,4 @@ npm run export:check
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 15. Eine Branchenvorlage beim Anlegen steht unter `stammdaten.angewendeteVorlage`. Posten ohne Betrag stehen am Assistentenfortschritt und gehen nicht in die Rechnung ein. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Die Kapitelauswahl des PDF steht unter `pdfExport`. Die Blattauswahl des Excel-Exports steht unter `excelExport`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Konten und ein Server kommen später. Dieselbe JSON-Datei liegt im Browser.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 15. Eine Branchenvorlage beim Anlegen steht unter `stammdaten.angewendeteVorlage`. Posten ohne Betrag stehen am Assistentenfortschritt und gehen nicht in die Rechnung ein. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Die Kapitelauswahl des PDF steht unter `pdfExport`. Die Blattauswahl des Excel-Exports steht unter `excelExport`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts` und dienen dem Speicher im Browser. Konten und ein Server gibt es nicht.

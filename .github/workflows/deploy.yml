@@ -1,7 +1,8 @@
-name: Seiten
+name: Veröffentlichen
 
 # Die Umgebung github-pages erlaubt nur den Branch main.
 # Veröffentlicht wird deshalb genau main, nicht ein Feature-Branch.
+# Adresse: https://ichbinschlechtmitbenutzernamen.github.io/finanzplaner/
 
 on:
   push:
