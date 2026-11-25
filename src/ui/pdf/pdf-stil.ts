@@ -4,23 +4,36 @@ import { farben } from "../design-tokens.ts";
 export const HOCH_BREITE = 520;
 export const QUER_BREITE = 784;
 
+/** A4 in Punkt, wie @react-pdf/renderer die Seite aufbaut. */
+export const A4_KURZ = 595.28;
+export const A4_LANG = 841.89;
+
+const RAND_HOCH = { oben: 46, unten: 38, seite: 36 } as const;
+const RAND_QUER = { oben: 42, unten: 34, seite: 28 } as const;
+
+/** Nutzhöhe zwischen den Seitenrändern. Tabellen müssen darunter bleiben. */
+export const NUTZ_HOCH = A4_LANG - RAND_HOCH.oben - RAND_HOCH.unten;
+export const NUTZ_QUER = A4_KURZ - RAND_QUER.oben - RAND_QUER.unten;
+export const BREITE_HOCH = A4_KURZ - RAND_HOCH.seite * 2;
+export const BREITE_QUER = A4_LANG - RAND_QUER.seite * 2;
+
 /** Roboto, eingebettet als „Finanz“. Überschriften und Tabellenköpfe sind fett und in der Akzentfarbe. */
 const seite = {
   fontFamily: "Finanz",
   fontSize: 9,
   color: farben.text,
-  paddingTop: 46,
-  paddingBottom: 38,
-  paddingHorizontal: 36,
+  paddingTop: RAND_HOCH.oben,
+  paddingBottom: RAND_HOCH.unten,
+  paddingHorizontal: RAND_HOCH.seite,
 } as const;
 
 export const stil = StyleSheet.create({
   seite,
   seiteQuer: {
     ...seite,
-    paddingTop: 42,
-    paddingBottom: 34,
-    paddingHorizontal: 28,
+    paddingTop: RAND_QUER.oben,
+    paddingBottom: RAND_QUER.unten,
+    paddingHorizontal: RAND_QUER.seite,
   },
   kopf: {
     position: "absolute",
@@ -106,6 +119,9 @@ export const stil = StyleSheet.create({
     fontWeight: 700,
     color: farben.fehler,
     marginBottom: 3,
+  },
+  block: {
+    marginBottom: 8,
   },
   tabelle: {
     marginTop: 4,

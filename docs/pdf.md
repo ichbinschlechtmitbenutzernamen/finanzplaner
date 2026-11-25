@@ -25,7 +25,11 @@ Im Dialog wird das Szenario gewählt. Standard ist der Basisplan. Nur dieses Sze
 - Prüfungsmeldungen: Fehler, Warnungen und Hinweise
 - Szenarienvergleich
 
-Die Monatstabellen sind A4 quer. Jedes Planjahr hat eine Seite mit den zwölf Monaten und der Jahresspalte. Die Jahresübersichten sind A4 hoch. Oben steht das Vorhaben und das Szenario, unten „Seite x von y“. Vorne liegt ein Inhaltsverzeichnis.
+Kleine Tabellen fließen hintereinander. Eine Tabelle bricht nicht mitten in den Zeilen um: passt sie nicht mehr auf den Rest der Seite, rückt sie mit ihrer Überschrift geschlossen auf die nächste Seite. Das Inhaltsverzeichnis und das Deckblatt bleiben eigene Seiten. Der Wechsel zwischen Hoch- und Querformat beginnt eine neue Seite.
+
+Die Jahresübersichten, der Kapitalbedarf, die Investitionen, die Tragfähigkeit, die Steuern und der Szenarienvergleich stehen im Hochformat und teilen sich die Seiten. Die Monatstabellen sind A4 quer. 36 Monate werden in drei Tabellen geteilt, eine je Planjahr mit den zwölf Monaten, der Jahresspalte und einem vollständigen Tabellenkopf. Jede dieser Tabellen bleibt auf einer Seite. Ist eine Planjahr-Tabelle höher als die Seite, wird die Schrift etwas kleiner, statt die Tabelle zu zerschneiden. Diagramme und Prüfungsmeldungen folgen nach den Monatstabellen.
+
+Oben steht das Vorhaben und das Szenario, unten „Seite x von y“.
 
 ## Fehler
 
