@@ -1,3 +1,4 @@
+import { fuelleOffenenPosten, type OffenerBereich } from "../vorlagen/fuellen.ts";
 import type {
   Finanzplan,
   IsoMonth,
@@ -39,6 +40,12 @@ export type EinmalZiel =
   | {
       art: "betriebsmittel";
       feld: "betriebsmittelbedarfCents" | "liquiditaetsreserveCents" | "warenErstbestandNettoCents";
+    }
+  | {
+      art: "offener-posten";
+      bereich: OffenerBereich;
+      id: string;
+      monat: IsoMonth;
     };
 
 export type SerieZiel = MonatswertZiel | MengenZiel;
@@ -217,6 +224,8 @@ export function setzeEinmal(plan: Finanzplan, ziel: EinmalZiel, wertCents: numbe
     case "betriebsmittel":
       naechster.kapitalbedarf.betriebsmittel[ziel.feld] = wertCents;
       return naechster;
+    case "offener-posten":
+      return fuelleOffenenPosten(plan, ziel.bereich, ziel.id, wertCents, ziel.monat);
     default: {
       const unerreichbar: never = ziel;
       return unerreichbar;

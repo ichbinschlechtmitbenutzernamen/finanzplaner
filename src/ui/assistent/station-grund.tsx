@@ -440,8 +440,9 @@ function UmsatzKarte({
             <EuroFeld
               label="Monatsstart"
               hilfe="Nettobetrag im Gründungsmonat, vor Wachstum und Saison."
-              cents={linie.basisCents}
-              onChange={(basisCents) => onChange({ ...linie, basisCents })}
+              cents={linie.betragOffen ? null : linie.basisCents}
+              pflicht={linie.betragOffen === true}
+              onChange={(basisCents) => onChange({ ...linie, basisCents, betragOffen: false })}
             />
             <ProzentFeld
               label="Wachstumsrate je Jahr"
@@ -604,6 +605,14 @@ export function WareneinsatzStation({
 }) {
   const linien = leseWareneinsatz(plan);
   const namen = new Map(plan.umsatzplanung.map((linie) => [linie.id, linie.bezeichnung]));
+  for (const eintrag of plan.assistent?.offeneUmsaetze ?? []) {
+    if (!namen.has(eintrag.id)) namen.set(eintrag.id, eintrag.bezeichnung);
+  }
+  const material = new Map(
+    (plan.assistent?.offeneUmsaetze ?? []).flatMap((eintrag) =>
+      eintrag.material ? [[eintrag.id, eintrag.material] as const] : [],
+    ),
+  );
   return (
     <section className="assistent-station" aria-labelledby="station-ware">
       <h2 id="station-ware">Wareneinsatz</h2>
@@ -615,7 +624,7 @@ export function WareneinsatzStation({
       {linien.map((linie) => (
         <PruefBlock key={linie.id} feld={`ware-${linie.id}`}>
           <fieldset className="feld-gruppe">
-            <legend>{namen.get(linie.id) || "Leistung"}</legend>
+            <legend>{material.get(linie.id) ?? namen.get(linie.id) ?? "Leistung"}</legend>
             <div className="feld-raster">
               <ProzentFeld
                 label="Anteil vom Umsatz"

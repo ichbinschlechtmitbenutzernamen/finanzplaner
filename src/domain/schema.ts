@@ -19,6 +19,7 @@ import {
   UST_REGIME,
   UST_VERSTEUERUNG,
   UST_VORANMELDUNG,
+  AFA_METHODEN,
   ASSISTENT_STATIONEN,
   ASSISTENT_WEGE,
   PDF_KAPITEL,
@@ -734,12 +735,56 @@ const excelExportSchema = z
     }
   });
 
+const offenerUmsatzSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  nurMaterial: z.boolean().optional(),
+  material: optionalTextSchema(200).optional(),
+  materialQuote: z.number().min(0).max(5).optional(),
+  materialUmsatzsteuerSatz: satzSchema.optional(),
+});
+
+const offeneStelleSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  rolle: z.enum(PERSONAL_ROLLEN),
+  name: textSchema(200).optional(),
+  bruttoCents: centsSchema.optional(),
+  eintritt: isoMonthSchema.optional(),
+  agNebenkostenSatz: satzSchema.optional(),
+  wochenstunden: z.number().positive().max(80).optional(),
+});
+
+const offeneKostenSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  kategorie: z.enum(KOSTENKATEGORIEN),
+  umsatzsteuerSatz: satzSchema.optional(),
+  zahlungszielTage: tageSchema.optional(),
+});
+
+const offeneInvestitionSchema = z.strictObject({
+  id: idSchema,
+  bezeichnung: textSchema(200),
+  kategorie: z.enum(INVESTITIONSKATEGORIEN),
+  nettoCents: positiveCentsSchema.optional(),
+  anschaffungsmonat: isoMonthSchema.optional(),
+  umsatzsteuerSatz: satzSchema.optional(),
+  zahlungszielTage: tageSchema.optional(),
+  methode: z.enum(AFA_METHODEN).optional(),
+  nutzungsdauerMonate: z.number().int().min(1).max(600).optional(),
+});
+
 const assistentSchema = z.strictObject({
   weg: z.enum(ASSISTENT_WEGE).optional(),
   station: z.enum(ASSISTENT_STATIONEN),
   erledigt: z.array(z.enum(ASSISTENT_STATIONEN)).max(ASSISTENT_STATIONEN.length),
   offeneEinlagen: z.array(offeneEinlageSchema).max(50).optional(),
   offeneDarlehen: z.array(offenesDarlehenSchema).max(50).optional(),
+  offeneUmsaetze: z.array(offenerUmsatzSchema).max(100).optional(),
+  offeneStellen: z.array(offeneStelleSchema).max(200).optional(),
+  offeneKosten: z.array(offeneKostenSchema).max(200).optional(),
+  offeneInvestitionen: z.array(offeneInvestitionSchema).max(100).optional(),
 });
 
 /** Eingaben einer Kopie. Die Szenario-Liste des umgebenden Plans bleibt draußen. */

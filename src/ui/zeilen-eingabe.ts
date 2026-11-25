@@ -29,7 +29,7 @@ export function eingabeZeilen(
   tragfaehigkeit: Tragfaehigkeit | null = null,
 ): TabellenZeile[] {
   const start = plan.startMonat;
-  if (!start) return [];
+  if (!start) return zeilenOhneHorizont(plan);
   const laenge = monate.length;
   const umsatz = umsatzZeilen(plan, monate, start, jahre);
   const personal = personalZeilen(plan, monate, start, jahre);
@@ -179,6 +179,24 @@ function umsatzZeilen(
     }
   }
 
+  const laenge = monate.length;
+  for (const eintrag of plan.assistent?.offeneUmsaetze ?? []) {
+    if (!eintrag.nurMaterial) {
+      zeilen.push(
+        offeneBetragszeile(
+          `umsatz-offen-${eintrag.id}`,
+          eintrag.bezeichnung,
+          monate,
+          "umsatz",
+          eintrag.id,
+        ),
+      );
+    }
+    if (eintrag.material && eintrag.materialQuote == null) {
+      waren.push(namenszeile(`ware-offen-${eintrag.id}`, eintrag.material, laenge));
+    }
+  }
+
   return { zeilen, summe, waren, netto };
 }
 
@@ -229,6 +247,17 @@ function personalZeilen(
       summe.push(sonderZeile);
     }
   }
+  for (const stelle of plan.assistent?.offeneStellen ?? []) {
+    zeilen.push(
+      offeneBetragszeile(
+        `personal-offen-${stelle.id}`,
+        `${stelle.bezeichnung}, Brutto`,
+        monate,
+        "personal",
+        stelle.id,
+      ),
+    );
+  }
   return { zeilen, summe };
 }
 
@@ -276,6 +305,17 @@ function kostenZeilen(
     zeilen.push(zeile);
     summe.push(zeile);
   }
+  for (const posten of plan.assistent?.offeneKosten ?? []) {
+    zeilen.push(
+      offeneBetragszeile(
+        `kosten-offen-${posten.id}`,
+        posten.bezeichnung,
+        monate,
+        "kosten",
+        posten.id,
+      ),
+    );
+  }
   return { zeilen, summe };
 }
 
@@ -285,17 +325,22 @@ function listenZeilen(
   jahre: readonly Planjahr[],
 ): TabellenZeile[] {
   const laenge = monate.length;
-  const invest = plan.kapitalbedarf.investitionen.map((posten) =>
-    einmalBetrag(
-      `invest-${posten.id}`,
-      posten.bezeichnung,
-      posten.anschaffungsmonat,
-      posten.nettoCents,
-      monate,
-      jahre,
-      { art: "investition", id: posten.id },
+  const invest = [
+    ...plan.kapitalbedarf.investitionen.map((posten) =>
+      einmalBetrag(
+        `invest-${posten.id}`,
+        posten.bezeichnung,
+        posten.anschaffungsmonat,
+        posten.nettoCents,
+        monate,
+        jahre,
+        { art: "investition", id: posten.id },
+      ),
     ),
-  );
+    ...(plan.assistent?.offeneInvestitionen ?? []).map((posten) =>
+      namenszeile(`invest-offen-${posten.id}`, posten.bezeichnung, laenge),
+    ),
+  ];
   const gruendung = plan.kapitalbedarf.gruendungskosten.map((posten) =>
     einmalBetrag(
       `gruendung-${posten.id}`,
@@ -602,4 +647,72 @@ function mengenReihe(
   aktiv: (monat: IsoMonth) => boolean,
 ): (number | null)[] {
   return monate.map((monat) => (aktiv(monat) ? mengeImMonat(vorgabe, monat, start) : null));
+}
+
+function zeilenOhneHorizont(plan: Finanzplan): TabellenZeile[] {
+  const umsatz = (plan.assistent?.offeneUmsaetze ?? []).filter((eintrag) => !eintrag.nurMaterial);
+  const material = (plan.assistent?.offeneUmsaetze ?? []).flatMap((eintrag) =>
+    eintrag.material && eintrag.materialQuote == null
+      ? [{ id: eintrag.id, bezeichnung: eintrag.material }]
+      : [],
+  );
+  const personal = plan.assistent?.offeneStellen ?? [];
+  const kosten = plan.assistent?.offeneKosten ?? [];
+  const invest = plan.assistent?.offeneInvestitionen ?? [];
+  if (umsatz.length + material.length + personal.length + kosten.length + invest.length === 0) {
+    return [];
+  }
+  const zeilen: TabellenZeile[] = [];
+  const block = (
+    id: string,
+    titel: string,
+    posten: readonly { id: string; bezeichnung: string }[],
+  ) => {
+    if (posten.length === 0) return;
+    zeilen.push(kopfZeile(id, titel, 0));
+    for (const eintrag of posten) {
+      zeilen.push(namenszeile(`${id}-${eintrag.id}`, eintrag.bezeichnung, 0));
+    }
+  };
+  block("kopf-umsatz", "Umsatz", umsatz);
+  block("kopf-ware", "Wareneinsatz", material);
+  block("kopf-personal", "Personal", personal);
+  block("kopf-kosten", "Laufende Kosten", kosten);
+  block("kopf-invest", "Investitionen, Gründung und Anlauf", invest);
+  return zeilen;
+}
+
+function namenszeile(id: string, bezeichnung: string, laenge: number): TabellenZeile {
+  return {
+    id,
+    bezeichnung,
+    ebene: 1,
+    rolle: "normal",
+    kopf: false,
+    werte: Array.from({ length: laenge }, () => null),
+    planjahre: [],
+    bearbeitbar: Array.from({ length: laenge }, () => false),
+    einheit: "leer",
+  };
+}
+
+function offeneBetragszeile(
+  id: string,
+  bezeichnung: string,
+  monate: readonly IsoMonth[],
+  bereich: "umsatz" | "personal" | "kosten",
+  postenId: string,
+): TabellenZeile {
+  return {
+    id,
+    bezeichnung,
+    ebene: 1,
+    rolle: "normal",
+    kopf: false,
+    werte: monate.map(() => null),
+    planjahre: [],
+    bearbeitbar: monate.map(() => true),
+    einheit: "euro",
+    einmalImMonat: (monat) => ({ art: "offener-posten", bereich, id: postenId, monat }),
+  };
 }
