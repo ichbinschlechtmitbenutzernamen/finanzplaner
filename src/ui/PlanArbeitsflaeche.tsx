@@ -317,7 +317,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Finanzplan über 36 Monate</p>
+          <p className="eyebrow">Finanzplaner</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}

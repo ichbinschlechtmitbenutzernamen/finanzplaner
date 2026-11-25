@@ -28,6 +28,7 @@ import {
   type Zeitmodus,
 } from "../domain/reports/diagramme.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
+import { diagrammFarbe, farben } from "./design-tokens.ts";
 import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from "./format.ts";
 
 /**
@@ -46,32 +47,9 @@ interface DiagrammProps {
   fest?: DiagrammFest;
 }
 
-const TICK = { fill: "#5e6872", fontSize: 12 };
+const TICK = { fill: farben.textGedaempft, fontSize: 12 };
 const RAND = { top: 28, right: 28, left: 0, bottom: 0 };
-const GITTER = "#e4ddd2";
-
-const FARBE: Record<string, string> = {
-  umsatz: "#1f4d45",
-  kosten: "#b8612e",
-  kontostand: "#1f4d45",
-  ergebnis: "#245f8a",
-  wareneinsatz: "#b8612e",
-  personal: "#1f4d45",
-  raumkosten: "#6e8b74",
-  "sonstige-kosten": "#c4a035",
-  abschreibungen: "#5c6b7a",
-  zinsen: "#7a3e0b",
-  steuern: "#9f1d1d",
-  eigenmittel: "#1f4d45",
-  darlehen: "#245f8a",
-  zuschuesse: "#6e8b74",
-  investitionen: "#b8612e",
-  gruendungskosten: "#7a3e0b",
-  anlaufkosten: "#c4a035",
-  "waren-erstbestand": "#8a5a44",
-  betriebsmittel: "#5c6b7a",
-  reserve: "#3d6b8a",
-};
+const GITTER = farben.linie;
 
 type BalkenZeile = { name: string } & Record<string, string | number>;
 
@@ -92,7 +70,7 @@ export function UmsatzKostenDiagramm({ berichte, modus, fest }: DiagrammProps) {
           <Line
             dataKey="umsatzCents"
             name="Umsatz"
-            stroke={farbe("umsatz")}
+            stroke={diagrammFarbe("umsatz")}
             strokeWidth={2}
             dot={modus === "planjahre"}
             isAnimationActive={false}
@@ -100,7 +78,7 @@ export function UmsatzKostenDiagramm({ berichte, modus, fest }: DiagrammProps) {
           <Line
             dataKey="kostenCents"
             name="Kosten"
-            stroke={farbe("kosten")}
+            stroke={diagrammFarbe("kosten")}
             strokeWidth={2}
             dot={modus === "planjahre"}
             isAnimationActive={false}
@@ -135,11 +113,11 @@ export function KontostandDiagramm({ berichte, modus, fest }: DiagrammProps) {
       chart={
         <LineChart data={daten} {...masse(fest)} margin={RAND}>
           {grundgeruest(modus, { mitNull: true })}
-          <ReferenceLine y={0} stroke="#8a8175" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
           <Line
             dataKey="standCents"
             name="Kontostand"
-            stroke={farbe("kontostand")}
+            stroke={diagrammFarbe("kontostand")}
             strokeWidth={2}
             dot={false}
             isAnimationActive={false}
@@ -149,17 +127,17 @@ export function KontostandDiagramm({ berichte, modus, fest }: DiagrammProps) {
               x={achsenName(minimum.schluessel)}
               y={minimum.standCents}
               r={6}
-              fill="#9f1d1d"
-              stroke="#fffcf8"
+              fill={farben.fehler}
+              stroke={farben.flaeche}
               strokeWidth={2}
               ifOverflow="visible"
               label={
                 modus === "monate"
-                  ? { value: "Tiefpunkt", position: "top", fill: "#9f1d1d", fontSize: 12 }
+                  ? { value: "Tiefpunkt", position: "top", fill: farben.fehler, fontSize: 12 }
                   : {
                       value: "niedrigster Jahresendstand",
                       position: "top",
-                      fill: "#9f1d1d",
+                      fill: farben.fehler,
                       fontSize: 12,
                     }
               }
@@ -186,11 +164,11 @@ export function ErgebnisDiagramm({ berichte, modus, fest }: DiagrammProps) {
       chart={
         <LineChart data={daten} {...masse(fest)} margin={RAND}>
           {grundgeruest(modus, { mitNull: true })}
-          <ReferenceLine y={0} stroke="#8a8175" strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
           <Line
             dataKey="kumuliertCents"
             name="Ergebnis nach Steuern, kumuliert"
-            stroke={farbe("ergebnis")}
+            stroke={diagrammFarbe("ergebnis")}
             strokeWidth={2}
             dot={modus === "planjahre"}
             isAnimationActive={false}
@@ -220,7 +198,7 @@ export function KostenstrukturDiagramm({ berichte, modus, fest }: DiagrammProps)
                 key={serie.id}
                 dataKey={serie.id}
                 name={serie.bezeichnung}
-                fill={farbe(serie.id)}
+                fill={diagrammFarbe(serie.id)}
                 isAnimationActive={false}
               />
             ))}
@@ -266,7 +244,7 @@ export function FinanzierungDiagramm({ berichte, modus, fest }: DiagrammProps) {
                 key={serie.id}
                 dataKey={serie.id}
                 name={serie.bezeichnung}
-                fill={farbe(serie.id)}
+                fill={diagrammFarbe(serie.id)}
                 isAnimationActive={false}
               />
             ))}
@@ -353,10 +331,6 @@ function masse(fest: DiagrammFest | undefined): { width?: number; height?: numbe
 function achsenName(schluessel: string): string {
   if (!isIsoMonth(schluessel)) return schluessel;
   return formatMonatKurz(schluessel);
-}
-
-function farbe(id: string): string {
-  return FARBE[id] ?? "#5e6872";
 }
 
 function anteileZuBalken(punkte: { schluessel: string; anteile: Kostenanteil[] }[]): {

@@ -1,22 +1,60 @@
 :root {
   color-scheme: light;
-  --bg: #f4f1ea;
-  --paper: #fffcf8;
-  --ink: #1c2430;
-  --muted: #5e6872;
-  --line: #e4ddd2;
-  --accent: #1f4d45;
-  --accent-soft: #e6f0ed;
-  --warn: #7a3e0b;
-  --warn-bg: #f8ecdf;
-  --neg: #9f1d1d;
-  --jahr: #e7f0ec;
-  --summe: #f3eee4;
-  font-family: "Segoe UI", "Source Sans 3", sans-serif;
+  --hintergrund: #f3f4f6;
+  --flaeche: #ffffff;
+  --text: #1a1d21;
+  --text-gedaempft: #4b5563;
+  --text-auf-akzent: #ffffff;
+  --linie: #d5dbe2;
+  --linie-stark: #7d8b99;
+  --akzent: #1e4a73;
+  --akzent-dunkel: #17395a;
+  --akzent-sanft: #e6eef5;
+  --fehler: #9b1c1c;
+  --fehler-hintergrund: #fdecec;
+  --warnung: #8a4b08;
+  --warnung-hintergrund: #fbf1e4;
+  --hinweis: #0f5c66;
+  --hinweis-hintergrund: #e6f3f4;
+  --zebra: #f6f7f9;
+  --hover: #eef1f5;
+  --jahr: #e7eef5;
+  --summe: #eef1f4;
+  --tabellenkopf: #f3f5f7;
+  --nullinie: #6b7380;
+  --reihe-umsatz: #1e4a73;
+  --reihe-kosten: #8a4f2b;
+  --reihe-ergebnis: #3d6f8f;
+  --reihe-raum: #3f6b5e;
+  --reihe-sonstige: #8a7040;
+  --reihe-neutral: #5c6570;
+  --reihe-zinsen: #8a4b08;
+  --reihe-steuern: #9b1c1c;
+  --reihe-waren: #6e5144;
+  --reihe-reserve: #2f5f73;
+  --schrift:
+    system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
+    "Liberation Sans", sans-serif;
+  --abstand-2xs: 0.25rem;
+  --abstand-xs: 0.4rem;
+  --abstand-sm: 0.5rem;
+  --abstand-md: 0.75rem;
+  --abstand-lg: 1rem;
+  --abstand-xl: 1.5rem;
+  --abstand-2xl: 2rem;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --schatten-popup: 0 8px 24px rgb(26 29 33 / 10%);
+  --schatten-dialog: 0 18px 48px rgb(26 29 33 / 22%);
+  --schleier: rgb(26 29 33 / 42%);
+  font-family: var(--schrift);
   font-size: 16px;
-  line-height: 1.45;
-  color: var(--ink);
-  background: var(--bg);
+  line-height: 1.5;
+  color: var(--text);
+  background: var(--hintergrund);
 }
 
 * {
@@ -35,12 +73,12 @@ select {
 }
 
 .app {
-  padding: 1rem 1rem 2rem;
+  padding: var(--abstand-lg) var(--abstand-lg) var(--abstand-2xl);
 }
 
 .fusszeile {
-  margin-top: 2rem;
-  color: var(--muted);
+  margin-top: var(--abstand-2xl);
+  color: var(--text-gedaempft);
   font-size: 0.85rem;
 }
 
@@ -48,13 +86,13 @@ select {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  gap: 1rem;
+  gap: var(--abstand-lg);
   align-items: flex-end;
 }
 
 .eyebrow {
   margin: 0 0 0.25rem;
-  color: var(--accent);
+  color: var(--akzent);
   font-size: 0.75rem;
   font-weight: 650;
   letter-spacing: 0.08em;
@@ -71,14 +109,14 @@ h1 {
 
 .meta {
   margin: 0.35rem 0 0;
-  color: var(--muted);
+  color: var(--text-gedaempft);
 }
 
 .werkzeuge {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  gap: 0.5rem;
+  gap: var(--abstand-sm);
 }
 
 .werkzeuge-reihe,
@@ -89,7 +127,7 @@ h1 {
 .saison-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
   align-items: end;
 }
 
@@ -98,9 +136,9 @@ h1 {
 .hilfe button,
 .reiter button,
 .zeit-schalter button {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: 999px;
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.75rem;
   cursor: pointer;
 }
@@ -108,9 +146,43 @@ h1 {
 .switcher button[aria-pressed="true"],
 .reiter button[aria-selected="true"],
 .zeit-schalter button[aria-pressed="true"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #f4f1ea;
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--text-auf-akzent);
+}
+
+.switcher button:hover,
+.werkzeuge-reihe button:hover,
+.hilfe button:hover,
+.reiter button:hover,
+.zeit-schalter button:hover,
+.stationen button:hover,
+.assistent-nav button:hover,
+.startwahl-aktionen button:hover,
+.vorschlag-liste button:hover,
+.feld-gruppe > button:hover,
+.karte button:hover,
+.pruef-aktionen button:hover,
+.schwellen button:hover {
+  background: var(--hover);
+}
+
+.switcher button[aria-pressed="true"]:hover,
+.reiter button[aria-selected="true"]:hover,
+.zeit-schalter button[aria-pressed="true"]:hover,
+.stationen button[aria-current="step"]:hover,
+button.primaer:hover {
+  background: var(--akzent-dunkel);
+  border-color: var(--akzent-dunkel);
+  color: var(--text-auf-akzent);
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--akzent);
+  outline-offset: 2px;
 }
 
 button:disabled {
@@ -122,9 +194,9 @@ button:disabled {
   display: inline-block;
   margin: 0.8rem 0 0;
   padding: 0.2rem 0.55rem;
-  border-radius: 999px;
-  background: var(--warn-bg);
-  color: var(--warn);
+  border-radius: var(--radius-pill);
+  background: var(--warnung-hintergrund);
+  color: var(--warnung);
   font-size: 0.85rem;
   font-weight: 650;
 }
@@ -137,22 +209,22 @@ button:disabled {
 .hinweis,
 .hilfe-text {
   margin: 0 0 0.6rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.92rem;
 }
 
 .fehler {
   margin: 0 0 0.6rem;
-  color: var(--neg);
+  color: var(--fehler);
   font-weight: 650;
 }
 
 .hilfe {
   margin-bottom: 0.6rem;
   padding: 0.7rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .hilfe label,
@@ -162,16 +234,16 @@ button:disabled {
   flex-direction: column;
   gap: 0.15rem;
   font-size: 0.75rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
 }
 
 .hilfe input,
 .hilfe select {
   width: 4.5rem;
   padding: 0.25rem 0.35rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--linie-stark);
+  border-radius: var(--radius-sm);
+  background: var(--flaeche);
 }
 
 .wachstum-form input {
@@ -181,21 +253,21 @@ button:disabled {
 .saison-titel {
   align-self: center;
   font-weight: 650;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .tabelle-scroll {
   max-height: calc(100vh - 16rem);
   min-height: 24rem;
   overflow: auto;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
+  background: var(--flaeche);
   outline: none;
 }
 
 .tabelle-scroll:focus-visible {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--akzent);
 }
 
 .tabelle {
@@ -212,9 +284,9 @@ button:disabled {
   max-width: 6.7rem;
   height: 36px;
   padding: 0 0.4rem;
-  border-right: 1px solid var(--line);
-  border-bottom: 1px solid var(--line);
-  background: var(--paper);
+  border-right: 1px solid var(--linie);
+  border-bottom: 1px solid var(--linie);
+  background: var(--flaeche);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -234,7 +306,7 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 2;
-  background: #f7f3ec;
+  background: var(--tabellenkopf);
   font-weight: 650;
   text-align: center;
 }
@@ -266,7 +338,7 @@ button:disabled {
 
 .kopf th,
 .kopf td {
-  background: var(--accent-soft);
+  background: var(--akzent-sanft);
   font-weight: 650;
 }
 
@@ -284,16 +356,16 @@ button:disabled {
 }
 
 .nachricht .spalte-name {
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-weight: 450;
 }
 
 .zahl.neg {
-  color: var(--neg);
+  color: var(--fehler);
 }
 
 .zahl.aktiv {
-  box-shadow: inset 0 0 0 2px var(--accent);
+  box-shadow: inset 0 0 0 2px var(--akzent);
 }
 
 .zahl.kann {
@@ -316,6 +388,53 @@ button:disabled {
   background: transparent;
 }
 
+.tabelle tbody tr.zebra .spalte-name,
+.tabelle tbody tr.zebra td:not(.spalte-jahr) {
+  background: var(--zebra);
+}
+
+.tabelle
+  tbody
+  tr.zeile:not(.kopf):not(.summe):not(.ergebnis):not(.pruef-fehler):not(.pruef-warnung):not(
+    .pruef-hinweis
+  ):hover
+  .spalte-name,
+.tabelle
+  tbody
+  tr.zeile:not(.kopf):not(.summe):not(.ergebnis):not(.pruef-fehler):not(.pruef-warnung):not(
+    .pruef-hinweis
+  ):hover
+  td {
+  background: var(--hover);
+}
+
+@media (max-width: 1024px) {
+  .app {
+    padding: var(--abstand-md) var(--abstand-md) var(--abstand-2xl);
+  }
+
+  .kopfzeile {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .werkzeuge {
+    align-items: flex-start;
+    width: 100%;
+  }
+
+  .tabelle-scroll {
+    max-height: calc(100vh - 22rem);
+    min-height: 16rem;
+  }
+
+  .tabelle .spalte-name {
+    width: 13.5rem;
+    min-width: 13.5rem;
+    max-width: 13.5rem;
+  }
+}
+
 @media (max-width: 720px) {
   .werkzeuge {
     align-items: flex-start;
@@ -335,15 +454,15 @@ button:disabled {
 .kpi-raster {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0.75rem;
+  gap: var(--abstand-md);
 }
 
 .kpi {
   min-width: 0;
   padding: 0.85rem 0.95rem 0.95rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .kpi.breit {
@@ -352,7 +471,7 @@ button:disabled {
 
 .kpi h3 {
   margin: 0 0 0.45rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.82rem;
   font-weight: 650;
 }
@@ -395,7 +514,7 @@ button:disabled {
 .zeit-hinweis,
 .zeit-label,
 .diagramm-notiz {
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.82rem;
 }
 
@@ -415,31 +534,31 @@ button:disabled {
 }
 
 .kpi .neg {
-  color: var(--neg);
+  color: var(--fehler);
 }
 
 .kpi-status {
   display: inline-block;
   margin: 0 0 0.4rem;
   padding: 0.12rem 0.5rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 0.8rem;
   font-weight: 700;
 }
 
 .kpi-status.ja {
-  background: var(--accent-soft);
-  color: var(--accent);
+  background: var(--akzent-sanft);
+  color: var(--akzent);
 }
 
 .kpi-status.nein {
-  background: #f8e4e4;
-  color: var(--neg);
+  background: var(--fehler-hintergrund);
+  color: var(--fehler);
 }
 
 .kpi-status.offen {
   background: var(--summe);
-  color: var(--muted);
+  color: var(--text-gedaempft);
 }
 
 .kpi-personen {
@@ -451,7 +570,7 @@ button:disabled {
 .zeit-schalter {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
   align-items: center;
   margin: 1.2rem 0 0.8rem;
 }
@@ -463,15 +582,15 @@ button:disabled {
 
 .zeit-label {
   font-weight: 650;
-  color: var(--ink);
+  color: var(--text);
 }
 
 .diagramm-karte {
   margin-bottom: 0.75rem;
   padding: 0.9rem 0.9rem 0.4rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .diagramm-karte h3 {
@@ -491,10 +610,10 @@ button:disabled {
 .diagramm-tooltip {
   min-width: 12rem;
   padding: 0.45rem 0.6rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  box-shadow: 0 8px 20px rgb(28 36 48 / 8%);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-md);
+  box-shadow: var(--schatten-popup);
 }
 
 .diagramm-tooltip p {
@@ -540,7 +659,7 @@ button:disabled {
 .stationen {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
   margin: 0 0 1rem;
 }
 
@@ -548,9 +667,9 @@ button:disabled {
   display: flex;
   align-items: center;
   gap: 0.35rem;
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: 999px;
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  border-radius: var(--radius-pill);
   padding: 0.35rem 0.7rem;
   cursor: pointer;
 }
@@ -560,32 +679,32 @@ button:disabled {
   place-items: center;
   width: 1.3rem;
   height: 1.3rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
+  border-radius: var(--radius-pill);
+  background: var(--akzent-sanft);
+  color: var(--akzent);
   font-size: 0.75rem;
   font-weight: 700;
 }
 
 .stationen button[aria-current="step"] {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #f4f1ea;
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--text-auf-akzent);
 }
 
 .stationen button[aria-current="step"] span {
-  background: #f4f1ea;
-  color: var(--accent);
+  background: var(--text-auf-akzent);
+  color: var(--akzent);
 }
 
 .stationen button.erledigt span {
-  background: var(--accent);
-  color: #f4f1ea;
+  background: var(--akzent);
+  color: var(--text-auf-akzent);
 }
 
 .stationen button[aria-current="step"].erledigt span {
-  background: #f4f1ea;
-  color: var(--accent);
+  background: var(--text-auf-akzent);
+  color: var(--akzent);
 }
 
 .stationen button[data-uebersprungen="true"] {
@@ -639,22 +758,22 @@ button:disabled {
   width: 100%;
   max-width: 24rem;
   padding: 0.4rem 0.5rem;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: #fff;
+  border: 1px solid var(--linie-stark);
+  border-radius: var(--radius-md);
+  background: var(--flaeche);
 }
 
 .feld-hilfe {
   margin: 0;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.85rem;
 }
 
 .feld-gruppe {
   padding: 0.8rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
+  background: var(--flaeche);
 }
 
 .check {
@@ -682,33 +801,33 @@ button:disabled {
 .vorschlag-liste button,
 .feld-gruppe > button,
 .karte button {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: 999px;
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  border-radius: var(--radius-pill);
   padding: 0.4rem 0.85rem;
   cursor: pointer;
 }
 
 button.primaer {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: #f4f1ea;
+  background: var(--akzent);
+  border-color: var(--akzent);
+  color: var(--text-auf-akzent);
 }
 
 .startwahl {
   max-width: 40rem;
   margin-top: 1rem;
   padding: 1.2rem;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  background: var(--paper);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-xl);
+  background: var(--flaeche);
 }
 
 .vorlage-wahl {
   margin: 0.9rem 0 0.2rem;
   padding: 0.75rem 0.9rem 0.85rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .vorlage-wahl legend {
@@ -733,7 +852,7 @@ button.primaer {
   align-items: end;
   margin: 0.4rem 0;
   padding-bottom: 0.4rem;
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid var(--linie);
 }
 
 .einordnung {
@@ -758,9 +877,9 @@ button.primaer {
   min-width: 1.35rem;
   margin-left: 0.35rem;
   padding: 0 0.35rem;
-  border-radius: 999px;
-  background: var(--line);
-  color: var(--ink);
+  border-radius: var(--radius-pill);
+  background: var(--linie);
+  color: var(--text);
   font-size: 0.75rem;
   font-weight: 750;
   line-height: 1.35rem;
@@ -768,20 +887,20 @@ button.primaer {
 
 .pruef-zaehler.pruef-fehler,
 .pruef-icon.pruef-fehler {
-  background: var(--neg);
-  color: #fff;
+  background: var(--fehler);
+  color: var(--text-auf-akzent);
 }
 
 .pruef-zaehler.pruef-warnung,
 .pruef-icon.pruef-warnung {
-  background: var(--warn);
-  color: #fff;
+  background: var(--warnung);
+  color: var(--text-auf-akzent);
 }
 
 .pruef-zaehler.pruef-hinweis,
 .pruef-icon.pruef-hinweis {
-  background: var(--accent);
-  color: #f4f1ea;
+  background: var(--hinweis);
+  color: var(--text-auf-akzent);
 }
 
 .pruef-icon {
@@ -791,7 +910,7 @@ button.primaer {
   width: 1.05rem;
   height: 1.05rem;
   margin-right: 0.35rem;
-  border-radius: 999px;
+  border-radius: var(--radius-pill);
   font-size: 0.72rem;
   font-style: normal;
   font-weight: 750;
@@ -800,29 +919,29 @@ button.primaer {
 
 .zeile.pruef-fehler th,
 .zeile.pruef-fehler td {
-  background: #fde8e8;
+  background: var(--fehler-hintergrund);
 }
 
 .zeile.pruef-warnung th,
 .zeile.pruef-warnung td {
-  background: var(--warn-bg);
+  background: var(--warnung-hintergrund);
 }
 
 .zeile.pruef-hinweis th,
 .zeile.pruef-hinweis td {
-  background: var(--accent-soft);
+  background: var(--hinweis-hintergrund);
 }
 
 .zeile.pruef-fehler .spalte-name {
-  box-shadow: inset 4px 0 0 var(--neg);
+  box-shadow: inset 4px 0 0 var(--fehler);
 }
 
 .zeile.pruef-warnung .spalte-name {
-  box-shadow: inset 4px 0 0 var(--warn);
+  box-shadow: inset 4px 0 0 var(--warnung);
 }
 
 .zeile.pruef-hinweis .spalte-name {
-  box-shadow: inset 4px 0 0 var(--accent);
+  box-shadow: inset 4px 0 0 var(--hinweis);
 }
 
 .zahl.pruef-monat-fehler,
@@ -833,7 +952,16 @@ button.primaer {
 }
 
 .zahl.pruef-monat-fehler {
-  color: var(--neg);
+  color: var(--fehler);
+  outline-color: var(--fehler);
+}
+
+.zahl.pruef-monat-warnung {
+  outline-color: var(--warnung);
+}
+
+.zahl.pruef-monat-hinweis {
+  outline-color: var(--hinweis);
 }
 
 .pruefung h2,
@@ -845,17 +973,17 @@ button.primaer {
 
 .pruef-gruppe h4 {
   margin-top: 0.6rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.95rem;
 }
 
 .pruef-karte {
   margin: 0.45rem 0;
   padding: 0.75rem 0.85rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
   border-left-width: 4px;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .pruef-karte p {
@@ -863,28 +991,28 @@ button.primaer {
 }
 
 .pruef-karte.pruef-fehler {
-  border-left-color: var(--neg);
+  border-left-color: var(--fehler);
 }
 
 .pruef-karte.pruef-warnung {
-  border-left-color: var(--warn);
+  border-left-color: var(--warnung);
 }
 
 .pruef-karte.pruef-hinweis {
-  border-left-color: var(--accent);
+  border-left-color: var(--hinweis);
 }
 
 .pruef-aktionen {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
 }
 
 .pruef-aktionen button,
 .schwellen button {
-  border: 1px solid var(--line);
-  background: var(--paper);
-  border-radius: 999px;
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  border-radius: var(--radius-pill);
   padding: 0.3rem 0.7rem;
   cursor: pointer;
 }
@@ -893,22 +1021,22 @@ button.primaer {
   position: relative;
   margin: 0.35rem 0;
   padding: 0.45rem 0.6rem;
-  border-radius: 12px;
+  border-radius: var(--radius-lg);
 }
 
 .pruef-feld.pruef-fehler {
-  background: #fde8e8;
-  outline: 2px solid var(--neg);
+  background: var(--fehler-hintergrund);
+  outline: 2px solid var(--fehler);
 }
 
 .pruef-feld.pruef-warnung {
-  background: var(--warn-bg);
-  outline: 2px solid var(--warn);
+  background: var(--warnung-hintergrund);
+  outline: 2px solid var(--warnung);
 }
 
 .pruef-feld.pruef-hinweis {
-  background: var(--accent-soft);
-  outline: 2px solid var(--accent);
+  background: var(--hinweis-hintergrund);
+  outline: 2px solid var(--hinweis);
 }
 
 .pruef-zeile {
@@ -927,9 +1055,9 @@ button.primaer {
   top: calc(100% - 0.2rem);
   width: min(28rem, 80vw);
   padding: 0.5rem 0.65rem;
-  border-radius: 8px;
-  background: var(--ink);
-  color: #f4f1ea;
+  border-radius: var(--radius-md);
+  background: var(--text);
+  color: var(--text-auf-akzent);
   font-size: 0.85rem;
   font-weight: 450;
   line-height: 1.35;
@@ -944,9 +1072,9 @@ button.primaer {
 .schwellen {
   margin-top: 0.4rem;
   padding: 0.8rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .schwellen summary {
@@ -996,42 +1124,42 @@ button.primaer {
   justify-content: space-between;
   gap: 0.6rem;
   padding: 0.75rem 0.9rem;
-  background: var(--paper);
-  border: 1px solid var(--line);
-  border-radius: 12px;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
 }
 
 .szenarien-liste li.aktiv {
-  border-color: var(--accent);
-  background: var(--accent-soft);
+  border-color: var(--akzent);
+  background: var(--akzent-sanft);
 }
 
 .szenarien-liste form {
   display: flex;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
   align-items: end;
 }
 
 .szenarien-liste input,
 .dialog input {
   padding: 0.3rem 0.45rem;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  background: #fff;
+  border: 1px solid var(--linie-stark);
+  border-radius: var(--radius-sm);
+  background: var(--flaeche);
 }
 
 .szenario-art {
   margin: 0.15rem 0;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.85rem;
 }
 
 .vergleich-scroll {
   overflow-x: auto;
   margin-bottom: 1rem;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: var(--paper);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
+  background: var(--flaeche);
 }
 
 .vergleich {
@@ -1044,14 +1172,14 @@ button.primaer {
 .vergleich caption {
   padding: 0.7rem 0.8rem 0.2rem;
   text-align: left;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-size: 0.85rem;
 }
 
 .vergleich th,
 .vergleich td {
   padding: 0.45rem 0.7rem;
-  border-top: 1px solid var(--line);
+  border-top: 1px solid var(--linie);
   text-align: right;
   vertical-align: top;
 }
@@ -1068,17 +1196,31 @@ button.primaer {
 
 .vergleich thead th span {
   display: block;
-  color: var(--muted);
+  color: var(--text-gedaempft);
   font-weight: 450;
 }
 
+.vergleich tbody tr:nth-child(even) td,
+.vergleich tbody tr:nth-child(even) th {
+  background: var(--zebra);
+}
+
+.vergleich tbody tr:hover td,
+.vergleich tbody tr:hover th {
+  background: var(--hover);
+}
+
 .vergleich th.aktiv,
-.vergleich .aktiv {
-  background: var(--accent-soft);
+.vergleich .aktiv,
+.vergleich tbody tr:nth-child(even) td.aktiv,
+.vergleich tbody tr:nth-child(even) th.aktiv,
+.vergleich tbody tr:hover td.aktiv,
+.vergleich tbody tr:hover th.aktiv {
+  background: var(--akzent-sanft);
 }
 
 .zahl-negativ {
-  color: var(--neg);
+  color: var(--fehler);
 }
 
 .dialog-hintergrund {
@@ -1088,17 +1230,18 @@ button.primaer {
   display: grid;
   place-items: center;
   padding: 1rem;
-  background: rgb(28 36 48 / 35%);
+  background: var(--schleier);
 }
 
 .dialog {
   width: min(40rem, 100%);
   max-height: calc(100vh - 2rem);
   overflow: auto;
-  padding: 1rem 1.1rem 1.1rem;
-  background: var(--paper);
-  border-radius: 16px;
-  box-shadow: 0 18px 50px rgb(28 36 48 / 25%);
+  padding: var(--abstand-lg) 1.1rem 1.1rem;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--schatten-dialog);
 }
 
 .dialog h2 {
@@ -1116,7 +1259,7 @@ button.primaer {
   flex-direction: column;
   gap: 0.2rem;
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
 }
 
 .pdf-szenario {
@@ -1128,13 +1271,13 @@ button.primaer {
 .pdf-szenario legend {
   margin-bottom: 0.35rem;
   font-size: 0.78rem;
-  color: var(--muted);
+  color: var(--text-gedaempft);
 }
 
 .pdf-szenario label {
   display: inline-flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: var(--abstand-xs);
   margin: 0 0.9rem 0.35rem 0;
 }
 
@@ -1150,7 +1293,7 @@ button.primaer {
   flex-direction: row;
   align-items: center;
   gap: 0.45rem;
-  color: var(--ink);
+  color: var(--text);
 }
 
 @media (max-width: 640px) {

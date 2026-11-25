@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Fragment, cloneElement } from "react";
 import { Document, Page, Text, View, pdf, renderToBuffer } from "@react-pdf/renderer";
 import type { ReactElement, ReactNode } from "react";
 
@@ -12,7 +12,15 @@ import type { Berichte } from "../../domain/reports/typen.ts";
 import type { ExportSzenarioVergleich } from "../../domain/szenarien/vergleich.ts";
 import type { PdfKapitelId } from "../../domain/types.ts";
 import { DiagrammSeitenInhalt } from "./pdf-diagramme.tsx";
-import { stil } from "./pdf-stil.ts";
+import {
+  DICHTE_JAHR,
+  einfacheReihen,
+  gruppenFuerSeite,
+  jahresGruppen,
+  monatsGruppen,
+  stapelHoehe,
+} from "./pdf-layout.ts";
+import { BREITE_HOCH, BREITE_QUER, NUTZ_HOCH, NUTZ_QUER, stil } from "./pdf-stil.ts";
 import { EinfacheTabelle, JahresTabelle, MonatsTabelle } from "./pdf-tabelle.tsx";
 import { ausBestand, ausBewegung, ausPosten, nurDiese, type ZellenZeile } from "./zeilen.ts";
 import {
@@ -134,27 +142,160 @@ function kopfVon(dokument: PdfDokument, name: string): string {
   return `${dokument.vorhaben} · ${name}`;
 }
 
-function monatsSeiten(
+interface TextTeil {
+  text: string;
+  schrift: number;
+  breite: number;
+  oben?: number;
+  unten?: number;
+  faktor?: number;
+}
+
+function zeileH1(text: string, breite = BREITE_HOCH): TextTeil {
+  return { text, schrift: 16, breite, unten: 6 };
+}
+
+function zeileH2(text: string, breite = BREITE_HOCH): TextTeil {
+  return { text, schrift: 11, breite, oben: 8, unten: 4 };
+}
+
+function zeileAbsatz(text: string, breite = BREITE_HOCH): TextTeil {
+  return { text, schrift: 9, breite, unten: 3, faktor: 1.35 };
+}
+
+function zeileHinweis(text: string, breite = BREITE_HOCH): TextTeil {
+  return { text, schrift: 8, breite, oben: 8, faktor: 1.35 };
+}
+
+function zeileLegende(text: string, breite = BREITE_HOCH): TextTeil {
+  return { text, schrift: 7.5, breite, unten: 4 };
+}
+
+/** Höhe über der Tabelle, einschließlich Tabellenrand und des unsichtbaren Ankers. */
+function vorspann(teile: readonly TextTeil[], mitAnker = false): number {
+  return stapelHoehe(teile) + 4 + (mitAnker ? 2 : 0);
+}
+
+function monatsVorspann(titel: string): number {
+  return vorspann(
+    [
+      zeileH1(titel, BREITE_QUER),
+      zeileH2(`Planjahr 3, September 2026 bis August 2027`, BREITE_QUER),
+      zeileLegende(MONATS_HINWEIS, BREITE_QUER),
+    ],
+    true,
+  );
+}
+
+/**
+ * Eine Tabelle je Planjahr. Jede bleibt geschlossen; passt sie nicht mehr,
+ * rückt sie auf die nächste Seite. Ist sie höher als eine Seite, wird die
+ * Schrift etwas kleiner, und nur dann in Blöcke mit wiederholtem Kopf geteilt.
+ */
+function monatsBloecke(
   schluessel: string,
   titel: string,
   zeilen: readonly ZellenZeile[],
   berichte: Berichte,
-  kopf: string,
   anker: string,
   rahmen: Rahmen,
 ): ReactElement[] {
   if (zeilen.length === 0) return [];
-  return berichte.planjahre.map((jahr) => (
-    <Blatt key={`${schluessel}-${jahr.nummer}`} quer kopf={kopf}>
-      {jahr.nummer === 1 ? <Anker id={anker} rahmen={rahmen} /> : null}
-      <Text style={stil.h1}>{titel}</Text>
-      <Text style={stil.h2}>
-        {jahr.bezeichnung}, {monatLang(jahr.vonMonat)} bis {monatLang(jahr.bisMonat)}
-      </Text>
-      <Text style={stil.legende}>{MONATS_HINWEIS}</Text>
-      <MonatsTabelle zeilen={zeilen} monate={berichte.monate} jahr={jahr} />
-    </Blatt>
-  ));
+  const layout = monatsGruppen(zeilen, monatsVorspann(titel));
+  const bloecke: ReactElement[] = [];
+  for (const jahr of berichte.planjahre) {
+    const zeitraum = `${monatLang(jahr.vonMonat)} bis ${monatLang(jahr.bisMonat)}`;
+    layout.gruppen.forEach((teil, index) => {
+      const erste = jahr.nummer === 1 && index === 0;
+      const fortsetzung = index > 0;
+      bloecke.push(
+        <View key={`${schluessel}-${jahr.nummer}-${index}`} wrap={false} style={stil.block}>
+          {erste ? <Anker id={anker} rahmen={rahmen} /> : null}
+          {erste ? <Text style={stil.h1}>{titel}</Text> : null}
+          <Text style={stil.h2}>
+            {fortsetzung
+              ? `${titel} · ${jahr.bezeichnung}, Fortsetzung, ${zeitraum}`
+              : jahr.nummer === 1
+                ? `${jahr.bezeichnung}, ${zeitraum}`
+                : `${titel} · ${jahr.bezeichnung}, ${zeitraum}`}
+          </Text>
+          <Text style={stil.legende}>{MONATS_HINWEIS}</Text>
+          <MonatsTabelle
+            zeilen={teil}
+            monate={berichte.monate}
+            jahr={jahr}
+            dichte={layout.dichte}
+          />
+        </View>,
+      );
+    });
+  }
+  return bloecke;
+}
+
+function jahresBloecke(
+  schluessel: string,
+  zeilen: readonly ZellenZeile[],
+  berichte: Berichte,
+  davor: number,
+  kopf: (fortsetzung: boolean) => ReactNode,
+  fuss?: ReactNode,
+): ReactElement[] {
+  if (zeilen.length === 0) return [];
+  const layout = jahresGruppen(zeilen, davor);
+  return layout.gruppen.map((teil, index) => {
+    const letzte = index === layout.gruppen.length - 1;
+    return (
+      <View key={`${schluessel}-${index}`} wrap={false} style={stil.block}>
+        {kopf(index > 0)}
+        <JahresTabelle zeilen={teil} jahre={berichte.planjahre} dichte={layout.dichte} />
+        {letzte ? fuss : null}
+      </View>
+    );
+  });
+}
+
+function einfacheBloecke(
+  schluessel: string,
+  kopfzeilen: readonly string[],
+  zeilen: readonly (readonly string[])[],
+  breiten: readonly number[],
+  davor: number,
+  seite: number,
+  kopf: (fortsetzung: boolean) => ReactNode,
+  fuss?: ReactNode,
+): ReactElement[] {
+  const gemessen = zeilen.map((zeile) => ({
+    bezeichnung: zeile.join(" "),
+    einzug: false,
+    zeile,
+  }));
+  const layout = gruppenFuerSeite(
+    gemessen,
+    (teil) =>
+      einfacheReihen(
+        kopfzeilen,
+        teil.map((eintrag) => eintrag.zeile),
+        breiten,
+      ),
+    DICHTE_JAHR,
+    { seite, davor },
+  );
+  return layout.gruppen.map((teil, index) => {
+    const letzte = index === layout.gruppen.length - 1;
+    return (
+      <View key={`${schluessel}-${index}`} wrap={false} style={stil.block}>
+        {kopf(index > 0)}
+        <EinfacheTabelle
+          kopf={kopfzeilen}
+          zeilen={teil.map((eintrag) => eintrag.zeile)}
+          breiten={breiten}
+          dichte={layout.dichte}
+        />
+        {letzte ? fuss : null}
+      </View>
+    );
+  });
 }
 
 function adresse(abschnitt: PdfSzenarioAbschnitt): string {
@@ -253,46 +394,72 @@ function Kennzahlen({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; ra
     ],
   ];
   const bruch = kpis.breakEven;
-  return (
-    <Blatt key={`${abschnitt.id}-kenn`} kopf={kopfVon(rahmen.dokument, abschnitt.name)}>
-      <Anker id={`${abschnitt.id}:kennzahlen`} rahmen={rahmen} />
-      <Text style={stil.h1}>Kennzahlen im Überblick</Text>
-      <Text style={stil.legende}>Beträge in Euro.</Text>
-      <EinfacheTabelle kopf={kopf} zeilen={zeilen} breiten={breiten} />
-      <Text style={stil.absatz}>
-        Break-even:{" "}
-        {bruch.erreicht && bruch.monat && bruch.planmonat
-          ? `${monatLang(bruch.monat)} (Planmonat ${bruch.planmonat})`
-          : "im Horizont nicht erreicht"}
-      </Text>
+  const breakEven =
+    bruch.erreicht && bruch.monat && bruch.planmonat
+      ? `Break-even: ${monatLang(bruch.monat)} (Planmonat ${bruch.planmonat})`
+      : "Break-even: im Horizont nicht erreicht";
+  const kontostand = `Tiefster Kontostand ${euro(kpis.tiefsterKontostandCents)}${
+    kpis.tiefsterKontostandMonat ? ` im ${monatLang(kpis.tiefsterKontostandMonat)}` : ""
+  }. Kontokorrentbedarf ${euro(kpis.kontokorrentbedarfCents)}.`;
+  const eigenkapital = `Eigenkapitalquote ${prozent(kpis.eigenkapitalquote)}. Eigenmittel ${euro(kpis.eigenmittelCents)}, Finanzierung ${euro(kpis.finanzierungCents)}.`;
+  const dienst = berichte.kennzahlen.kapitaldienstfaehigkeit.map(
+    (jahr) =>
+      `Planjahr ${jahr.planjahr}: Cashflow ${euro(jahr.cashflowCents)}, Kapitaldienst ${euro(jahr.kapitaldienstCents)}, Quote ${faktor(jahr.quote)}`,
+  );
+  const personen = kpis.tragfaehigkeit.personen.map((person) =>
+    person.planjahr2Cents == null
+      ? `${person.name}: ohne Bewertung`
+      : `${person.name}: ${euro(person.planjahr2Cents)} im Planjahr 2, ${person.tragfaehig ? "tragfähig" : "nicht tragfähig"}`,
+  );
+  const davor = vorspann([
+    zeileH1("Kennzahlen im Überblick"),
+    zeileLegende("Beträge in Euro."),
+    zeileAbsatz(breakEven),
+    zeileHinweis(bruch.definition),
+    zeileAbsatz(kontostand),
+    zeileAbsatz(eigenkapital),
+    zeileH2("Kapitaldienstfähigkeit"),
+    ...dienst.map((text) => zeileAbsatz(text)),
+    zeileH2("Tragfähigkeit"),
+    zeileAbsatz(kpis.tragfaehigkeit.hinweis),
+    ...personen.map((text) => zeileAbsatz(text)),
+  ]);
+  return einfacheBloecke(
+    `${abschnitt.id}-kenn`,
+    kopf,
+    zeilen,
+    breiten,
+    davor,
+    NUTZ_HOCH,
+    (fortsetzung) =>
+      fortsetzung ? (
+        <Text style={stil.h2}>Kennzahlen im Überblick, Fortsetzung</Text>
+      ) : (
+        <>
+          <Anker id={`${abschnitt.id}:kennzahlen`} rahmen={rahmen} />
+          <Text style={stil.h1}>Kennzahlen im Überblick</Text>
+          <Text style={stil.legende}>Beträge in Euro.</Text>
+        </>
+      ),
+    <>
+      <Text style={stil.absatz}>{breakEven}</Text>
       <Text style={stil.hinweis}>{bruch.definition}</Text>
-      <Text style={stil.absatz}>
-        Tiefster Kontostand {euro(kpis.tiefsterKontostandCents)}
-        {kpis.tiefsterKontostandMonat ? ` im ${monatLang(kpis.tiefsterKontostandMonat)}` : ""}.
-        Kontokorrentbedarf {euro(kpis.kontokorrentbedarfCents)}.
-      </Text>
-      <Text style={stil.absatz}>
-        Eigenkapitalquote {prozent(kpis.eigenkapitalquote)}. Eigenmittel{" "}
-        {euro(kpis.eigenmittelCents)}, Finanzierung {euro(kpis.finanzierungCents)}.
-      </Text>
+      <Text style={stil.absatz}>{kontostand}</Text>
+      <Text style={stil.absatz}>{eigenkapital}</Text>
       <Text style={stil.h2}>Kapitaldienstfähigkeit</Text>
-      {berichte.kennzahlen.kapitaldienstfaehigkeit.map((jahr) => (
-        <Text key={jahr.planjahr} style={stil.absatz}>
-          Planjahr {jahr.planjahr}: Cashflow {euro(jahr.cashflowCents)}, Kapitaldienst{" "}
-          {euro(jahr.kapitaldienstCents)}, Quote {faktor(jahr.quote)}
+      {dienst.map((text) => (
+        <Text key={text} style={stil.absatz}>
+          {text}
         </Text>
       ))}
       <Text style={stil.h2}>Tragfähigkeit</Text>
       <Text style={stil.absatz}>{kpis.tragfaehigkeit.hinweis}</Text>
-      {kpis.tragfaehigkeit.personen.map((person) => (
+      {kpis.tragfaehigkeit.personen.map((person, index) => (
         <Text key={person.personId} style={stil.absatz}>
-          {person.name}:{" "}
-          {person.planjahr2Cents == null
-            ? "ohne Bewertung"
-            : `${euro(person.planjahr2Cents)} im Planjahr 2, ${person.tragfaehig ? "tragfähig" : "nicht tragfähig"}`}
+          {personen[index]}
         </Text>
       ))}
-    </Blatt>
+    </>,
   );
 }
 
@@ -306,22 +473,35 @@ function Kapital({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahme
     ausPosten(berichte.kapital.summeFinanzierung, "summe"),
     ausPosten(berichte.kapital.deckung, "ergebnis"),
   ];
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-kapital`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:kapital`} rahmen={rahmen} />
-      <Text style={stil.h1}>Kapitalbedarf und Finanzierung</Text>
-      <Text style={stil.absatz}>
-        Deckung {euro(berichte.kapital.deckung.betragCents)} (
-        {deckungText(berichte.kapital.deckungArt)}).
-        {berichte.kapital.darlehenAbzugCents > 0
-          ? ` Darlehen unter Nominal ${euro(berichte.kapital.darlehenAbzugCents)}.`
-          : ""}
-      </Text>
-      <JahresTabelle zeilen={zeilen} jahre={berichte.planjahre} />
-      <Text style={stil.hinweis}>{berichte.kapital.hinweis}</Text>
-    </Blatt>,
-  ];
+  const einleitung = `Deckung ${euro(berichte.kapital.deckung.betragCents)} (${deckungText(berichte.kapital.deckungArt)}).${
+    berichte.kapital.darlehenAbzugCents > 0
+      ? ` Darlehen unter Nominal ${euro(berichte.kapital.darlehenAbzugCents)}.`
+      : ""
+  }`;
+  return jahresBloecke(
+    `${abschnitt.id}-kapital`,
+    zeilen,
+    berichte,
+    vorspann(
+      [
+        zeileH1("Kapitalbedarf und Finanzierung"),
+        zeileAbsatz(einleitung),
+        zeileHinweis(berichte.kapital.hinweis),
+      ],
+      true,
+    ),
+    (fortsetzung) =>
+      fortsetzung ? (
+        <Text style={stil.h2}>Kapitalbedarf und Finanzierung, Fortsetzung</Text>
+      ) : (
+        <>
+          <Anker id={`${abschnitt.id}:kapital`} rahmen={rahmen} />
+          <Text style={stil.h1}>Kapitalbedarf und Finanzierung</Text>
+          <Text style={stil.absatz}>{einleitung}</Text>
+        </>
+      ),
+    <Text style={stil.hinweis}>{berichte.kapital.hinweis}</Text>,
+  );
 }
 
 function kapitalMonate(abschnitt: PdfSzenarioAbschnitt, rahmen: Rahmen): ReactElement[] {
@@ -334,12 +514,11 @@ function kapitalMonate(abschnitt: PdfSzenarioAbschnitt, rahmen: Rahmen): ReactEl
     ausPosten(berichte.kapital.summeFinanzierung, "summe"),
     ausPosten(berichte.kapital.deckung, "ergebnis"),
   ];
-  return monatsSeiten(
+  return monatsBloecke(
     `${abschnitt.id}-kapital-monat`,
     "Kapitalbedarf und Finanzierung, Monate",
     zeilen,
     berichte,
-    kopfVon(rahmen.dokument, abschnitt.name),
     `${abschnitt.id}:kapital-monate`,
     rahmen,
   );
@@ -354,9 +533,18 @@ function erste(zeilen: ZellenZeile[]): ZellenZeile | undefined {
   return zeilen[0];
 }
 
-function Investitionen({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
+function Investitionen({
+  abschnitt,
+  rahmen,
+}: {
+  abschnitt: PdfSzenarioAbschnitt;
+  rahmen: Rahmen;
+}): {
+  hoch: ReactNode[];
+  quer: ReactNode[];
+} {
   const berichte = abschnitt.berichte;
-  if (!berichte) return [];
+  if (!berichte) return { hoch: [], quer: [] };
   const anlagen = berichte.anlagen.positionen.map((position) => [
     `${position.bezeichnung}\n${position.kategorie}, ${position.methode}, ${position.behandlung}`,
     euroZahl(position.aktivierungCents),
@@ -371,7 +559,6 @@ function Investitionen({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt;
     euroZahl(position.tilgung.summeCents),
     euroZahl(position.restschuld.horizontWertCents),
   ]);
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
   const afa = [
     ...berichte.anlagen.positionen.flatMap((position) => {
       const zeile = mitName(
@@ -390,50 +577,81 @@ function Investitionen({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt;
       mitName(ausBestand(position.restschuld), `${position.bezeichnung}: Restschuld`),
     ].flatMap((zeile) => (zeile ? [zeile] : [])),
   );
-  return [
-    <Blatt key={`${abschnitt.id}-invest`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:investitionen`} rahmen={rahmen} />
-      <Text style={stil.h1}>Investitionen und Abschreibungen</Text>
-      {anlagen.length === 0 ? (
-        <Text style={stil.absatz}>Keine Investitionen erfasst.</Text>
-      ) : (
-        <EinfacheTabelle
-          kopf={["Anlage", "Aktivierung", "AfA Summe", "Buchwert Ende", "Auszahlung"]}
-          zeilen={anlagen}
-          breiten={[200, 80, 80, 80, 80]}
-        />
-      )}
-      <Text style={stil.h2}>Darlehen</Text>
-      {darlehen.length === 0 ? (
+  const anlagenKopf = ["Anlage", "Aktivierung", "AfA Summe", "Buchwert Ende", "Auszahlung"];
+  const anlagenBreiten = [200, 80, 80, 80, 80];
+  const darlehenKopf = ["Darlehen", "Nominal", "Zins Summe", "Tilgung Summe", "Restschuld"];
+  const darlehenBreiten = [200, 80, 80, 80, 80];
+  const hoch: ReactNode[] =
+    anlagen.length === 0
+      ? [
+          <View key={`${abschnitt.id}-invest-leer`} wrap={false} style={stil.block}>
+            <Anker id={`${abschnitt.id}:investitionen`} rahmen={rahmen} />
+            <Text style={stil.h1}>Investitionen und Abschreibungen</Text>
+            <Text style={stil.absatz}>Keine Investitionen erfasst.</Text>
+          </View>,
+        ]
+      : einfacheBloecke(
+          `${abschnitt.id}-invest`,
+          anlagenKopf,
+          anlagen,
+          anlagenBreiten,
+          vorspann([zeileH1("Investitionen und Abschreibungen")], true),
+          NUTZ_HOCH,
+          (fortsetzung) =>
+            fortsetzung ? (
+              <Text style={stil.h2}>Investitionen und Abschreibungen, Fortsetzung</Text>
+            ) : (
+              <>
+                <Anker id={`${abschnitt.id}:investitionen`} rahmen={rahmen} />
+                <Text style={stil.h1}>Investitionen und Abschreibungen</Text>
+              </>
+            ),
+        );
+  if (darlehen.length === 0) {
+    hoch.push(
+      <View key={`${abschnitt.id}-darlehen-leer`} wrap={false} style={stil.block}>
+        <Text style={stil.h2}>Darlehen</Text>
         <Text style={stil.absatz}>Keine Darlehen erfasst.</Text>
-      ) : (
-        <EinfacheTabelle
-          kopf={["Darlehen", "Nominal", "Zins Summe", "Tilgung Summe", "Restschuld"]}
-          zeilen={darlehen}
-          breiten={[200, 80, 80, 80, 80]}
-        />
-      )}
-      <Text style={stil.hinweis}>{berichte.darlehen.hinweis}</Text>
-    </Blatt>,
-    ...monatsSeiten(
-      `${abschnitt.id}-afa`,
-      "Abschreibungen, Monate",
-      afa,
-      berichte,
-      kopf,
-      `${abschnitt.id}:investitionen-afa`,
-      rahmen,
-    ),
-    ...monatsSeiten(
-      `${abschnitt.id}-raten`,
-      "Darlehen, Monate",
-      raten,
-      berichte,
-      kopf,
-      `${abschnitt.id}:investitionen-darlehen`,
-      rahmen,
-    ),
-  ];
+        <Text style={stil.hinweis}>{berichte.darlehen.hinweis}</Text>
+      </View>,
+    );
+  } else {
+    hoch.push(
+      ...einfacheBloecke(
+        `${abschnitt.id}-darlehen`,
+        darlehenKopf,
+        darlehen,
+        darlehenBreiten,
+        vorspann([zeileH2("Darlehen"), zeileHinweis(berichte.darlehen.hinweis)], false),
+        NUTZ_HOCH,
+        (fortsetzung) => (
+          <Text style={stil.h2}>{fortsetzung ? "Darlehen, Fortsetzung" : "Darlehen"}</Text>
+        ),
+        <Text style={stil.hinweis}>{berichte.darlehen.hinweis}</Text>,
+      ),
+    );
+  }
+  return {
+    hoch,
+    quer: [
+      ...monatsBloecke(
+        `${abschnitt.id}-afa`,
+        "Abschreibungen, Monate",
+        afa,
+        berichte,
+        `${abschnitt.id}:investitionen-afa`,
+        rahmen,
+      ),
+      ...monatsBloecke(
+        `${abschnitt.id}-raten`,
+        "Darlehen, Monate",
+        raten,
+        berichte,
+        `${abschnitt.id}:investitionen-darlehen`,
+        rahmen,
+      ),
+    ],
+  };
 }
 
 function summeKosten(abschnitt: PdfSzenarioAbschnitt): ZellenZeile | null {
@@ -450,9 +668,15 @@ function summeKosten(abschnitt: PdfSzenarioAbschnitt): ZellenZeile | null {
   };
 }
 
-function Umsatz({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
+const UMSATZ_LEGENDE =
+  "Beträge in Euro. Die Summe der Kosten ist dieselbe Reihe wie im Diagramm Umsatz gegen Kosten.";
+
+function Umsatz({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }): {
+  hoch: ReactNode[];
+  quer: ReactNode[];
+} {
   const berichte = abschnitt.berichte;
-  if (!berichte) return [];
+  if (!berichte) return { hoch: [], quer: [] };
   const kosten = summeKosten(abschnitt);
   const gewaehlt = [
     findeZeile(berichte.rentabilitaet.zeilen, "umsatz"),
@@ -464,56 +688,81 @@ function Umsatz({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen
     ...(kosten ? [kosten] : []),
     ...ausBewegung([ergebnis], false),
   ];
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-umsatz`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:umsatz`} rahmen={rahmen} />
-      <Text style={stil.h1}>Umsatz und Kosten</Text>
-      <Text style={stil.legende}>
-        Beträge in Euro. Die Summe der Kosten ist dieselbe Reihe wie im Diagramm Umsatz gegen
-        Kosten.
-      </Text>
-      <JahresTabelle zeilen={zeilen} jahre={berichte.planjahre} />
-    </Blatt>,
-    ...monatsSeiten(
+  return {
+    hoch: jahresBloecke(
+      `${abschnitt.id}-umsatz`,
+      zeilen,
+      berichte,
+      vorspann([zeileH1("Umsatz und Kosten"), zeileLegende(UMSATZ_LEGENDE)], true),
+      (fortsetzung) =>
+        fortsetzung ? (
+          <Text style={stil.h2}>Umsatz und Kosten, Fortsetzung</Text>
+        ) : (
+          <>
+            <Anker id={`${abschnitt.id}:umsatz`} rahmen={rahmen} />
+            <Text style={stil.h1}>Umsatz und Kosten</Text>
+            <Text style={stil.legende}>{UMSATZ_LEGENDE}</Text>
+          </>
+        ),
+    ),
+    quer: monatsBloecke(
       `${abschnitt.id}-umsatz-monat`,
       "Umsatz und Kosten, Monate",
       zeilen,
       berichte,
-      kopf,
       `${abschnitt.id}:umsatz-monate`,
       rahmen,
     ),
-  ];
+  };
 }
 
-function Rentabilitaet({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
+function Rentabilitaet({
+  abschnitt,
+  rahmen,
+}: {
+  abschnitt: PdfSzenarioAbschnitt;
+  rahmen: Rahmen;
+}): {
+  hoch: ReactNode[];
+  quer: ReactNode[];
+} {
   const berichte = abschnitt.berichte;
-  if (!berichte) return [];
+  if (!berichte) return { hoch: [], quer: [] };
   const zeilen = ausBewegung(berichte.rentabilitaet.zeilen, true);
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-rent`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:rentabilitaet`} rahmen={rahmen} />
-      <Text style={stil.h1}>Rentabilität</Text>
-      <JahresTabelle zeilen={zeilen} jahre={berichte.planjahre} />
-      <Text style={stil.hinweis}>{berichte.rentabilitaet.hinweis}</Text>
-    </Blatt>,
-    ...monatsSeiten(
+  return {
+    hoch: jahresBloecke(
+      `${abschnitt.id}-rent`,
+      zeilen,
+      berichte,
+      vorspann([zeileH1("Rentabilität"), zeileHinweis(berichte.rentabilitaet.hinweis)], true),
+      (fortsetzung) =>
+        fortsetzung ? (
+          <Text style={stil.h2}>Rentabilität, Fortsetzung</Text>
+        ) : (
+          <>
+            <Anker id={`${abschnitt.id}:rentabilitaet`} rahmen={rahmen} />
+            <Text style={stil.h1}>Rentabilität</Text>
+          </>
+        ),
+      <Text style={stil.hinweis}>{berichte.rentabilitaet.hinweis}</Text>,
+    ),
+    quer: monatsBloecke(
       `${abschnitt.id}-rent-monat`,
       "Rentabilität, Monate",
       zeilen,
       berichte,
-      kopf,
       `${abschnitt.id}:rentabilitaet-monate`,
       rahmen,
     ),
-  ];
+  };
 }
 
-function Liquiditaet({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
+function Liquiditaet({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }): {
+  hoch: ReactNode[];
+  quer: ReactNode[];
+} {
   const berichte = abschnitt.berichte;
-  if (!berichte) return [];
+  if (!berichte) return { hoch: [], quer: [] };
   const plan = berichte.liquiditaet;
   const zeilen = [
     ausBestand(plan.anfangsbestand),
@@ -523,29 +772,36 @@ function Liquiditaet({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; r
     ...ausBewegung([plan.steuerruecklage], false),
     ausBestand(plan.steuerruecklageKumuliert),
   ];
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-liq`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:liquiditaet`} rahmen={rahmen} />
-      <Text style={stil.h1}>Liquidität</Text>
-      <Text style={stil.absatz}>
-        Tiefster Kontostand {euro(plan.tiefsterKontostandCents)}
-        {plan.tiefsterKontostandMonat ? ` im ${monatLang(plan.tiefsterKontostandMonat)}` : ""}.
-        Kontokorrentbedarf {euro(plan.kontokorrentbedarfCents)}.
-      </Text>
-      <JahresTabelle zeilen={zeilen} jahre={berichte.planjahre} />
-      <Text style={stil.hinweis}>{plan.hinweis}</Text>
-    </Blatt>,
-    ...monatsSeiten(
+  const einleitung = `Tiefster Kontostand ${euro(plan.tiefsterKontostandCents)}${
+    plan.tiefsterKontostandMonat ? ` im ${monatLang(plan.tiefsterKontostandMonat)}` : ""
+  }. Kontokorrentbedarf ${euro(plan.kontokorrentbedarfCents)}.`;
+  return {
+    hoch: jahresBloecke(
+      `${abschnitt.id}-liq`,
+      zeilen,
+      berichte,
+      vorspann([zeileH1("Liquidität"), zeileAbsatz(einleitung), zeileHinweis(plan.hinweis)], true),
+      (fortsetzung) =>
+        fortsetzung ? (
+          <Text style={stil.h2}>Liquidität, Fortsetzung</Text>
+        ) : (
+          <>
+            <Anker id={`${abschnitt.id}:liquiditaet`} rahmen={rahmen} />
+            <Text style={stil.h1}>Liquidität</Text>
+            <Text style={stil.absatz}>{einleitung}</Text>
+          </>
+        ),
+      <Text style={stil.hinweis}>{plan.hinweis}</Text>,
+    ),
+    quer: monatsBloecke(
       `${abschnitt.id}-liq-monat`,
       "Liquidität, Monate",
       zeilen,
       berichte,
-      kopf,
       `${abschnitt.id}:liquiditaet-monate`,
       rahmen,
     ),
-  ];
+  };
 }
 
 function Tragfaehigkeit({
@@ -554,9 +810,9 @@ function Tragfaehigkeit({
 }: {
   abschnitt: PdfSzenarioAbschnitt;
   rahmen: Rahmen;
-}) {
+}): { hoch: ReactNode[]; quer: ReactNode[] } {
   const berichte = abschnitt.berichte;
-  if (!berichte || !berichte.tragfaehigkeit.anwendbar) return [];
+  if (!berichte || !berichte.tragfaehigkeit.anwendbar) return { hoch: [], quer: [] };
   const zeilen = berichte.tragfaehigkeit.personen.flatMap((person) =>
     [
       mitName(
@@ -575,40 +831,65 @@ function Tragfaehigkeit({
     ].flatMap((zeile) => (zeile ? [zeile] : [])),
   );
   const kopfzeilen = ["Person", "Anteil", "Planjahr 2", "Tragfähig"];
+  const breiten = [180, 80, 140, 120];
   const personen = berichte.tragfaehigkeit.personen.map((person) => [
     person.name,
     prozent(person.anteil),
     person.planjahr2Cents == null ? "-" : euroZahl(person.planjahr2Cents),
     person.tragfaehig == null ? "-" : person.tragfaehig ? "ja" : "nein",
   ]);
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-trag`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:tragfaehigkeit`} rahmen={rahmen} />
-      <Text style={stil.h1}>Tragfähigkeit mit Lebenshaltung</Text>
-      <Text style={stil.absatz}>{berichte.tragfaehigkeit.hinweis}</Text>
-      <EinfacheTabelle kopf={kopfzeilen} zeilen={personen} breiten={[180, 80, 140, 120]} />
-      {berichte.tragfaehigkeit.personen.map((person) => (
+  return {
+    hoch: [
+      ...einfacheBloecke(
+        `${abschnitt.id}-trag`,
+        kopfzeilen,
+        personen,
+        breiten,
+        vorspann(
+          [
+            zeileH1("Tragfähigkeit mit Lebenshaltung"),
+            zeileAbsatz(berichte.tragfaehigkeit.hinweis),
+          ],
+          true,
+        ),
+        NUTZ_HOCH,
+        (fortsetzung) =>
+          fortsetzung ? (
+            <Text style={stil.h2}>Tragfähigkeit mit Lebenshaltung, Fortsetzung</Text>
+          ) : (
+            <>
+              <Anker id={`${abschnitt.id}:tragfaehigkeit`} rahmen={rahmen} />
+              <Text style={stil.h1}>Tragfähigkeit mit Lebenshaltung</Text>
+              <Text style={stil.absatz}>{berichte.tragfaehigkeit.hinweis}</Text>
+            </>
+          ),
+      ),
+      ...berichte.tragfaehigkeit.personen.map((person) => (
         <Text key={person.personId} style={stil.absatz}>
           {person.name}: {person.herleitung.join(" ")}
         </Text>
-      ))}
-    </Blatt>,
-    ...monatsSeiten(
+      )),
+    ],
+    quer: monatsBloecke(
       `${abschnitt.id}-trag-monat`,
       "Tragfähigkeit, Monate",
       zeilen,
       berichte,
-      kopf,
       `${abschnitt.id}:tragfaehigkeit-monate`,
       rahmen,
     ),
-  ];
+  };
 }
 
-function Steuern({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
+const STEUER_LEGENDE =
+  "Die festgesetzte Steuer steht je Kalenderjahr. Gezahlt wird zu den Terminen des Liquiditätsplans. Beträge in Euro.";
+
+function Steuern({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }): {
+  hoch: ReactNode[];
+  quer: ReactNode[];
+} {
   const berichte = abschnitt.berichte;
-  if (!berichte) return [];
+  if (!berichte) return { hoch: [], quer: [] };
   const kalender = berichte.rentabilitaet.kalenderjahre.map((jahr) => [
     String(jahr.jahr),
     monatLang(jahr.vonMonat),
@@ -629,44 +910,67 @@ function Steuern({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahme
     ...zahlungen,
     ...ausBewegung([berichte.liquiditaet.steuerruecklage], false),
   ];
-  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
-  return [
-    <Blatt key={`${abschnitt.id}-steuer`} kopf={kopf}>
-      <Anker id={`${abschnitt.id}:steuern`} rahmen={rahmen} />
-      <Text style={stil.h1}>Steuern</Text>
-      <Text style={stil.legende}>
-        Die festgesetzte Steuer steht je Kalenderjahr. Gezahlt wird zu den Terminen des
-        Liquiditätsplans. Beträge in Euro.
-      </Text>
-      <EinfacheTabelle
-        kopf={["Kalenderjahr", "von", "bis", "Monate", "festgesetzte Steuer"]}
-        zeilen={kalender}
-        breiten={[90, 110, 110, 70, 140]}
-      />
-      <Text style={stil.h2}>Steueraufwand und Zahlungen</Text>
-      <JahresTabelle zeilen={zeilen} jahre={berichte.planjahre} />
-      <Text style={stil.hinweis}>{berichte.rentabilitaet.hinweis}</Text>
-    </Blatt>,
-    ...monatsSeiten(
+  const kopfzeilen = ["Kalenderjahr", "von", "bis", "Monate", "festgesetzte Steuer"];
+  const breiten = [90, 110, 110, 70, 140];
+  return {
+    hoch: [
+      ...einfacheBloecke(
+        `${abschnitt.id}-steuer-jahr`,
+        kopfzeilen,
+        kalender,
+        breiten,
+        vorspann([zeileH1("Steuern"), zeileLegende(STEUER_LEGENDE)], true),
+        NUTZ_HOCH,
+        (fortsetzung) =>
+          fortsetzung ? (
+            <Text style={stil.h2}>Steuern, Fortsetzung</Text>
+          ) : (
+            <>
+              <Anker id={`${abschnitt.id}:steuern`} rahmen={rahmen} />
+              <Text style={stil.h1}>Steuern</Text>
+              <Text style={stil.legende}>{STEUER_LEGENDE}</Text>
+            </>
+          ),
+      ),
+      ...jahresBloecke(
+        `${abschnitt.id}-steuer`,
+        zeilen,
+        berichte,
+        vorspann(
+          [zeileH2("Steueraufwand und Zahlungen"), zeileHinweis(berichte.rentabilitaet.hinweis)],
+          false,
+        ),
+        (fortsetzung) => (
+          <Text style={stil.h2}>
+            {fortsetzung
+              ? "Steueraufwand und Zahlungen, Fortsetzung"
+              : "Steueraufwand und Zahlungen"}
+          </Text>
+        ),
+        <Text style={stil.hinweis}>{berichte.rentabilitaet.hinweis}</Text>,
+      ),
+    ],
+    quer: monatsBloecke(
       `${abschnitt.id}-steuer-monat`,
       "Steuern, Monate",
       zeilen,
       berichte,
-      kopf,
       `${abschnitt.id}:steuern-monate`,
       rahmen,
     ),
-  ];
+  };
 }
 
 function Diagramme({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahmen: Rahmen }) {
   if (!abschnitt.diagramme) return null;
   return (
-    <Blatt key={`${abschnitt.id}-dia`} kopf={kopfVon(rahmen.dokument, abschnitt.name)}>
+    <View key={`${abschnitt.id}-dia`}>
       <Anker id={`${abschnitt.id}:diagramme`} rahmen={rahmen} />
-      <Text style={stil.h1}>Diagramme</Text>
+      <Text style={stil.h1} minPresenceAhead={240}>
+        Diagramme
+      </Text>
       <DiagrammSeitenInhalt diagramme={abschnitt.diagramme} />
-    </Blatt>
+    </View>
   );
 }
 
@@ -677,9 +981,11 @@ function Pruefung({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahm
     { stufe: "hinweis", titel: "Hinweise" },
   ] as const;
   return (
-    <Blatt kopf={kopfVon(rahmen.dokument, abschnitt.name)}>
+    <View key={`${abschnitt.id}-pruef`}>
       <Anker id={`${abschnitt.id}:pruefung`} rahmen={rahmen} />
-      <Text style={stil.h1}>Prüfungsmeldungen</Text>
+      <Text style={stil.h1} minPresenceAhead={40}>
+        Prüfungsmeldungen
+      </Text>
       {abschnitt.meldungen.length === 0 ? (
         <Text style={stil.absatz}>Keine Meldungen.</Text>
       ) : (
@@ -688,7 +994,9 @@ function Pruefung({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahm
           if (liste.length === 0) return null;
           return (
             <View key={gruppe.stufe}>
-              <Text style={stil.h2}>{gruppe.titel}</Text>
+              <Text style={stil.h2} minPresenceAhead={32}>
+                {gruppe.titel}
+              </Text>
               {liste.map((meldung) => (
                 <View key={meldung.id} wrap={false}>
                   <Text style={stil.absatz}>
@@ -701,7 +1009,7 @@ function Pruefung({ abschnitt, rahmen }: { abschnitt: PdfSzenarioAbschnitt; rahm
           );
         })
       )}
-    </Blatt>
+    </View>
   );
 }
 
@@ -709,7 +1017,7 @@ function vergleichZelle(spalte: ExportSzenarioVergleich, wert: string): string {
   return spalte.fehlerText ? "-" : wert;
 }
 
-function Vergleich({ rahmen }: { rahmen: Rahmen }) {
+function Vergleich({ rahmen }: { rahmen: Rahmen }): { quer: boolean; knoten: ReactElement } | null {
   const spalten = rahmen.dokument.vergleich;
   if (!spalten) return null;
   const quer = spalten.length > 4;
@@ -783,52 +1091,142 @@ function Vergleich({ rahmen }: { rahmen: Rahmen }) {
     ["Warnungen", ...spalten.map((spalte) => String(spalte.warnungen))],
     ["Hinweise", ...spalten.map((spalte) => String(spalte.hinweise))],
   );
-  return (
-    <Blatt quer={quer} kopf={`${rahmen.dokument.vorhaben} · Szenarienvergleich`}>
-      <Anker id="vergleich" rahmen={rahmen} />
-      <Text style={stil.h1}>Szenarienvergleich</Text>
-      <Text style={stil.legende}>
-        Beträge in Euro. Dieselben Zahlen wie auf der Seite Szenarien.
-      </Text>
-      <EinfacheTabelle kopf={kopf} zeilen={zeilen} breiten={breiten} />
-      {spalten
-        .filter((spalte) => spalte.fehlerText)
-        .map((spalte) => (
-          <Text key={spalte.id} style={stil.hinweis}>
-            {spalte.name}: {spalte.fehlerText}
-          </Text>
-        ))}
-    </Blatt>
+  const legende = "Beträge in Euro. Dieselben Zahlen wie auf der Seite Szenarien.";
+  const fehler = spalten.filter((spalte) => spalte.fehlerText);
+  const breiteText = quer ? BREITE_QUER : BREITE_HOCH;
+  const davor = vorspann(
+    [
+      zeileH1("Szenarienvergleich", breiteText),
+      zeileLegende(legende, breiteText),
+      ...fehler.map((spalte) => zeileHinweis(`${spalte.name}: ${spalte.fehlerText}`, breiteText)),
+    ],
+    true,
   );
+  const knoten = (
+    <Fragment key="vergleich">
+      {einfacheBloecke(
+        "vergleich",
+        kopf,
+        zeilen,
+        breiten,
+        davor,
+        quer ? NUTZ_QUER : NUTZ_HOCH,
+        (fortsetzung) =>
+          fortsetzung ? (
+            <Text style={stil.h2}>Szenarienvergleich, Fortsetzung</Text>
+          ) : (
+            <>
+              <Anker id="vergleich" rahmen={rahmen} />
+              <Text style={stil.h1}>Szenarienvergleich</Text>
+              <Text style={stil.legende}>{legende}</Text>
+            </>
+          ),
+        <>
+          {fehler.map((spalte) => (
+            <Text key={spalte.id} style={stil.hinweis}>
+              {spalte.name}: {spalte.fehlerText}
+            </Text>
+          ))}
+        </>,
+      )}
+    </Fragment>
+  );
+  return { quer, knoten };
 }
 
-function szenarioSeiten(abschnitt: PdfSzenarioAbschnitt, rahmen: Rahmen): ReactElement[] {
-  const seiten: ReactElement[] = [];
+interface FlussTeil {
+  art: "fluss";
+  kopf: string;
+  quer: boolean;
+  /** Jahresübersichten. Der Vergleich hängt sich hier an, damit die kleinen Tabellen zusammenbleiben. */
+  sammeln: boolean;
+  kinder: ReactNode[];
+}
+
+interface FesteSeite {
+  art: "fest";
+  knoten: ReactElement;
+}
+
+type Teil = FlussTeil | FesteSeite;
+
+function mergen(teile: readonly Teil[]): Teil[] {
+  const aus: Teil[] = [];
+  for (const teil of teile) {
+    if (teil.art === "fluss" && teil.kinder.length === 0) continue;
+    const letzter = aus.at(-1);
+    if (teil.art === "fluss" && letzter?.art === "fluss" && letzter.quer === teil.quer) {
+      letzter.kinder.push(...teil.kinder);
+      if (teil.sammeln) letzter.sammeln = true;
+      continue;
+    }
+    if (teil.art === "fluss") aus.push({ ...teil, kinder: [...teil.kinder] });
+    else aus.push(teil);
+  }
+  return aus;
+}
+
+function teileFuerSzenario(abschnitt: PdfSzenarioAbschnitt, rahmen: Rahmen): Teil[] {
+  const kopf = kopfVon(rahmen.dokument, abschnitt.name);
+  const teile: Teil[] = [];
   const hat = (id: PdfKapitelId) => abschnitt.kapitel.includes(id);
-  if (hat("deckblatt"))
-    seiten.push(<Deckblatt key={`${abschnitt.id}-deck`} abschnitt={abschnitt} rahmen={rahmen} />);
+  if (hat("deckblatt")) {
+    teile.push({
+      art: "fest",
+      knoten: <Deckblatt key={`${abschnitt.id}-deck`} abschnitt={abschnitt} rahmen={rahmen} />,
+    });
+  }
+  const hoch: ReactNode[] = [];
+  const quer: ReactNode[] = [];
+  const nach: ReactNode[] = [];
   if (hat("kennzahlen")) {
-    const blatt = Kennzahlen({ abschnitt, rahmen });
-    if (blatt) seiten.push(blatt);
+    const knoten = Kennzahlen({ abschnitt, rahmen });
+    if (knoten) hoch.push(...knoten);
   }
   if (hat("kapital")) {
-    const blatt = Kapital({ abschnitt, rahmen });
-    seiten.push(...blatt);
-    seiten.push(...kapitalMonate(abschnitt, rahmen));
+    hoch.push(...Kapital({ abschnitt, rahmen }));
+    quer.push(...kapitalMonate(abschnitt, rahmen));
   }
-  if (hat("investitionen")) seiten.push(...Investitionen({ abschnitt, rahmen }));
-  if (hat("umsatz")) seiten.push(...Umsatz({ abschnitt, rahmen }));
-  if (hat("rentabilitaet")) seiten.push(...Rentabilitaet({ abschnitt, rahmen }));
-  if (hat("liquiditaet")) seiten.push(...Liquiditaet({ abschnitt, rahmen }));
-  if (hat("tragfaehigkeit")) seiten.push(...Tragfaehigkeit({ abschnitt, rahmen }));
-  if (hat("steuern")) seiten.push(...Steuern({ abschnitt, rahmen }));
+  if (hat("investitionen")) {
+    const invest = Investitionen({ abschnitt, rahmen });
+    hoch.push(...invest.hoch);
+    quer.push(...invest.quer);
+  }
+  if (hat("umsatz")) {
+    const umsatz = Umsatz({ abschnitt, rahmen });
+    hoch.push(...umsatz.hoch);
+    quer.push(...umsatz.quer);
+  }
+  if (hat("rentabilitaet")) {
+    const rent = Rentabilitaet({ abschnitt, rahmen });
+    hoch.push(...rent.hoch);
+    quer.push(...rent.quer);
+  }
+  if (hat("liquiditaet")) {
+    const liquiditaet = Liquiditaet({ abschnitt, rahmen });
+    hoch.push(...liquiditaet.hoch);
+    quer.push(...liquiditaet.quer);
+  }
+  if (hat("tragfaehigkeit")) {
+    const trag = Tragfaehigkeit({ abschnitt, rahmen });
+    hoch.push(...trag.hoch);
+    quer.push(...trag.quer);
+  }
+  if (hat("steuern")) {
+    const steuern = Steuern({ abschnitt, rahmen });
+    hoch.push(...steuern.hoch);
+    quer.push(...steuern.quer);
+  }
   if (hat("diagramme")) {
-    const blatt = Diagramme({ abschnitt, rahmen });
-    if (blatt) seiten.push(blatt);
+    const diagramme = Diagramme({ abschnitt, rahmen });
+    if (diagramme) nach.push(diagramme);
   }
-  if (hat("pruefung"))
-    seiten.push(<Pruefung key={`${abschnitt.id}-pruef`} abschnitt={abschnitt} rahmen={rahmen} />);
-  return seiten;
+  if (hat("pruefung")) nach.push(Pruefung({ abschnitt, rahmen }));
+  if (hoch.length > 0) teile.push({ art: "fluss", kopf, quer: false, sammeln: true, kinder: hoch });
+  if (quer.length > 0) teile.push({ art: "fluss", kopf, quer: true, sammeln: false, kinder: quer });
+  if (nach.length > 0)
+    teile.push({ art: "fluss", kopf, quer: false, sammeln: false, kinder: nach });
+  return teile;
 }
 
 function PdfPlan({
@@ -841,6 +1239,34 @@ function PdfPlan({
   merken: Rahmen["merken"];
 }) {
   const rahmen: Rahmen = { dokument, seiten, merken };
+  const teile: Teil[] = [
+    { art: "fest", knoten: <Inhalt rahmen={rahmen} /> },
+    ...dokument.szenarien.flatMap((abschnitt) => teileFuerSzenario(abschnitt, rahmen)),
+  ];
+  const vergleich = Vergleich({ rahmen });
+  if (vergleich) {
+    if (vergleich.quer) {
+      teile.push({
+        art: "fluss",
+        kopf: `${dokument.vorhaben} · Szenarienvergleich`,
+        quer: true,
+        sammeln: false,
+        kinder: [vergleich.knoten],
+      });
+    } else {
+      const ziel = [...teile].reverse().find((teil) => teil.art === "fluss" && teil.sammeln);
+      if (ziel?.art === "fluss") ziel.kinder.push(vergleich.knoten);
+      else {
+        teile.push({
+          art: "fluss",
+          kopf: `${dokument.vorhaben} · Szenarienvergleich`,
+          quer: false,
+          sammeln: true,
+          kinder: [vergleich.knoten],
+        });
+      }
+    }
+  }
   const leer =
     dokument.szenarien.every((abschnitt) => abschnitt.kapitel.length === 0) && !dokument.vergleich;
   return (
@@ -851,9 +1277,15 @@ function PdfPlan({
       language="de"
       subject="Finanzplan, im Browser erstellt"
     >
-      <Inhalt rahmen={rahmen} />
-      {dokument.szenarien.flatMap((abschnitt) => szenarioSeiten(abschnitt, rahmen))}
-      {dokument.vergleich ? <Vergleich rahmen={rahmen} /> : null}
+      {mergen(teile).map((teil, index) =>
+        teil.art === "fest" ? (
+          cloneElement(teil.knoten, { key: `seite-${index}` })
+        ) : (
+          <Blatt key={`fluss-${index}`} kopf={teil.kopf} quer={teil.quer}>
+            {teil.kinder}
+          </Blatt>
+        ),
+      )}
       {leer ? (
         <Blatt kopf={`${dokument.vorhaben} · Finanzplan`}>
           <Text style={stil.h1}>Keine Kapitel ausgewählt</Text>
@@ -869,6 +1301,11 @@ function PdfPlan({
 
 function zeichne(dokument: PdfDokument, seiten: Record<string, number>, merken: Rahmen["merken"]) {
   return <PdfPlan dokument={dokument} seiten={seiten} merken={merken} />;
+}
+
+/** Elementbaum des PDFs, noch ohne Schrift und Seitenumbruch. Die Tests lesen daran die Tabellen ab. */
+export function pdfDokumentBaum(dokument: PdfDokument) {
+  return zeichne(dokument, {}, null);
 }
 
 /** Zwei Durchläufe, damit das Inhaltsverzeichnis die Seitenzahlen kennt. */

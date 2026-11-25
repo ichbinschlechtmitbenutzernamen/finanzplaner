@@ -4,6 +4,8 @@ Finanzplan über 36 Monate für Gründerinnen und Gründer in Deutschland. Versi
 
 Die Anwendung: <https://ichbinschlechtmitbenutzernamen.github.io/finanzplaner/>
 
+Die Oberfläche heißt Finanzplaner, in der Kopfzeile, im Fenstertitel und als Monogramm F im Favicon. Farben, Schrift, Abstände und Schatten kommen aus zentralen Design-Tokens. Im PDF bleiben Tabellen zusammen: passt eine Tabelle nicht mehr auf den Rest der Seite, rückt sie geschlossen weiter.
+
 ## Kurzanleitung
 
 **Plan anlegen.** „Neuer Plan“ fragt zuerst nach einer Branchenvorlage: Ohne Vorlage, Handwerk, Gastronomie oder Einzelhandel. Die Vorlage setzt typische Bezeichnungen für Umsatz, Wareneinsatz, Personal, laufende Kosten und Investitionen. Beträge bleiben leer und lassen sich später nicht nachladen. Danach die Wahl: Assistent oder Tabelle.
