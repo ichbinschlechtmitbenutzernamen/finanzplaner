@@ -26,6 +26,16 @@ function werkzeugeDa(): boolean {
 
 const vorhanden = werkzeugeDa();
 
+function zeileCents(berichte: ReturnType<typeof erstelleBerichte>, id: string): number[] {
+  const alle = [
+    ...(berichte.liquiditaet.einzahlungen.unterzeilen ?? []),
+    ...(berichte.liquiditaet.auszahlungen.unterzeilen ?? []),
+  ];
+  const zeile = alle.find((eintrag) => eintrag.id === id);
+  if (!zeile) throw new Error(`Zeile ${id} fehlt.`);
+  return [...zeile.monateCents];
+}
+
 async function rechneNeu(quelle: string, ausgabe: string): Promise<void> {
   execFileSync(
     "python3",
@@ -110,18 +120,67 @@ resolver.resolve("uno:socket,host=127.0.0.1,port=${PORT};urp;StarOffice.Componen
         ],
         [
           "Rentabilität",
+          "Wareneinsatz",
+          berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "wareneinsatz")!.monateCents,
+        ],
+        [
+          "Rentabilität",
+          "Personal",
+          berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "personal")!.monateCents,
+        ],
+        [
+          "Rentabilität",
+          "Steuern",
+          berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "steuern")!.monateCents,
+        ],
+        [
+          "Rentabilität",
           "Ergebnis nach Steuern",
           berichte.rentabilitaet.zeilen.find((zeile) => zeile.id === "ergebnis-nach-steuern")!
             .monateCents,
         ],
+        ["Liquidität", "Kundenzahlungen", zeileCents(berichte, "einzahlung-kunden")],
+        ["Liquidität", "Darlehensauszahlungen", zeileCents(berichte, "einzahlung-darlehen")],
+        ["Liquidität", "Einzahlungen", berichte.liquiditaet.einzahlungen.monateCents],
+        ["Liquidität", "Investitionen", zeileCents(berichte, "auszahlung-investitionen")],
+        ["Liquidität", "Zinsen", zeileCents(berichte, "auszahlung-zinsen")],
+        ["Liquidität", "Tilgung", zeileCents(berichte, "auszahlung-tilgung")],
+        ["Liquidität", "Auszahlungen", berichte.liquiditaet.auszahlungen.monateCents],
         ["Liquidität", "Endbestand", berichte.liquiditaet.endbestand.monateCents],
       ];
+      const entnahmen = berichte.rentabilitaet.zeilen.find(
+        (zeile) => zeile.id === "privatentnahmen",
+      );
+      if (entnahmen) paare.push(["Rentabilität", "Privatentnahmen", entnahmen.monateCents]);
+      const person = berichte.tragfaehigkeit.personen[0];
+      if (person) {
+        for (const block of person.bloecke) {
+          if (block.id.endsWith("-abgaben")) continue;
+          paare.push(["Tragfähigkeit", block.bezeichnung, block.monateCents]);
+          for (const posten of block.unterzeilen ?? []) {
+            paare.push(["Tragfähigkeit", posten.bezeichnung, posten.monateCents]);
+          }
+        }
+        const abgaben = person.bloecke.find((block) => block.id.endsWith("-abgaben"));
+        for (const unter of abgaben?.unterzeilen ?? []) {
+          paare.push(["Tragfähigkeit", unter.bezeichnung, unter.monateCents]);
+        }
+        paare.push([
+          "Tragfähigkeit",
+          "Verfügbares Einkommen",
+          person.verfuegbaresEinkommen.monateCents,
+        ]);
+      }
+      const stand = new Map<string, number>();
       for (const [blattName, label, cents] of paare) {
         const sheet = workbook.getWorksheet(blattName);
+        const nach = stand.get(blattName) ?? 0;
         let nummer = 0;
         sheet?.eachRow((row, index) => {
-          if (row.getCell(1).text === label && nummer === 0) nummer = index;
+          if (nummer === 0 && index > nach && row.getCell(1).text === label) nummer = index;
         });
+        stand.set(blattName, nummer);
+        expect(nummer, `${beispiel.label} ${blattName} ${label}`).toBeGreaterThan(0);
         for (let index = 0; index < 36; index += 1) {
           const zelle = sheet?.getRow(nummer).getCell(berichtSpalte(index));
           const wert = zelle?.value;

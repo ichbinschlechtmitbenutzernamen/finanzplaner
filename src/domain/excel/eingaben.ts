@@ -289,10 +289,19 @@ export function baueEingaben(
 
   const steuer = plan.parameter.steuer;
   const tarif = steuer.einkommensteuerTarif;
+  const vorhaben = text("Vorhaben", plan.stammdaten.firmenname || plan.stammdaten.planName);
+  const rechtsform = text("Rechtsform", plan.stammdaten.rechtsform ?? "");
+  const bundesland = text("Bundesland", plan.stammdaten.bundesland ?? "");
+  feld("Branche", { text: plan.stammdaten.branche ?? "", stil: "normal" });
+  feld("Branchenschlüssel", { text: plan.stammdaten.branchenschluessel ?? "", stil: "normal" });
+  feld("Branchenvorlage", {
+    text: plan.stammdaten.angewendeteVorlage?.name ?? "",
+    stil: "normal",
+  });
   const skalare: Skalare = {
-    vorhaben: text("Vorhaben", plan.stammdaten.firmenname || plan.stammdaten.planName),
-    rechtsform: text("Rechtsform", plan.stammdaten.rechtsform ?? ""),
-    bundesland: text("Bundesland", plan.stammdaten.bundesland ?? ""),
+    vorhaben,
+    rechtsform,
+    bundesland,
     startJahr: zahl("Startjahr", Number(start.slice(0, 4)), "ganzzahl"),
     startMonat: zahl("Startmonat", Number(start.slice(5, 7)), "ganzzahl"),
     hebesatz: leerOderZahl(

@@ -38,6 +38,12 @@ select {
   padding: 1rem 1rem 2rem;
 }
 
+.fusszeile {
+  margin-top: 2rem;
+  color: var(--muted);
+  font-size: 0.85rem;
+}
+
 .kopfzeile {
   display: flex;
   flex-wrap: wrap;

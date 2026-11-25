@@ -317,7 +317,7 @@ export function PlanArbeitsflaeche({
     <div className="app">
       <header className="kopfzeile">
         <div>
-          <p className="eyebrow">Schritt 12 · Private Blöcke und Vorlagen</p>
+          <p className="eyebrow">Finanzplan über 36 Monate</p>
           <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
           <p className="meta">
             {ansicht.stammdaten.planName}
@@ -546,6 +546,7 @@ export function PlanArbeitsflaeche({
           }
         />
       ) : null}
+      <footer className="fusszeile">Finanzplaner 1.0</footer>
     </div>
   );
 }

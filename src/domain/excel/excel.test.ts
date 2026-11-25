@@ -170,12 +170,18 @@ describe("Excel-Export", () => {
     expect(zeilen).toContain("Kranken- und Pflegeversicherung");
     expect(zeilen).toContain("Einkommensteuerrücklage");
     const eingaben = elektro.workbook.getWorksheet("Eingaben")!;
-    const faktorZeile = eingaben
-      .getColumn(1)
-      .values.findIndex(
-        (wert) => typeof wert === "string" && wert.includes("Faktor Planjahr 2 und 3"),
-      );
+    const spalte = eingaben.getColumn(1).values;
+    const faktorZeile = spalte.findIndex(
+      (wert) => typeof wert === "string" && wert.includes("Faktor Planjahr 2 und 3"),
+    );
     expect(faktorZeile).toBeGreaterThan(0);
+    expect(spalte).toContain("Branche");
+    expect(spalte).toContain("Branchenschlüssel");
+    expect(spalte).toContain("Branchenvorlage");
+    expect(eingaben.getRow(spalte.indexOf("Branchenschlüssel")).getCell(2).text).toBe(
+      "elektroinstallation",
+    );
+    expect(eingaben.getRow(spalte.indexOf("Branchenvorlage")).getCell(2).text).toBe("");
     const fehler = meldungenFuerExport(
       beispielElektro,
       erstelleBerichte(beispielElektro, berechnePlan(beispielElektro)),

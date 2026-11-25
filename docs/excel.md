@@ -11,7 +11,7 @@ Im Dialog sind die Blätter an- und abwählbar. Standardmäßig sind alle an. Di
 Das Eingabeblatt und die Hilfsblätter sind immer in der Datei, sobald ein Rechenblatt gewählt ist, auch wenn die Eingaben im Dialog abgewählt wurden. Prüfung und Szenarienvergleich allein brauchen sie nicht.
 
 - Übersicht: Kennzahlen. Hat das Szenario mindestens einen Fehler, steht ein Vermerk mit der Anzahl. Warnungen allein lösen ihn nicht aus.
-- Eingaben: Stammdaten, Rechtsform, Personen, Hebel, Steuerparameter, Sozialversicherungsrechengrößen, Umsatz, Personal, laufende Kosten, Investitionen, Finanzierung, private Blöcke mit Posten und Planjahrfaktoren, die Annahmen für Block 6. Gelbe Zellen mit blauer Schrift sind Eingaben. Blocksummen, Faktoren und Block 6 sind Formeln.
+- Eingaben: Stammdaten, Rechtsform, Branche, Branchenschlüssel und die beim Anlegen gewählte Branchenvorlage, Personen, Hebel, Steuerparameter, Sozialversicherungsrechengrößen, Umsatz, Personal, laufende Kosten, Investitionen, Finanzierung, private Blöcke mit Posten und Planjahrfaktoren, die Annahmen für Block 6. Gelbe Zellen mit blauer Schrift sind Eingaben. Branche, Schlüssel und Vorlage stehen nur zur Kenntnis, sie treiben keine Formel. Blocksummen, Faktoren und Block 6 sind Formeln.
 - Kapitalbedarf und Finanzierung
 - Investitionen und AfA, dazu die Darlehen. Der Reiter im Dialog heißt „Investitionen und Abschreibungen“. Der Blattname ist kürzer, weil Excel höchstens 31 Zeichen zulässt.
 - Umsatz und Kosten
@@ -46,9 +46,9 @@ Bei einer Abweichung stehen die Hebel als Eingabezellen und gehen in die Formeln
 
 ## Abgleich
 
-Geprüft wurde mit LibreOffice Calc, `calculateAll` über die Programmierschnittstelle, nicht mit `--convert-to`: das Umspeichern allein lässt die gespeicherten Ergebnisse stehen. Für Blitzweg Elektrotechnik, Café Leseecke, Hafenlicht GmbH und Studio Nordlicht ist die größte Abweichung nach der Neuberechnung 0,00 Euro, auf den Cent, bei Umsatz, Ergebnis nach Steuern, Steueraufwand, Kundenzahlungen, Darlehen, Zinsen, Tilgung, Investitionen, Ein- und Auszahlungen und dem Endbestand. Dasselbe gilt für die Hebel Vorsichtig und Optimistisch von Blitzweg beim Ergebnis nach Steuern.
+Geprüft wurde mit LibreOffice Calc, `calculateAll` über die Programmierschnittstelle, nicht mit `--convert-to`: das Umspeichern allein lässt die gespeicherten Ergebnisse stehen. Für die Fassung 1.0 wurden Blitzweg Elektrotechnik, Café Leseecke, Hafenlicht GmbH und Studio Nordlicht erneut gerechnet, einschließlich der privaten Blöcke, ihrer Posten, der Kranken-, Pflege-, Renten- und Arbeitslosenversicherung, der Einkommensteuerrücklage und des verfügbaren Einkommens. Die größte Abweichung ist bei jedem Beispiel 0,00 Euro. Die Hebel Vorsichtig und Optimistisch von Blitzweg lagen beim Ergebnis nach Steuern schon zuvor auf dem Cent; die Formeln dafür sind unverändert.
 
-Die Toleranz, die der Export zulässt, ist 1 Euro. Die Beispiele bleiben darunter.
+Abweichungen über 1 Cent wären zu beheben. Die Beispiele bleiben darunter.
 
 ## Bewusst so
 
