@@ -32,18 +32,8 @@ import {
   type SzenarioHebel,
 } from "../domain/types.ts";
 import type { PlanAendern } from "./assistent/typen.ts";
+import { DIAGRAMM_PALETTE, farben } from "./design-tokens.ts";
 import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from "./format.ts";
-
-const FARBEN = [
-  "#1f4d45",
-  "#b8612e",
-  "#245f8a",
-  "#6e8b74",
-  "#7a3e0b",
-  "#5c6b7a",
-  "#9f1d1d",
-  "#c4a035",
-];
 
 interface DialogState {
   id: string;
@@ -446,29 +436,29 @@ function KontostandVergleich({ spalten }: { spalten: ExportSzenarioVergleich[] }
       <div className="diagramm-flaeche">
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={daten} margin={{ top: 28, right: 28, left: 0, bottom: 0 }}>
-            <CartesianGrid stroke="#e4ddd2" vertical={false} />
+            <CartesianGrid stroke={farben.linie} vertical={false} />
             <XAxis
               dataKey="name"
-              tick={{ fill: "#5e6872", fontSize: 12 }}
+              tick={{ fill: farben.textGedaempft, fontSize: 12 }}
               interval="preserveStartEnd"
               minTickGap={20}
-              axisLine={{ stroke: "#e4ddd2" }}
+              axisLine={{ stroke: farben.linie }}
               tickLine={false}
             />
             <YAxis
-              tick={{ fill: "#5e6872", fontSize: 12 }}
+              tick={{ fill: farben.textGedaempft, fontSize: 12 }}
               width={78}
               tickFormatter={(wert) => formatEuroAchse(Number(wert))}
               axisLine={false}
               tickLine={false}
             />
-            <ReferenceLine y={0} stroke="#8a8175" strokeDasharray="4 4" />
+            <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
             {spalten.map((spalte, index) => (
               <Line
                 key={spalte.id}
                 dataKey={spalte.id}
                 name={spalte.name}
-                stroke={FARBEN[index % FARBEN.length]}
+                stroke={DIAGRAMM_PALETTE[index % DIAGRAMM_PALETTE.length]}
                 strokeWidth={2}
                 dot={false}
                 isAnimationActive={false}

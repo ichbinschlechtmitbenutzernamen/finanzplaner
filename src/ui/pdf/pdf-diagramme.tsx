@@ -3,6 +3,7 @@ import { Circle, Line, Polyline, Rect, Svg, Text, View } from "@react-pdf/render
 
 void React;
 import type { PdfDiagramme } from "../../domain/pdf/modell.ts";
+import { diagrammFarbe, farben } from "../design-tokens.ts";
 import { HOCH_BREITE, stil } from "./pdf-stil.ts";
 import { achse, euro, monatKurz, monatLang } from "./zahlen.ts";
 
@@ -13,31 +14,8 @@ const RECHTS = 10;
 const OBEN = 8;
 const UNTEN = 26;
 
-const FARBE: Record<string, string> = {
-  umsatz: "#1f4d45",
-  kosten: "#b8612e",
-  kontostand: "#1f4d45",
-  ergebnis: "#245f8a",
-  wareneinsatz: "#b8612e",
-  personal: "#1f4d45",
-  raumkosten: "#6e8b74",
-  "sonstige-kosten": "#c4a035",
-  abschreibungen: "#5c6b7a",
-  zinsen: "#7a3e0b",
-  steuern: "#9f1d1d",
-  eigenmittel: "#1f4d45",
-  darlehen: "#245f8a",
-  zuschuesse: "#6e8b74",
-  investitionen: "#b8612e",
-  gruendungskosten: "#7a3e0b",
-  anlaufkosten: "#c4a035",
-  "waren-erstbestand": "#8a5a44",
-  betriebsmittel: "#5c6b7a",
-  reserve: "#3d6b8a",
-};
-
 function farbe(id: string): string {
-  return FARBE[id] ?? "#5c6b7a";
+  return diagrammFarbe(id);
 }
 
 interface Bereich {
@@ -94,7 +72,7 @@ function SvgText({
       x={x}
       y={y}
       textAnchor={anker}
-      fill="#5e6872"
+      fill={farben.textGedaempft}
       style={{ fontSize: 7, fontFamily: "Finanz" } as never}
     >
       {children}
@@ -122,7 +100,7 @@ function Achsen({
             x2={BREITE - RECHTS}
             y1={y}
             y2={y}
-            stroke="#e4ddd2"
+            stroke={farben.linie}
             strokeWidth={0.4}
           />
         );
@@ -133,7 +111,7 @@ function Achsen({
           x2={BREITE - RECHTS}
           y1={nullY}
           y2={nullY}
-          stroke="#8a8175"
+          stroke={farben.nullinie}
           strokeWidth={0.8}
           strokeDasharray="3 2"
         />
@@ -190,8 +168,8 @@ function LinienDiagramm({
           cx={xVon(markierung.index, beschriftungen.length)}
           cy={yVon(serien[0]?.werte[markierung.index] ?? 0, bereich)}
           r={3.2}
-          fill="#9f1d1d"
-          stroke="#fffcf8"
+          fill={farben.fehler}
+          stroke={farben.flaeche}
           strokeWidth={1}
         />
       ) : null}
