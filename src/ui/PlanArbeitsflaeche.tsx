@@ -1,12 +1,4 @@
-import {
-  useDeferredValue,
-  useEffect,
-  useMemo,
-  useReducer,
-  useRef,
-  useState,
-  type KeyboardEvent,
-} from "react";
+import { useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ExcelDialog } from "./excel/ExcelDialog.tsx";
 import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
@@ -47,28 +39,24 @@ import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
 import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
 import { Assistent, Startauswahl } from "./Assistent.tsx";
 import { starteMitVorlage, type BranchenvorlageId } from "../domain/vorlagen/branchen.ts";
+import {
+  HAUPTREITER,
+  hatUnterreiter,
+  hauptVon,
+  reiterVon,
+  type HauptId,
+  type ReiterId,
+} from "./navigation.ts";
 import { Pruefung, zaehlerStufe } from "./Pruefung.tsx";
 import { PruefAnbieter } from "./pruef-marke.tsx";
+import { Reiterleiste } from "./Reiterleiste.tsx";
 import { Szenarien, SzenarioHinweis, SzenarioUmschalter } from "./Szenarien.tsx";
 import { Ueberblick } from "./Ueberblick.tsx";
 import { berichtZeilen, type BerichtReiter } from "./zeilen-bericht.ts";
 import { eingabeZeilen, planMonate } from "./zeilen-eingabe.ts";
 import type { TabellenZeile } from "./zeilen-modell.ts";
 
-export const REITER = [
-  { id: "assistent", label: "Assistent" },
-  { id: "ueberblick", label: "Überblick" },
-  { id: "szenarien", label: "Szenarien" },
-  { id: "pruefung", label: "Prüfung" },
-  { id: "eingaben", label: "Eingaben" },
-  { id: "rentabilitaet", label: "Rentabilitätsvorschau" },
-  { id: "liquiditaet", label: "Liquiditätsplan" },
-  { id: "kapital", label: "Kapitalbedarf und Finanzierung" },
-  { id: "anlagen", label: "Investitionen und Darlehen" },
-  { id: "tragfaehigkeit", label: "Privatbedarf und Tragfähigkeit" },
-] as const;
-
-export type ReiterId = (typeof REITER)[number]["id"];
+export { REITER, type ReiterId } from "./navigation.ts";
 
 type Sprung =
   | { art: "tabelle"; ansicht: TabellenAnsicht; zeileId: string; monat?: string }
@@ -128,6 +116,9 @@ export function PlanArbeitsflaeche({
   const [sprung, setSprung] = useState<Sprung | null>(null);
   const sprungAngewandt = useRef("");
   const weitere = useRef<HTMLDetailsElement>(null);
+  const menue = useRef<HTMLDetailsElement>(null);
+  const letzterUnter = useRef<Partial<Record<HauptId, ReiterId>>>({});
+  const kompakt = useKompakt();
   const [jahreOffen, setJahreOffen] = useState<{ id: string; nummern: ReadonlySet<number> }>(
     () => ({
       id: anfangsplan.id,
@@ -394,122 +385,192 @@ export function PlanArbeitsflaeche({
     onReiter(id);
   }
 
-  function onReiterTaste(event: KeyboardEvent<HTMLDivElement>) {
-    if (event.altKey || event.ctrlKey || event.metaKey) return;
-    if (
-      event.key !== "ArrowRight" &&
-      event.key !== "ArrowLeft" &&
-      event.key !== "Home" &&
-      event.key !== "End"
-    ) {
-      return;
-    }
-    const zielElement = event.target;
-    if (!(zielElement instanceof HTMLElement) || zielElement.getAttribute("role") !== "tab") return;
-    const index = REITER.findIndex((eintrag) => zielElement.id === `reiter-${eintrag.id}`);
-    if (index < 0) return;
-    event.preventDefault();
-    const letzter = REITER.length - 1;
-    const naechster =
-      event.key === "Home"
-        ? 0
-        : event.key === "End"
-          ? letzter
-          : event.key === "ArrowRight"
-            ? (index + 1) % REITER.length
-            : (index - 1 + REITER.length) % REITER.length;
-    const eintrag = REITER[naechster];
-    if (!eintrag) return;
-    waehleReiter(eintrag.id);
-    document.getElementById(`reiter-${eintrag.id}`)?.focus();
+  function waehleHaupt(id: HauptId) {
+    const haupt = HAUPTREITER.find((eintrag) => eintrag.id === id);
+    if (!haupt) return;
+    const kind = haupt.kinder[0];
+    if (!kind) return;
+    const ziel = hatUnterreiter(haupt) ? (letzterUnter.current[id] ?? kind) : kind;
+    waehleReiter(ziel);
   }
+
+  const aktiverHaupt = hauptVon(reiter);
+  useEffect(() => {
+    if (!startwahl) letzterUnter.current[aktiverHaupt.id] = reiter;
+  }, [startwahl, aktiverHaupt.id, reiter]);
+  const unterSichtbar = !startwahl && hatUnterreiter(aktiverHaupt);
+  const szenarioName = aktivesSzenario(plan)?.name ?? "Basisplan";
+  const planTitel = ansicht.stammdaten.planName || ansicht.stammdaten.firmenname || "Finanzplaner";
+
+  const planWahl = (
+    <div className="switcher" role="group" aria-label="Plan wählen">
+      {onStart ? (
+        <button type="button" onClick={onStart}>
+          Startseite
+        </button>
+      ) : null}
+      <button type="button" aria-pressed={beispielId === "neu"} onClick={onNeu}>
+        Neuer Plan
+      </button>
+      {beispiele.map((beispiel) => (
+        <button
+          key={beispiel.id}
+          type="button"
+          aria-pressed={beispiel.id === beispielId}
+          onClick={() => onBeispiel(beispiel.id)}
+        >
+          {beispiel.label}
+        </button>
+      ))}
+    </div>
+  );
+
+  const dateiAktionen = (
+    <>
+      <button
+        type="button"
+        onClick={() => dispatch({ typ: "zurueck" })}
+        disabled={verlauf.vergangenheit.length === 0}
+      >
+        Rückgängig
+      </button>
+      <button
+        type="button"
+        onClick={() => dispatch({ typ: "vor" })}
+        disabled={verlauf.zukunft.length === 0}
+      >
+        Wiederholen
+      </button>
+      {plan.stammdaten.beispiel ? null : (
+        <>
+          <button type="button" onClick={speicher.sichern}>
+            Plan sichern
+          </button>
+          <button type="button" onClick={speicher.laden}>
+            Plan laden
+          </button>
+        </>
+      )}
+      <button type="button" onClick={() => setPdfOffen(true)}>
+        PDF erstellen
+      </button>
+      <button type="button" onClick={() => setExcelOffen(true)}>
+        Excel erstellen
+      </button>
+    </>
+  );
+
+  const hauptKnopfe = HAUPTREITER.map((eintrag) => {
+    const allein = !hatUnterreiter(eintrag);
+    const kind = eintrag.kinder[0];
+    return {
+      id: eintrag.id,
+      buttonId: allein && kind ? `reiter-${kind}` : `haupt-${eintrag.id}`,
+      ausgewaehlt: !startwahl && aktiverHaupt.id === eintrag.id,
+      tabStop: startwahl ? aktiverHaupt.id === eintrag.id : aktiverHaupt.id === eintrag.id,
+      onWaehlen: () => waehleHaupt(eintrag.id),
+      children:
+        eintrag.id === "pruefen" ? (
+          <>
+            {eintrag.label}
+            <span
+              className={`pruef-zaehler pruef-${zaehlerStufe(meldungen)}`}
+              aria-label={`${meldungen.length} ${meldungen.length === 1 ? "Meldung" : "Meldungen"}`}
+            >
+              {meldungen.length}
+            </span>
+          </>
+        ) : (
+          eintrag.label
+        ),
+    };
+  });
+
+  const unterKnopfe = unterSichtbar
+    ? aktiverHaupt.kinder.map((id) => {
+        const eintrag = reiterVon(id);
+        return {
+          id,
+          buttonId: `reiter-${id}`,
+          ausgewaehlt: reiter === id,
+          tabStop: reiter === id,
+          className: eintrag.fach ? "reiter-doppel" : undefined,
+          onWaehlen: () => waehleReiter(id),
+          children: eintrag.fach ? (
+            <>
+              <span className="reiter-alltag">{eintrag.label}</span>
+              <span className="reiter-fach">{eintrag.fach}</span>
+            </>
+          ) : (
+            eintrag.label
+          ),
+        };
+      })
+    : [];
 
   return (
     <div className="app">
-      <header className="kopfzeile">
-        <div>
-          <p className="eyebrow">Finanzplaner</p>
-          <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
-          <p className="meta">
-            {ansicht.stammdaten.planName}
-            {rechtsform ? ` · ${RECHTSFORM_LABEL[rechtsform]}` : ""}
-            {ansicht.startMonat && letzter
-              ? ` · ${formatMonatLang(ansicht.startMonat)} bis ${formatMonatLang(letzter)}`
-              : ""}
-            {` · ${aktivesSzenario(plan)?.name ?? "Basisplan"}`}
-          </p>
-        </div>
-        <div className="werkzeuge">
-          <div className="switcher" role="group" aria-label="Plan wählen">
-            {onStart ? (
-              <button type="button" onClick={onStart}>
-                Startseite
-              </button>
-            ) : null}
-            <button type="button" aria-pressed={beispielId === "neu"} onClick={onNeu}>
-              Neuer Plan
-            </button>
-            {beispiele.map((beispiel) => (
-              <button
-                key={beispiel.id}
-                type="button"
-                aria-pressed={beispiel.id === beispielId}
-                onClick={() => onBeispiel(beispiel.id)}
-              >
-                {beispiel.label}
-              </button>
-            ))}
-          </div>
-          <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
-          <div className="werkzeuge-zeile">
-            <div className="werkzeuge-reihe">
-              <button
-                type="button"
-                onClick={() => dispatch({ typ: "zurueck" })}
-                disabled={verlauf.vergangenheit.length === 0}
-              >
-                Rückgängig
-              </button>
-              <button
-                type="button"
-                onClick={() => dispatch({ typ: "vor" })}
-                disabled={verlauf.zukunft.length === 0}
-              >
-                Wiederholen
-              </button>
-              {plan.stammdaten.beispiel ? null : (
-                <>
-                  <button type="button" onClick={speicher.sichern}>
-                    Plan sichern
-                  </button>
-                  <button type="button" onClick={speicher.laden}>
-                    Plan laden
-                  </button>
-                </>
-              )}
-              <button type="button" onClick={() => setPdfOffen(true)}>
-                PDF erstellen
-              </button>
-              <button type="button" onClick={() => setExcelOffen(true)}>
-                Excel erstellen
-              </button>
+      <header className={kompakt ? "kopfzeile kopfzeile-kompakt" : "kopfzeile"}>
+        {kompakt ? (
+          <>
+            <div className="kopf-kurz">
+              <h1>{planTitel}</h1>
+              <p className="meta">{szenarioName}</p>
             </div>
-            <details className="weitere" ref={weitere}>
-              <summary>Weitere</summary>
-              <div className="weitere-menue">
-                <button
-                  type="button"
-                  onClick={() => {
-                    weitere.current?.removeAttribute("open");
-                    setZuruecksetzenOffen(true);
-                  }}
-                >
-                  {zuruecksetzenLabel}
-                </button>
+            <details className="app-menue" ref={menue}>
+              <summary>Menü</summary>
+              <div
+                className="app-menue-liste"
+                onClick={() => menue.current?.removeAttribute("open")}
+              >
+                {planWahl}
+                <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
+                <div className="app-menue-aktionen">
+                  {dateiAktionen}
+                  <button type="button" onClick={() => setZuruecksetzenOffen(true)}>
+                    {zuruecksetzenLabel}
+                  </button>
+                </div>
               </div>
             </details>
-          </div>
-        </div>
+          </>
+        ) : (
+          <>
+            <div>
+              <p className="eyebrow">Finanzplaner</p>
+              <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
+              <p className="meta">
+                {ansicht.stammdaten.planName}
+                {rechtsform ? ` · ${RECHTSFORM_LABEL[rechtsform]}` : ""}
+                {ansicht.startMonat && letzter
+                  ? ` · ${formatMonatLang(ansicht.startMonat)} bis ${formatMonatLang(letzter)}`
+                  : ""}
+                {` · ${szenarioName}`}
+              </p>
+            </div>
+            <div className="werkzeuge">
+              {planWahl}
+              <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
+              <div className="werkzeuge-zeile">
+                <div className="werkzeuge-reihe">{dateiAktionen}</div>
+                <details className="weitere" ref={weitere}>
+                  <summary>Weitere</summary>
+                  <div className="weitere-menue">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        weitere.current?.removeAttribute("open");
+                        setZuruecksetzenOffen(true);
+                      }}
+                    >
+                      {zuruecksetzenLabel}
+                    </button>
+                  </div>
+                </details>
+              </div>
+            </div>
+          </>
+        )}
       </header>
 
       {ansicht.stammdaten.beispiel ? (
@@ -520,35 +581,15 @@ export function PlanArbeitsflaeche({
         speicher.knoten
       )}
 
-      <div
-        className="reiter"
-        role="tablist"
-        aria-label="Ansichten"
-        aria-orientation="horizontal"
-        onKeyDown={onReiterTaste}
-      >
-        {REITER.map((eintrag) => (
-          <button
-            key={eintrag.id}
-            type="button"
-            role="tab"
-            id={`reiter-${eintrag.id}`}
-            aria-selected={startwahl ? false : reiter === eintrag.id}
-            aria-controls="plan-ansicht"
-            tabIndex={eintrag.id === reiter ? 0 : -1}
-            onClick={() => waehleReiter(eintrag.id)}
-          >
-            {eintrag.label}
-            {eintrag.id === "pruefung" ? (
-              <span
-                className={`pruef-zaehler pruef-${zaehlerStufe(meldungen)}`}
-                aria-label={`${meldungen.length} ${meldungen.length === 1 ? "Meldung" : "Meldungen"}`}
-              >
-                {meldungen.length}
-              </span>
-            ) : null}
-          </button>
-        ))}
+      <div className="reiter-ebenen">
+        <Reiterleiste label="Bereiche" className="reiter hauptreiter" eintraege={hauptKnopfe} />
+        {unterKnopfe.length > 0 ? (
+          <Reiterleiste
+            label={aktiverHaupt.label}
+            className="reiter unterreiter"
+            eintraege={unterKnopfe}
+          />
+        ) : null}
       </div>
 
       <div
@@ -812,4 +853,24 @@ function KennzahlenZeile({ berichte, reiter }: { berichte: Berichte; reiter: Rei
 function quote(wert: number | null): string {
   if (wert == null) return "–";
   return formatProzent(wert);
+}
+
+const KOMPAKT_BIS = "(max-width: 1024px)";
+
+function useKompakt(): boolean {
+  const [kompakt, setKompakt] = useState(() => leseKompakt());
+  useEffect(() => {
+    if (typeof window.matchMedia !== "function") return;
+    const media = window.matchMedia(KOMPAKT_BIS);
+    const sync = () => setKompakt(media.matches);
+    sync();
+    media.addEventListener("change", sync);
+    return () => media.removeEventListener("change", sync);
+  }, []);
+  return kompakt;
+}
+
+function leseKompakt(): boolean {
+  if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
+  return window.matchMedia(KOMPAKT_BIS).matches;
 }

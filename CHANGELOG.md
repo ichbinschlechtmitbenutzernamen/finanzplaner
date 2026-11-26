@@ -2,6 +2,7 @@
 
 ## Unveröffentlicht
 
+- **Navigation.** Die Ansichten liegen auf zwei Ebenen. Eingeben bündelt Assistent und Alle Eingaben. Ergebnisse bündelt den Überblick und fünf Berichte. Jeder Bericht zeigt einen kurzen Namen und darunter den Fachbegriff: Gewinn und Verlust (Rentabilitätsvorschau), Kontostand je Monat (Liquiditätsplan), Was Sie brauchen (Kapitalbedarf und Finanzierung), Anschaffungen und Kredite (Investitionen und Darlehen), Reicht es zum Leben? (Privatbedarf und Tragfähigkeit). Prüfen zeigt die Zahl der Meldungen. Szenarien bleibt ein eigener Hauptreiter. Links wie `#elektro/liquiditaet` gelten weiter, ebenso die Sprünge aus Prüfung und Kennzahlenleiste. Pfeiltasten, Pos1 und Ende gelten auf beiden Ebenen. Unter 1024 Pixel zeigt die Kopfzeile Planname und Szenario; Sichern, Laden, PDF, Excel, Zurücksetzen und die Beispiele liegen im Menü.
 - **Tabelle.** Planjahre starten eingeklappt. Zuerst sehen Sie die Jahressumme, die Monate öffnet ein Klick auf das Planjahr. Diese Wahl bleibt je Plan für die Sitzung erhalten. Jahressummen lassen sich nicht direkt ändern: „Zum Bearbeiten Jahr aufklappen“.
 - **Hilfeleiste.** Die Kurzhilfe steht in einer Zeile. Fortschreiben, Faktor oder Menge, Wachstum und die zwölf Monatsfelder erscheinen, wenn eine Zeile ausgewählt ist, sonst unter „Mehr Werkzeuge“. Tastatur, Einfügen aus Excel und Überschreibungen stehen unter „Hilfe“. Leere Zahlenfelder für Beträge und Mengen zeigen „z. B. 1.234,56“.
 - **Export.** PDF und Excel übernehmen das aktive Szenario. Im Dialog können Sie ein anderes wählen.
