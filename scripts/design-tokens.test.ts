@@ -1,6 +1,14 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
-import { DIAGRAMM_FARBE, cssVariablen, farben, reihen } from "../src/ui/design-tokens.ts";
+import {
+  DIAGRAMM_FARBE,
+  cssVariablen,
+  farben,
+  pdfDiagrammFarbe,
+  pdfFarben,
+  pdfReihen,
+  reihen,
+} from "../src/ui/design-tokens.ts";
 
 function kanal(wert: number): number {
   const anteil = wert / 255;
@@ -72,5 +80,54 @@ describe("Design-Tokens", () => {
     expect(favicon).toContain(farben.akzent);
     expect(favicon).toContain(farben.textAufAkzent);
     expect(favicon).not.toMatch(/<(image|use)\b/);
+  });
+
+  it("lässt die PDF-Farben hell", () => {
+    expect(pdfFarben).toEqual({
+      hintergrund: "#f3f4f6",
+      flaeche: "#ffffff",
+      text: "#1a1d21",
+      textGedaempft: "#4b5563",
+      textAufAkzent: "#ffffff",
+      linie: "#d5dbe2",
+      linieStark: "#7d8b99",
+      akzent: "#1e4a73",
+      akzentDunkel: "#17395a",
+      akzentSanft: "#e6eef5",
+      fehler: "#9b1c1c",
+      fehlerHintergrund: "#fdecec",
+      warnung: "#8a4b08",
+      warnungHintergrund: "#fbf1e4",
+      hinweis: "#0f5c66",
+      hinweisHintergrund: "#e6f3f4",
+      zebra: "#f6f7f9",
+      hover: "#eef1f5",
+      jahr: "#e7eef5",
+      summe: "#eef1f4",
+      tabellenkopf: "#f3f5f7",
+      nullinie: "#6b7380",
+    });
+    expect(pdfReihen).toEqual({
+      umsatz: "#1e4a73",
+      kosten: "#8a4f2b",
+      ergebnis: "#3d6f8f",
+      raum: "#3f6b5e",
+      sonstige: "#8a7040",
+      neutral: "#5c6570",
+      zinsen: "#8a4b08",
+      steuern: "#9b1c1c",
+      waren: "#6e5144",
+      reserve: "#2f5f73",
+    });
+    expect(pdfDiagrammFarbe("umsatz")).toBe("#1e4a73");
+    expect(pdfDiagrammFarbe("kosten")).toBe("#8a4f2b");
+    expect(pdfDiagrammFarbe("ergebnis")).toBe("#3d6f8f");
+    expect(farben.hintergrund).toBe("#0b1426");
+    expect(farben.flaeche).not.toBe(pdfFarben.flaeche);
+    for (const datei of ["pdf-stil.ts", "pdf-tabelle.tsx", "pdf-diagramme.tsx"]) {
+      const quelle = readFileSync(new URL(`../src/ui/pdf/${datei}`, import.meta.url), "utf8");
+      expect(quelle, datei).toContain("pdfFarben");
+      expect(quelle, datei).not.toMatch(/#0b1426|#111d33|#c9a54c/);
+    }
   });
 });

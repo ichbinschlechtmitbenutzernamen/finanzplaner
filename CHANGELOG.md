@@ -1,5 +1,9 @@
 # Änderungsprotokoll
 
+## Unveröffentlicht
+
+- **Dunkles Design Nachtblau und Gold.** Die Oberfläche ist dauerhaft dunkel, mit 2-Pixel-Ecken und ohne Schatten. Auf schmalen Bildschirmen bleibt der Menüknopf neben dem Titel. PDF und Excel bleiben hell.
+
 ## 1.1.0 – 2026-11-26
 
 - **Startseite und Sichern/Laden.** Ohne Beispiel-Link erscheint die Startseite. Eigene Pläne lassen sich als JSON sichern und laden. Ein Hinweis bleibt sichtbar, dass die Daten nur in diesem Browser liegen. Zurücksetzen und Löschen fragen vorher nach.

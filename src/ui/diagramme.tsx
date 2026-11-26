@@ -50,6 +50,12 @@ interface DiagrammProps {
 const TICK = { fill: farben.textGedaempft, fontSize: 12 };
 const RAND = { top: 28, right: 28, left: 0, bottom: 0 };
 const GITTER = farben.linie;
+const LEGENDEN_STIL = { color: farben.textGedaempft };
+const ZEIGER = { stroke: farben.linie, fill: farben.hover };
+
+function DiagrammLegende() {
+  return <Legend labelStyle={LEGENDEN_STIL} />;
+}
 
 type BalkenZeile = { name: string } & Record<string, string | number>;
 
@@ -83,8 +89,8 @@ export function UmsatzKostenDiagramm({ berichte, modus, fest }: DiagrammProps) {
             dot={modus === "planjahre"}
             isAnimationActive={false}
           />
-          <Tooltip content={EuroTooltip} />
-          <Legend />
+          <Tooltip cursor={ZEIGER} content={EuroTooltip} />
+          <DiagrammLegende />
         </LineChart>
       }
     />
@@ -113,7 +119,7 @@ export function KontostandDiagramm({ berichte, modus, fest }: DiagrammProps) {
       chart={
         <LineChart data={daten} {...masse(fest)} margin={RAND}>
           {grundgeruest(modus, { mitNull: true })}
-          <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke={GITTER} strokeDasharray="4 4" />
           <Line
             dataKey="standCents"
             name="Kontostand"
@@ -143,8 +149,8 @@ export function KontostandDiagramm({ berichte, modus, fest }: DiagrammProps) {
               }
             />
           ) : null}
-          <Tooltip content={EuroTooltip} />
-          <Legend />
+          <Tooltip cursor={ZEIGER} content={EuroTooltip} />
+          <DiagrammLegende />
         </LineChart>
       }
     />
@@ -164,7 +170,7 @@ export function ErgebnisDiagramm({ berichte, modus, fest }: DiagrammProps) {
       chart={
         <LineChart data={daten} {...masse(fest)} margin={RAND}>
           {grundgeruest(modus, { mitNull: true })}
-          <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
+          <ReferenceLine y={0} stroke={GITTER} strokeDasharray="4 4" />
           <Line
             dataKey="kumuliertCents"
             name="Ergebnis nach Steuern, kumuliert"
@@ -173,8 +179,8 @@ export function ErgebnisDiagramm({ berichte, modus, fest }: DiagrammProps) {
             dot={modus === "planjahre"}
             isAnimationActive={false}
           />
-          <Tooltip content={EuroTooltip} />
-          <Legend />
+          <Tooltip cursor={ZEIGER} content={EuroTooltip} />
+          <DiagrammLegende />
         </LineChart>
       }
     />
@@ -192,7 +198,7 @@ export function KostenstrukturDiagramm({ berichte, modus, fest }: DiagrammProps)
       chart={
         <BarChart data={zeilen} {...masse(fest)} margin={RAND} stackOffset="sign">
           {grundgeruest(modus)}
-          <BarStack stackId="kosten" radius={[3, 3, 0, 0]}>
+          <BarStack stackId="kosten" radius={[2, 2, 0, 0]}>
             {serien.map((serie) => (
               <Bar
                 key={serie.id}
@@ -203,8 +209,8 @@ export function KostenstrukturDiagramm({ berichte, modus, fest }: DiagrammProps)
               />
             ))}
           </BarStack>
-          <Tooltip content={EuroTooltip} />
-          <Legend />
+          <Tooltip cursor={ZEIGER} content={EuroTooltip} />
+          <DiagrammLegende />
         </BarChart>
       }
     />
@@ -238,7 +244,7 @@ export function FinanzierungDiagramm({ berichte, modus, fest }: DiagrammProps) {
       chart={
         <BarChart data={zeilen} {...masse(fest)} margin={RAND}>
           {grundgeruest(modus, { alleBeschriftungen: true })}
-          <BarStack stackId="mittel" radius={[3, 3, 0, 0]}>
+          <BarStack stackId="mittel" radius={[2, 2, 0, 0]}>
             {serien.map((serie) => (
               <Bar
                 key={serie.id}
@@ -249,8 +255,8 @@ export function FinanzierungDiagramm({ berichte, modus, fest }: DiagrammProps) {
               />
             ))}
           </BarStack>
-          <Tooltip content={EuroTooltip} />
-          <Legend />
+          <Tooltip cursor={ZEIGER} content={EuroTooltip} />
+          <DiagrammLegende />
         </BarChart>
       }
     />

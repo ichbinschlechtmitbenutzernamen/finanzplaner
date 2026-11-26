@@ -543,7 +543,7 @@ function KontostandVergleich({ spalten }: { spalten: ExportSzenarioVergleich[] }
               axisLine={false}
               tickLine={false}
             />
-            <ReferenceLine y={0} stroke={farben.nullinie} strokeDasharray="4 4" />
+            <ReferenceLine y={0} stroke={farben.linie} strokeDasharray="4 4" />
             {spalten.map((spalte, index) => (
               <Line
                 key={spalte.id}
@@ -555,8 +555,8 @@ function KontostandVergleich({ spalten }: { spalten: ExportSzenarioVergleich[] }
                 isAnimationActive={false}
               />
             ))}
-            <Tooltip content={EuroTooltip} />
-            <Legend />
+            <Tooltip cursor={{ stroke: farben.linie, fill: farben.hover }} content={EuroTooltip} />
+            <Legend labelStyle={{ color: farben.textGedaempft }} />
           </LineChart>
         </ResponsiveContainer>
       </div>
