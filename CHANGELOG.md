@@ -3,6 +3,7 @@
 ## Unveröffentlicht
 
 - **Dunkles Design Nachtblau und Gold.** Die Oberfläche ist dauerhaft dunkel, mit 2-Pixel-Ecken und ohne Schatten. Auf schmalen Bildschirmen bleibt der Menüknopf neben dem Titel. PDF und Excel bleiben hell.
+- **Desktop-Gerüst.** Ab 1024 Pixel füllt der Finanzplaner das Fenster: Titelleiste mit Menü, Werkzeugleiste, Seitenleiste und Statusleiste. Der Arbeitsbereich nutzt dieselben dunklen Flächen. Unter 1024 Pixel bleibt die bisherige Ansicht. Version bleibt 1.1.0.
 
 ## 1.1.0 – 2026-11-26
 

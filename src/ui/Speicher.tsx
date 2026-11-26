@@ -70,14 +70,34 @@ export function useSpeicher({
     setTick((wert) => wert + 1);
   }
 
+  const dateiKnoten = (
+    <>
+      {datei.fehler ? (
+        <p className="fehler" role="alert">
+          {datei.fehler}
+        </p>
+      ) : null}
+      <PlanDateiEingabe eingabe={datei.eingabe} onDatei={datei.beiDatei} />
+      {datei.bereit ? (
+        <Bestaetigung
+          titel="Plan laden"
+          text={`Die Datei ersetzt „${anzeigename(plan)}“ in diesem Browser, zuletzt geändert am ${formatZeitpunkt(plan.geaendertAm)}.`}
+          bestaetigen="Plan ersetzen"
+          gefahr
+          onBestaetigen={datei.bestaetigen}
+          onAbbrechen={datei.abbrechen}
+        />
+      ) : null}
+    </>
+  );
+
   if (!aktiv) {
-    return { sichern, laden: datei.oeffnen, knoten: null };
+    return { sichern, laden: datei.oeffnen, knoten: dateiKnoten };
   }
 
   const zuletzt = bewertung?.letzteSicherung
     ? formatZeitpunkt(bewertung.letzteSicherung)
     : "noch nicht";
-  const name = anzeigename(plan);
 
   const knoten = (
     <>
@@ -96,22 +116,7 @@ export function useSpeicher({
           </button>
         </p>
       ) : null}
-      {datei.fehler ? (
-        <p className="fehler" role="alert">
-          {datei.fehler}
-        </p>
-      ) : null}
-      <PlanDateiEingabe eingabe={datei.eingabe} onDatei={datei.beiDatei} />
-      {datei.bereit ? (
-        <Bestaetigung
-          titel="Plan laden"
-          text={`Die Datei ersetzt „${name}“ in diesem Browser, zuletzt geändert am ${formatZeitpunkt(plan.geaendertAm)}.`}
-          bestaetigen="Plan ersetzen"
-          gefahr
-          onBestaetigen={datei.bestaetigen}
-          onAbbrechen={datei.abbrechen}
-        />
-      ) : null}
+      {dateiKnoten}
     </>
   );
 

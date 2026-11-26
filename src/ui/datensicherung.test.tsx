@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createDraftFinanzplan, createEmptyFinanzplan } from "../domain/empty-plan.ts";
 import { exportPlanToJson, importPlanFromJson } from "../domain/io.ts";
 import type { Finanzplan } from "../domain/types.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche, REITER, type ReiterId } from "./PlanArbeitsflaeche.tsx";
+
+const ORIGINAL_MATCH = window.matchMedia;
 import { PLAN_REITER } from "./route.ts";
 import { Szenarien } from "./Szenarien.tsx";
 
@@ -20,6 +23,8 @@ afterEach(() => {
   HTMLAnchorElement.prototype.click = ORIGINAL_CLICK;
   URL.createObjectURL = ORIGINAL_CREATE;
   URL.revokeObjectURL = ORIGINAL_REVOKE;
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
 });
 
 beforeEach(() => {
@@ -68,6 +73,7 @@ describe("Reiter vor der Wegwahl", () => {
 
   it("markiert vor Assistent oder Tabelle keinen Reiter als geöffnet", async () => {
     const user = userEvent.setup();
+    setzeFensterbreite("mobil");
     function Harness() {
       const [reiter, setReiter] = useState<ReiterId>("assistent");
       return flaeche(
@@ -97,20 +103,18 @@ describe("Rückfragen", () => {
     });
     render(flaeche(plan, { reiter: "ueberblick", onZuruecksetzen: bestaetigt }));
 
-    const menu = screen.getByText("Weitere").closest("details");
-    expect(menu?.open).toBe(false);
-    await user.click(screen.getByText("Weitere"));
-    if (!menu) throw new Error("Menü fehlt.");
-    await user.click(within(menu).getByRole("button", { name: "Plan zurücksetzen" }));
+    expect(screen.queryByRole("menu", { name: "Datei" })).toBeNull();
+    await user.click(screen.getByRole("menuitem", { name: "Datei" }));
+    const menu = screen.getByRole("menu", { name: "Datei" });
+    await user.click(within(menu).getByRole("menuitem", { name: "Plan zurücksetzen" }));
     const dialog = screen.getByRole("dialog", { name: "Plan zurücksetzen" });
     expect(dialog.textContent).toMatch(/bereits gesichert/);
     await user.click(within(dialog).getByRole("button", { name: "Abbrechen" }));
     expect(bestaetigt).not.toHaveBeenCalled();
 
-    await user.click(screen.getByText("Weitere"));
-    const erneut = screen.getByText("Weitere").closest("details");
-    if (!erneut) throw new Error("Menü fehlt.");
-    await user.click(within(erneut).getByRole("button", { name: "Plan zurücksetzen" }));
+    await user.click(screen.getByRole("menuitem", { name: "Datei" }));
+    const erneut = screen.getByRole("menu", { name: "Datei" });
+    await user.click(within(erneut).getByRole("menuitem", { name: "Plan zurücksetzen" }));
     await user.click(
       within(screen.getByRole("dialog")).getByRole("button", { name: "Plan zurücksetzen" }),
     );

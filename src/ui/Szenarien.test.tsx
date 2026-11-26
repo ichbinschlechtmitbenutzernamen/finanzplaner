@@ -3,16 +3,25 @@
 import { useState } from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createEmptyFinanzplan } from "../domain/empty-plan.ts";
 import { setzeAktivesSzenario, setzeHebel } from "../domain/szenarien/index.ts";
 import type { Finanzplan } from "../domain/types.ts";
 import { beispielElektro } from "../fixtures/beispiel-elektro.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche } from "./PlanArbeitsflaeche.tsx";
 import { Szenarien, kurzbeschreibung } from "./Szenarien.tsx";
 
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
+
 afterEach(() => {
   cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
 });
 
 function flaeche(plan: Finanzplan) {

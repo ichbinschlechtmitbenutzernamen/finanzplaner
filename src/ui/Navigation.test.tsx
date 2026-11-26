@@ -7,6 +7,7 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import App from "../App.tsx";
 import { createEmptyFinanzplan } from "../domain/empty-plan.ts";
 import type { Finanzplan } from "../domain/types.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche, type ReiterId } from "./PlanArbeitsflaeche.tsx";
 
 const ORIGINAL_MATCH = window.matchMedia;
@@ -21,6 +22,7 @@ beforeEach(() => {
   localStorage.clear();
   sessionStorage.clear();
   window.location.hash = "";
+  setzeFensterbreite("mobil");
 });
 
 function planMitUmsatz(): Finanzplan {
@@ -59,20 +61,7 @@ function Harness({ anfang = "ueberblick" }: { anfang?: ReiterId }) {
 }
 
 function setzeKompakt(aktiv: boolean) {
-  Object.defineProperty(window, "matchMedia", {
-    configurable: true,
-    writable: true,
-    value: (query: string) => ({
-      matches: aktiv && query.includes("1024"),
-      media: query,
-      onchange: null,
-      addEventListener() {},
-      removeEventListener() {},
-      dispatchEvent() {
-        return false;
-      },
-    }),
-  });
+  setzeFensterbreite(aktiv ? "mobil" : "desktop");
 }
 
 describe("Zweistufige Navigation", () => {
@@ -95,7 +84,6 @@ describe("Zweistufige Navigation", () => {
     expect(screen.getByRole("tab", { name: /Reicht es zum Leben/ }).textContent).toContain(
       "Privatbedarf und Tragfähigkeit",
     );
-    expect(screen.queryByRole("button", { name: "Menü" })).toBeNull();
 
     await user.click(screen.getByRole("tab", { name: "Eingeben" }));
     expect(screen.getByRole("tab", { name: "Assistent" })).toBeTruthy();

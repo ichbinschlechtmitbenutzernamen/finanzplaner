@@ -1,11 +1,24 @@
 // @vitest-environment jsdom
 
-import { render, screen, within } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { createEmptyFinanzplan } from "../domain/empty-plan.ts";
 import type { Finanzplan } from "../domain/types.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche } from "./PlanArbeitsflaeche.tsx";
+
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
+
+afterEach(() => {
+  cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
+});
 
 function planMitLuecke(): Finanzplan {
   const plan = createEmptyFinanzplan({
