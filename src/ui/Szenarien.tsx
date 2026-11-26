@@ -32,6 +32,7 @@ import {
   type SzenarioHebel,
 } from "../domain/types.ts";
 import type { PlanAendern } from "./assistent/typen.ts";
+import { Bestaetigung } from "./Bestaetigung.tsx";
 import { DIAGRAMM_PALETTE, farben } from "./design-tokens.ts";
 import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from "./format.ts";
 
@@ -101,6 +102,7 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [benennenId, setBenennenId] = useState<string | null>(null);
   const [nameEntwurf, setNameEntwurf] = useState("");
+  const [loeschen, setLoeschen] = useState<{ id: string; name: string } | null>(null);
 
   function abweichungAnlegen() {
     const id = neueSzenarioId();
@@ -236,7 +238,7 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
                 </button>
                 <button
                   type="button"
-                  onClick={() => onAendern((aktuell) => loescheSzenario(aktuell, eintrag.id))}
+                  onClick={() => setLoeschen({ id: eintrag.id, name: eintrag.name })}
                 >
                   Löschen
                 </button>
@@ -248,6 +250,21 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
 
       <Vergleich plan={plan} spalten={spalten} />
       <KontostandVergleich spalten={spalten} />
+
+      {loeschen ? (
+        <Bestaetigung
+          titel="Szenario löschen"
+          text={`Das Szenario „${loeschen.name}“ wird gelöscht.`}
+          bestaetigen="Szenario löschen"
+          gefahr
+          onBestaetigen={() => {
+            const ziel = loeschen;
+            setLoeschen(null);
+            onAendern((aktuell) => loescheSzenario(aktuell, ziel.id));
+          }}
+          onAbbrechen={() => setLoeschen(null)}
+        />
+      ) : null}
 
       {dialog ? (
         <div className="dialog-hintergrund">

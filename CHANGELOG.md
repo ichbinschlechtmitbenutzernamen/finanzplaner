@@ -1,5 +1,11 @@
 # Änderungsprotokoll
 
+## Unveröffentlicht
+
+- **Startseite.** Aufruf ohne Beispiel-Link zeigt eine kurze Startseite. Von dort legen Sie einen eigenen Plan an, öffnen eines der vier Beispiele oder laden eine Datei. Ein bereits vorhandener Plan lässt sich fortsetzen; ein neuer Plan ersetzt ihn erst nach einer Rückfrage. Direkte Links wie `#elektro/ueberblick` bleiben gültig. Vor der Wahl zwischen Assistent und Tabelle ist kein Reiter als geöffnet markiert.
+- **Sichern und Laden.** Eigene Pläne lassen sich als JSON-Datei sichern und wieder laden, auch ältere Schema-Versionen. Ein Hinweis bleibt sichtbar, dass die Daten nur in diesem Browser liegen. Nach 30 Minuten ungesicherter Arbeit erscheint ein schließbarer Hinweis mit dem Zeitpunkt der letzten Sicherung.
+- **Rückfragen.** „Plan zurücksetzen“ und das Löschen eines Szenarios fragen in einem Dialog nach. Zurücksetzen steht unter „Weitere“, getrennt von Sichern, PDF und Excel.
+
 ## 1.0.0
 
 Erste veröffentlichte Fassung. Die App rechnet im Browser. Eingaben bleiben auf dem Gerät.

@@ -32,7 +32,7 @@ function text(name: string): string {
 describe("Überblick", () => {
   it("startet mit den Beispielkennzahlen und folgt dem Beispielwechsel", async () => {
     const user = userEvent.setup();
-    window.location.hash = "";
+    window.location.hash = "#elektro/ueberblick";
     render(<App />);
 
     expect(screen.getByRole("tab", { name: "Überblick", selected: true })).toBeTruthy();

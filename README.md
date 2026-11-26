@@ -8,9 +8,11 @@ Die Oberfläche heißt Finanzplaner, in der Kopfzeile, im Fenstertitel und als M
 
 ## Kurzanleitung
 
-**Plan anlegen.** „Neuer Plan“ fragt zuerst nach einer Branchenvorlage: Ohne Vorlage, Handwerk, Gastronomie oder Einzelhandel. Die Vorlage setzt typische Bezeichnungen für Umsatz, Wareneinsatz, Personal, laufende Kosten und Investitionen. Beträge bleiben leer und lassen sich später nicht nachladen. Danach die Wahl: Assistent oder Tabelle.
+**Start.** Ohne Beispiel-Link erscheint die Startseite. „Eigenen Plan anlegen“ führt zur Wahl aus Assistent oder Tabelle und einer Branchenvorlage. „Beispiel ansehen“ öffnet Blitzweg, Café Leseecke, Hafenlicht GmbH oder das Grafikstudio. Liegt schon ein Plan im Browser, setzt „Weiter mit meinem Plan“ ihn fort. „Neuen Plan anlegen“ ersetzt den vorhandenen Plan erst nach einer Rückfrage. „Plan laden“ liest eine Sicherungsdatei. Direkte Links wie `#elektro/ueberblick` öffnen das Beispiel weiterhin.
 
-**Assistent und Tabelle.** Der Assistent führt durch die Stationen und schreibt in denselben Plan wie die Tabelle. Bei GmbH und UG entfällt die Station Persönliches. In der Tabelle stehen 36 Monate und je Planjahr eine Summe. Pfeile bewegen die Auswahl, Enter öffnet die Zelle, Tab springt weiter, Strg+Z und Strg+Y machen rückgängig und wiederholen. Oben lassen sich die Beispiele Blitzweg, Café Leseecke, Hafenlicht GmbH und das Grafikstudio laden.
+**Plan anlegen.** Die Branchenvorlage heißt Ohne Vorlage, Handwerk, Gastronomie oder Einzelhandel. Die Vorlage setzt typische Bezeichnungen für Umsatz, Wareneinsatz, Personal, laufende Kosten und Investitionen. Beträge bleiben leer und lassen sich später nicht nachladen. Danach die Wahl: Assistent oder Tabelle. Vor dieser Wahl ist kein Reiter als geöffnet markiert.
+
+**Assistent und Tabelle.** Der Assistent führt durch die Stationen und schreibt in denselben Plan wie die Tabelle. Bei GmbH und UG entfällt die Station Persönliches. In der Tabelle stehen 36 Monate und je Planjahr eine Summe. Pfeile bewegen die Auswahl, Enter öffnet die Zelle, Tab springt weiter, Strg+Z und Strg+Y machen rückgängig und wiederholen. Oben bleiben die Beispiele und der eigene Plan erreichbar, „Startseite“ führt zurück.
 
 **Szenarien.** Basisplan, Vorsichtig und Optimistisch sind von Anfang an da. Vorsichtig senkt den Umsatz und schiebt den Start. Optimistisch hebt den Umsatz. Ist eine Abweichung aktiv, sind Tabelle und Assistent nur lesend. Der Reiter Szenarien stellt Umsatz, Ergebnis, Kontostand, Kapitalbedarf, Break-even und Tragfähigkeit nebeneinander.
 
@@ -18,7 +20,7 @@ Die Oberfläche heißt Finanzplaner, in der Kopfzeile, im Fenstertitel und als M
 
 **PDF und Excel.** „PDF erstellen“ und „Excel erstellen“ erzeugen die Datei im Browser. Das PDF übernimmt die Berichte des gewählten Szenarios. Die Excel-Mappe rechnet selbst: gelbe Zellen im Blatt Eingaben sind Eingaben, die Berichte holen sich die Zahlen per Formel.
 
-**Daten.** Änderungen bleiben in diesem Browser, bis der Plan zurückgesetzt wird. PDF und Excel sind die Ausgaben zum Mitnehmen. Eine eigene Datei zum Sichern und Wiedereinlesen gibt es in der Oberfläche nicht.
+**Sichern.** Am eigenen Plan stehen „Plan sichern“ und „Plan laden“. Die Datei ist JSON, der Name setzt sich aus Planname und Datum zusammen. Ein kurzer Hinweis bleibt stehen, dass die Eingaben nur in diesem Browser liegen. Wurde seit der letzten Sicherung gearbeitet und das mindestens 30 Minuten lang, erscheint ein schließbarer Hinweis mit dem Zeitpunkt der letzten Sicherung. „Plan zurücksetzen“ und das Löschen eines Szenarios fragen vorher nach. Zurücksetzen steht unter „Weitere“, getrennt von Sichern, PDF und Excel.
 
 ## Voraussetzungen
 
@@ -59,8 +61,8 @@ Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswer
 - `src/fixtures` – vier erfundene Beispielpläne: Grafikstudio, Elektromeister mit Thüringer Mikrodarlehen, Café, Hafenlicht GmbH
 - `src/domain/assistent` – Stationen, Validierung und das Schreiben in den Plan
 - `src/domain/vorlagen` – Branchenvorlagen. Sie legen nur Bezeichnungen an, keine Beträge
-- `src/ui` – Assistent, Überblick, Szenarien, Prüfung, Diagramme, Tabelle, Reiter, Rückgängig, die Eingabeleiste, der PDF-Dialog und der Excel-Dialog. PDF-Bibliothek und ExcelJS liegen in eigenen Bündeln und werden erst beim Erstellen geladen.
-- `src/App.tsx` – lädt die Beispiele und einen neuen Plan und merkt sich Änderungen im Browser. Startansicht der Beispiele ist der Überblick
+- `src/ui` – Assistent, Überblick, Szenarien, Prüfung, Diagramme, Tabelle, Reiter, Rückgängig, die Eingabeleiste, die Startseite, Sichern und Laden, der PDF-Dialog und der Excel-Dialog. PDF-Bibliothek und ExcelJS liegen in eigenen Bündeln und werden erst beim Erstellen geladen.
+- `src/App.tsx` – Startseite, die Beispiele und der eigene Plan. Änderungen bleiben im Browser, eine Sicherungsdatei liegt daneben. Startansicht der Beispiele ist der Überblick
 - `docs/datenmodell.md` – Überblick über die Eingaben für die Fachberatung
 - `docs/rechenkern.md` – Rechenregeln für die Fachberatung
 - `docs/steuern.md` – Einkommensteuer, Gewerbesteuer, Körperschaftsteuer
@@ -71,4 +73,4 @@ Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswer
 
 ## Daten
 
-Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 15. Eine Branchenvorlage beim Anlegen steht unter `stammdaten.angewendeteVorlage`. Posten ohne Betrag stehen am Assistentenfortschritt und gehen nicht in die Rechnung ein. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Die Kapitelauswahl des PDF steht unter `pdfExport`. Die Blattauswahl des Excel-Exports steht unter `excelExport`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts` und dienen dem Speicher im Browser. Konten und ein Server gibt es nicht.
+Gespeichert werden Eingaben, keine fertigen Monatsspalten und keine Berichte. Beträge stehen in ganzen Euro-Cent. `schemaVersion` ist 15. Eine Branchenvorlage beim Anlegen steht unter `stammdaten.angewendeteVorlage`. Posten ohne Betrag stehen am Assistentenfortschritt und gehen nicht in die Rechnung ein. Steuersätze, die Tarifformel und Fördervorlagen liegen als Parametersatz im Plan. Optional steht der Assistentenfortschritt unter `assistent`. Die Schwellen der Plausibilitätsprüfung stehen unter `pruefung`. Die Meldungen werden nicht gespeichert. Szenarien stehen unter `planSzenarien`: Hebel einer Abweichung oder der eingefrorene Stand einer Kopie. Die Kapitelauswahl des PDF steht unter `pdfExport`. Die Blattauswahl des Excel-Exports steht unter `excelExport`. Import und Export laufen über `exportPlanToJson` und `importPlanFromJson` in `src/domain/io.ts`. Dieselbe Funktion schreibt den Speicher im Browser und die Sicherungsdatei, einschließlich älterer Schema-Versionen. Der Zeitpunkt der letzten Sicherung liegt unter `finanzplaner.sicherung.` im Browser. Konten und ein Server gibt es nicht.
