@@ -1,4 +1,12 @@
-import { useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import {
+  useDeferredValue,
+  useEffect,
+  useMemo,
+  useReducer,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { ExcelDialog } from "./excel/ExcelDialog.tsx";
 import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
@@ -28,6 +36,7 @@ import type {
 import { Bestaetigung } from "./Bestaetigung.tsx";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
+import { leseOffeneJahre, merkeOffeneJahre } from "./jahre-ansicht.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
 import { Kennzahlenleiste } from "./Kennzahlenleiste.tsx";
 import { planHatKennzahlen } from "./kennzahlen-leiste.ts";
@@ -119,7 +128,12 @@ export function PlanArbeitsflaeche({
   const [sprung, setSprung] = useState<Sprung | null>(null);
   const sprungAngewandt = useRef("");
   const weitere = useRef<HTMLDetailsElement>(null);
-  const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
+  const [jahreOffen, setJahreOffen] = useState<{ id: string; nummern: ReadonlySet<number> }>(
+    () => ({
+      id: anfangsplan.id,
+      nummern: leseOffeneJahre(anfangsplan.id),
+    }),
+  );
   const [meldung, setMeldung] = useState<string | null>(null);
   const [pdfOffen, setPdfOffen] = useState(false);
   const [excelOffen, setExcelOffen] = useState(false);
@@ -134,6 +148,14 @@ export function PlanArbeitsflaeche({
   const modus = aktivesSzenario(plan)?.art ?? "basis";
   const monate = useMemo(() => planMonate(ansicht), [ansicht]);
   const jahre = useMemo(() => planjahreVon(monate), [monate]);
+  if (jahreOffen.id !== plan.id) {
+    setJahreOffen({ id: plan.id, nummern: leseOffeneJahre(plan.id) });
+  }
+  const offeneJahre = jahreOffen.id === plan.id ? jahreOffen.nummern : leseOffeneJahre(plan.id);
+  const eingeklappt = useMemo(
+    () => new Set(jahre.map((jahr) => jahr.nummer).filter((nummer) => !offeneJahre.has(nummer))),
+    [jahre, offeneJahre],
+  );
   const spalten = useMemo(
     () => sichtbareSpalten(monate, jahre, eingeklappt),
     [monate, jahre, eingeklappt],
@@ -303,6 +325,18 @@ export function PlanArbeitsflaeche({
     });
   }
 
+  function setzeOffeneJahre(nummern: ReadonlySet<number>) {
+    merkeOffeneJahre(plan.id, nummern);
+    setJahreOffen({ id: plan.id, nummern });
+  }
+
+  function schalteJahr(nummer: number) {
+    const naechste = new Set(offeneJahre);
+    if (naechste.has(nummer)) naechste.delete(nummer);
+    else naechste.add(nummer);
+    setzeOffeneJahre(naechste);
+  }
+
   function springe(meldung: Pruefmeldung, wohin: "tabelle" | "assistent") {
     if (wohin === "assistent" && meldung.ziel.assistent) {
       const ziel = meldung.ziel.assistent;
@@ -316,12 +350,10 @@ export function PlanArbeitsflaeche({
     if (tabelle.monat) {
       const monat = tabelle.monat;
       const jahr = jahre.find((eintrag) => monat >= eintrag.vonMonat && monat <= eintrag.bisMonat);
-      if (jahr && eingeklappt.has(jahr.nummer)) {
-        setEingeklappt((bisher) => {
-          const naechste = new Set(bisher);
-          naechste.delete(jahr.nummer);
-          return naechste;
-        });
+      if (jahr && !offeneJahre.has(jahr.nummer)) {
+        const naechste = new Set(offeneJahre);
+        naechste.add(jahr.nummer);
+        setzeOffeneJahre(naechste);
       }
     }
     setSprung({
@@ -351,6 +383,46 @@ export function PlanArbeitsflaeche({
   const zuruecksetzenLabel = plan.stammdaten.beispiel
     ? "Beispiel zurücksetzen"
     : "Plan zurücksetzen";
+
+  function waehleReiter(id: ReiterId) {
+    if (startwahl) {
+      if (id === "pruefung" || id === "szenarien") return;
+      aendernEingabe((aktuell) =>
+        starteMitVorlage(aktuell, id === "assistent" ? "assistent" : "tabelle", vorlage),
+      );
+    }
+    onReiter(id);
+  }
+
+  function onReiterTaste(event: KeyboardEvent<HTMLDivElement>) {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (
+      event.key !== "ArrowRight" &&
+      event.key !== "ArrowLeft" &&
+      event.key !== "Home" &&
+      event.key !== "End"
+    ) {
+      return;
+    }
+    const zielElement = event.target;
+    if (!(zielElement instanceof HTMLElement) || zielElement.getAttribute("role") !== "tab") return;
+    const index = REITER.findIndex((eintrag) => zielElement.id === `reiter-${eintrag.id}`);
+    if (index < 0) return;
+    event.preventDefault();
+    const letzter = REITER.length - 1;
+    const naechster =
+      event.key === "Home"
+        ? 0
+        : event.key === "End"
+          ? letzter
+          : event.key === "ArrowRight"
+            ? (index + 1) % REITER.length
+            : (index - 1 + REITER.length) % REITER.length;
+    const eintrag = REITER[naechster];
+    if (!eintrag) return;
+    waehleReiter(eintrag.id);
+    document.getElementById(`reiter-${eintrag.id}`)?.focus();
+  }
 
   return (
     <div className="app">
@@ -448,7 +520,13 @@ export function PlanArbeitsflaeche({
         speicher.knoten
       )}
 
-      <div className="reiter" role="tablist" aria-label="Ansichten">
+      <div
+        className="reiter"
+        role="tablist"
+        aria-label="Ansichten"
+        aria-orientation="horizontal"
+        onKeyDown={onReiterTaste}
+      >
         {REITER.map((eintrag) => (
           <button
             key={eintrag.id}
@@ -457,19 +535,8 @@ export function PlanArbeitsflaeche({
             id={`reiter-${eintrag.id}`}
             aria-selected={startwahl ? false : reiter === eintrag.id}
             aria-controls="plan-ansicht"
-            onClick={() => {
-              if (startwahl) {
-                if (eintrag.id === "pruefung" || eintrag.id === "szenarien") return;
-                aendernEingabe((aktuell) =>
-                  starteMitVorlage(
-                    aktuell,
-                    eintrag.id === "assistent" ? "assistent" : "tabelle",
-                    vorlage,
-                  ),
-                );
-              }
-              onReiter(eintrag.id);
-            }}
+            tabIndex={eintrag.id === reiter ? 0 : -1}
+            onClick={() => waehleReiter(eintrag.id)}
           >
             {eintrag.label}
             {eintrag.id === "pruefung" ? (
@@ -589,14 +656,7 @@ export function PlanArbeitsflaeche({
               auswahl={auswahl}
               onAuswahl={setAuswahl}
               eingeklappt={eingeklappt}
-              onUmschalten={(nummer) => {
-                setEingeklappt((bisher) => {
-                  const naechste = new Set(bisher);
-                  if (naechste.has(nummer)) naechste.delete(nummer);
-                  else naechste.add(nummer);
-                  return naechste;
-                });
-              }}
+              onUmschalten={schalteJahr}
               onCommit={commitZelle}
               onPaste={einfuegen}
               onUndo={() => dispatch({ typ: "zurueck" })}

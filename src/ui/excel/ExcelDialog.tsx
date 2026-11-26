@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { EXCEL_BLATT_LABEL, normalisiereBlaetter } from "../../domain/excel/blaetter.ts";
 import { erstelleArbeitsmappe } from "../../domain/excel/mappe.ts";
 import { istPersonenunternehmen } from "../../domain/reports/planjahr.ts";
@@ -9,6 +9,7 @@ import {
   type ExcelBlattId,
   type Finanzplan,
 } from "../../domain/types.ts";
+import { Dialog } from "../dialog.tsx";
 
 interface ExcelDialogProps {
   plan: Finanzplan;
@@ -19,7 +20,7 @@ interface ExcelDialogProps {
 export function ExcelDialog({ plan, onSchliessen, onBlaetter }: ExcelDialogProps) {
   const [laeuft, setLaeuft] = useState(false);
   const [fehler, setFehler] = useState<string | null>(null);
-  const [szenarioId, setSzenarioId] = useState<string>(BASIS_SZENARIO_ID);
+  const [szenarioId, setSzenarioId] = useState<string>(plan.planSzenarien.aktivId);
   const faelle = [
     { id: BASIS_SZENARIO_ID, name: "Basisplan" },
     ...plan.planSzenarien.eintraege.map((eintrag) => ({ id: eintrag.id, name: eintrag.name })),
@@ -29,14 +30,6 @@ export function ExcelDialog({ plan, onSchliessen, onBlaetter }: ExcelDialogProps
   const sichtbar = EXCEL_BLAETTER.filter(
     (id) => id !== "tragfaehigkeit" || istPersonenunternehmen(rechtsform),
   );
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && !laeuft) onSchliessen();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [laeuft, onSchliessen]);
 
   function schalte(id: ExcelBlattId, an: boolean) {
     const gesetzt = new Set(plan.excelExport.blaetter);
@@ -74,64 +67,63 @@ export function ExcelDialog({ plan, onSchliessen, onBlaetter }: ExcelDialogProps
   }
 
   return (
-    <div className="dialog-hintergrund">
-      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="excel-titel">
-        <h2 id="excel-titel">Excel erstellen</h2>
-        <p className="meta">
-          Das gewählte Szenario wird mit Formeln durchgerechnet. Die übrigen Szenarien stehen im
-          Szenarienvergleich. Die Datei entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
-        </p>
-        <fieldset className="pdf-szenario">
-          <legend>Szenario</legend>
-          {faelle.map((fall) => (
-            <label key={fall.id}>
-              <input
-                type="radio"
-                name="excel-szenario"
-                checked={gewaehlt === fall.id}
-                disabled={laeuft}
-                onChange={() => setSzenarioId(fall.id)}
-              />
-              {fall.name}
-            </label>
-          ))}
-        </fieldset>
-        <div className="kapitel-liste">
-          {sichtbar.map((id) => (
-            <label key={id}>
-              <input
-                type="checkbox"
-                checked={plan.excelExport.blaetter.includes(id)}
-                disabled={laeuft}
-                onChange={(event) => schalte(id, event.target.checked)}
-              />
-              {EXCEL_BLATT_LABEL[id]}
-            </label>
-          ))}
-        </div>
-        <p className="hinweis">
-          Eingaben und die Hilfsblätter sind immer in der Datei, sobald ein Rechenblatt gewählt ist.
-        </p>
-        {istPersonenunternehmen(rechtsform) ? null : (
-          <p className="hinweis">
-            Die Tragfähigkeit mit Lebenshaltung gibt es nur bei Einzelunternehmen, Freiberuf und
-            Personengesellschaften. Bei dieser Rechtsform entfällt das Blatt.
-          </p>
-        )}
-        {fehler ? (
-          <p className="fehler" role="alert">
-            {fehler}
-          </p>
-        ) : null}
-        <div className="szenarien-aktionen">
-          <button type="button" className="primaer" onClick={erstellen} disabled={laeuft}>
-            {laeuft ? "Excel wird erstellt …" : "Excel herunterladen"}
-          </button>
-          <button type="button" onClick={onSchliessen} disabled={laeuft}>
-            Abbrechen
-          </button>
-        </div>
+    <Dialog titelId="excel-titel" onSchliessen={onSchliessen} escapeAktiv={!laeuft}>
+      <h2 id="excel-titel">Excel erstellen</h2>
+      <p className="meta">
+        Das gewählte Szenario wird mit Formeln durchgerechnet. Die übrigen Szenarien stehen im
+        Szenarienvergleich. Die Datei entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
+      </p>
+      <fieldset className="pdf-szenario">
+        <legend>Szenario</legend>
+        {faelle.map((fall) => (
+          <label key={fall.id}>
+            <input
+              type="radio"
+              name="excel-szenario"
+              checked={gewaehlt === fall.id}
+              disabled={laeuft}
+              data-anfangs-fokus={gewaehlt === fall.id ? "true" : undefined}
+              onChange={() => setSzenarioId(fall.id)}
+            />
+            {fall.name}
+          </label>
+        ))}
+      </fieldset>
+      <div className="kapitel-liste">
+        {sichtbar.map((id) => (
+          <label key={id}>
+            <input
+              type="checkbox"
+              checked={plan.excelExport.blaetter.includes(id)}
+              disabled={laeuft}
+              onChange={(event) => schalte(id, event.target.checked)}
+            />
+            {EXCEL_BLATT_LABEL[id]}
+          </label>
+        ))}
       </div>
-    </div>
+      <p className="hinweis">
+        Eingaben und die Hilfsblätter sind immer in der Datei, sobald ein Rechenblatt gewählt ist.
+      </p>
+      {istPersonenunternehmen(rechtsform) ? null : (
+        <p className="hinweis">
+          Die Tragfähigkeit mit Lebenshaltung gibt es nur bei Einzelunternehmen, Freiberuf und
+          Personengesellschaften. Bei dieser Rechtsform entfällt das Blatt.
+        </p>
+      )}
+      {fehler ? (
+        <p className="fehler" role="alert">
+          {fehler}
+        </p>
+      ) : null}
+      <div className="szenarien-aktionen">
+        <button type="button" className="primaer" onClick={erstellen} disabled={laeuft}>
+          {laeuft ? "Excel wird erstellt …" : "Excel herunterladen"}
+        </button>
+        <button type="button" onClick={onSchliessen} disabled={laeuft}>
+          Abbrechen
+        </button>
+      </div>
+    </Dialog>
   );
 }

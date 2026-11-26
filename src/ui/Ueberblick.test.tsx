@@ -67,6 +67,7 @@ describe("Überblick", () => {
     const user = userEvent.setup();
     render(<Harness />);
 
+    await user.click(screen.getByRole("button", { name: "Planjahr 1 aufklappen" }));
     const april = screen.getByRole("gridcell", { name: /Beratung, April 2026, 1\.000,00/ });
     await user.click(april);
     await user.keyboard("{Enter}");

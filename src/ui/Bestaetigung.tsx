@@ -1,4 +1,5 @@
-import { useEffect, useId } from "react";
+import { useId } from "react";
+import { Dialog } from "./dialog.tsx";
 
 export function Bestaetigung({
   titel,
@@ -20,43 +21,28 @@ export function Bestaetigung({
   const titelId = useId();
   const textId = useId();
 
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onAbbrechen();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onAbbrechen]);
-
   return (
-    <div
-      className="dialog-hintergrund"
-      onMouseDown={(event) => {
-        if (event.target === event.currentTarget) onAbbrechen();
-      }}
+    <Dialog
+      titelId={titelId}
+      beschreibungId={textId}
+      klasse="dialog-kurz"
+      onSchliessen={onAbbrechen}
+      hintergrundSchliesst
     >
-      <div
-        className="dialog dialog-kurz"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titelId}
-        aria-describedby={textId}
-      >
-        <h2 id={titelId}>{titel}</h2>
-        <p id={textId}>{text}</p>
-        <div className="szenarien-aktionen">
-          <button
-            type="button"
-            className={gefahr ? "gefaehrlich" : "primaer"}
-            onClick={onBestaetigen}
-          >
-            {bestaetigen}
-          </button>
-          <button type="button" onClick={onAbbrechen} autoFocus>
-            {abbrechen}
-          </button>
-        </div>
+      <h2 id={titelId}>{titel}</h2>
+      <p id={textId}>{text}</p>
+      <div className="szenarien-aktionen">
+        <button
+          type="button"
+          className={gefahr ? "gefaehrlich" : "primaer"}
+          onClick={onBestaetigen}
+        >
+          {bestaetigen}
+        </button>
+        <button type="button" onClick={onAbbrechen} data-anfangs-fokus="true">
+          {abbrechen}
+        </button>
       </div>
-    </div>
+    </Dialog>
   );
 }
