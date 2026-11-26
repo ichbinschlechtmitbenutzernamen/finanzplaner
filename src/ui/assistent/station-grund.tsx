@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import {
   leseUmsatz,
   leseVorhaben,
@@ -568,10 +568,11 @@ function SaisonFaktoren({
   faktoren: MonatFaktoren;
   onChange: (faktoren: MonatFaktoren) => void;
 }) {
+  const hilfeId = useId();
   return (
-    <fieldset className="feld-gruppe">
+    <fieldset className="feld-gruppe saison-gruppe">
       <legend>Monatsfaktor oder Menge</legend>
-      <p className="feld-hilfe">
+      <p id={hilfeId} className="feld-hilfe">
         Zwölf Werte für Januar bis Dezember. 1 lässt einen Monatsbetrag unverändert, 0 setzt ihn auf
         null. Der Wert kann auch eine Menge sein, zum Beispiel 80 Stunden mal einem Stundenpreis. Es
         gibt keine Obergrenze. Derselbe Kalendermonat gilt in jedem Planjahr.
@@ -581,7 +582,7 @@ function SaisonFaktoren({
           <ZahlFeld
             key={monat}
             label={monat}
-            hilfe={`Faktor oder Menge für ${monat}. Mindestens 0, ohne Obergrenze.`}
+            beschreibungId={hilfeId}
             wert={faktoren[index] ?? 1}
             onChange={(wert) => {
               if (wert == null) return;
