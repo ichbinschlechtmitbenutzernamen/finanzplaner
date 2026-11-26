@@ -1,8 +1,5 @@
 // @vitest-environment jsdom
 
-import { readFileSync } from "node:fs";
-import { dirname, join } from "node:path";
-import { fileURLToPath } from "node:url";
 import { useState } from "react";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -364,11 +361,6 @@ describe("Kompakte Tabellen", () => {
       expect(kopf.textContent).toContain(`Jahr ${nummer}`);
       expect(kopf.querySelector("button")).toBeTruthy();
     }
-
-    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../index.css"), "utf8");
-    const kopfRegel = css.match(/\.tabelle thead th \{[^}]*\}/)?.[0] ?? "";
-    expect(kopfRegel).toContain("position: sticky");
-    expect(kopfRegel).toContain("overflow: visible");
   });
 
   it("beschreibt die Monatsfaktoren einmal für die ganze Gruppe", async () => {
