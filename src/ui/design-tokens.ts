@@ -1,11 +1,51 @@
 /**
- * Zentrale Farbwerte der Oberfläche.
- * Dieselben Hex-Werte stehen als CSS-Variablen in src/index.css.
- * Diagramme (Recharts) und das PDF lesen sie von hier, weil SVG-Attribute
- * und react-pdf keine CSS-Variablen auflösen.
+ * Farbwerte der Oberfläche und des PDF.
+ * Die App-Farben stehen als CSS-Variablen in src/index.css.
+ * Recharts liest `farben` und `reihen`, weil SVG-Attribute keine CSS-Variablen auflösen.
+ * `pdfFarben` und `pdfReihen` bleiben hell und hängen nicht am App-Theme.
  */
 
 export const farben = {
+  hintergrund: "#0b1426",
+  flaeche: "#111d33",
+  text: "#e8eef6",
+  textGedaempft: "#9aa8bc",
+  textAufAkzent: "#0b1426",
+  linie: "#5a6a84",
+  linieStark: "#6d7d97",
+  akzent: "#c9a54c",
+  akzentDunkel: "#b08e3a",
+  akzentSanft: "#1c2618",
+  fehler: "#f07a7a",
+  fehlerHintergrund: "#3a1c22",
+  warnung: "#e0893a",
+  warnungHintergrund: "#3a2614",
+  hinweis: "#7ec9d2",
+  hinweisHintergrund: "#163038",
+  zebra: "#151e36",
+  hover: "#1a2744",
+  jahr: "#1a2438",
+  summe: "#18233a",
+  tabellenkopf: "#0f1a30",
+  nullinie: "#9aa8bc",
+} as const;
+
+/** Unterscheidbare Reihen für Diagramme in der App. */
+export const reihen = {
+  umsatz: "#c9a54c",
+  kosten: "#e08a5a",
+  ergebnis: "#7eb0d0",
+  raum: "#6fbf9a",
+  sonstige: "#d4b56a",
+  neutral: "#9aa8bc",
+  zinsen: "#e0893a",
+  steuern: "#f07a7a",
+  waren: "#c4a07a",
+  reserve: "#6aa3b8",
+} as const;
+
+/** Helle Berichtsfarben. Dieselben Werte wie vor dem dunklen App-Theme. */
+export const pdfFarben = {
   hintergrund: "#f3f4f6",
   flaeche: "#ffffff",
   text: "#1a1d21",
@@ -30,8 +70,8 @@ export const farben = {
   nullinie: "#6b7380",
 } as const;
 
-/** Unterscheidbare Reihen für Diagramme. Gedeckt, ohne zweite Markenfarbe. */
-export const reihen = {
+/** Diagrammreihen im PDF, hell und unabhängig von der App. */
+export const pdfReihen = {
   umsatz: "#1e4a73",
   kosten: "#8a4f2b",
   ergebnis: "#3d6f8f",
@@ -67,6 +107,29 @@ export const DIAGRAMM_FARBE: Record<string, string> = {
   reserve: reihen.reserve,
 };
 
+const PDF_DIAGRAMM_FARBE: Record<string, string> = {
+  umsatz: pdfReihen.umsatz,
+  kosten: pdfReihen.kosten,
+  kontostand: pdfReihen.umsatz,
+  ergebnis: pdfReihen.ergebnis,
+  wareneinsatz: pdfReihen.kosten,
+  personal: pdfReihen.umsatz,
+  raumkosten: pdfReihen.raum,
+  "sonstige-kosten": pdfReihen.sonstige,
+  abschreibungen: pdfReihen.neutral,
+  zinsen: pdfReihen.zinsen,
+  steuern: pdfReihen.steuern,
+  eigenmittel: pdfReihen.umsatz,
+  darlehen: pdfReihen.ergebnis,
+  zuschuesse: pdfReihen.raum,
+  investitionen: pdfReihen.kosten,
+  gruendungskosten: pdfReihen.zinsen,
+  anlaufkosten: pdfReihen.sonstige,
+  "waren-erstbestand": pdfReihen.waren,
+  betriebsmittel: pdfReihen.neutral,
+  reserve: pdfReihen.reserve,
+};
+
 export const DIAGRAMM_PALETTE = [
   reihen.umsatz,
   reihen.kosten,
@@ -80,6 +143,10 @@ export const DIAGRAMM_PALETTE = [
 
 export function diagrammFarbe(id: string): string {
   return DIAGRAMM_FARBE[id] ?? farben.textGedaempft;
+}
+
+export function pdfDiagrammFarbe(id: string): string {
+  return PDF_DIAGRAMM_FARBE[id] ?? pdfFarben.textGedaempft;
 }
 
 /** Muss deckungsgleich mit dem :root-Block in src/index.css sein. */

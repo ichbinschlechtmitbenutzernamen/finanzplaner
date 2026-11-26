@@ -4,7 +4,7 @@ import { Text, View } from "@react-pdf/renderer";
 void React;
 import type { Planjahr } from "../../domain/reports/planjahr.ts";
 import type { IsoMonth } from "../../domain/types.ts";
-import { farben } from "../design-tokens.ts";
+import { pdfFarben as farben } from "../design-tokens.ts";
 import {
   DICHTE_JAHR,
   DICHTE_MONAT,
