@@ -48,7 +48,7 @@ describe("Prüfung", () => {
     const onReiter = vi.fn();
     render(flaeche("pruefung", onReiter));
 
-    expect(screen.getByRole("tab", { name: /Prüfung/ })).toBeTruthy();
+    expect(screen.getByRole("tab", { name: /Prüfen/ })).toBeTruthy();
     expect(screen.getByText("Es ist keine Steuerberatung oder Buchhaltung erfasst.")).toBeTruthy();
     expect(screen.getByText("Es ist keine Versicherung erfasst.")).toBeTruthy();
     const versicherung = screen.getByText("Es ist keine Versicherung erfasst.").closest("article");

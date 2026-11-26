@@ -13,7 +13,7 @@ afterEach(() => {
 });
 
 describe("Reiter", () => {
-  it("wechselt mit Pfeiltasten, Pos1 und Ende", async () => {
+  it("wechselt mit Pfeiltasten, Pos1 und Ende auf beiden Ebenen", async () => {
     const user = userEvent.setup();
     const plan = createEmptyFinanzplan({
       id: "plan-reiter",
@@ -38,17 +38,62 @@ describe("Reiter", () => {
     }
     render(<Harness />);
 
+    const ergebnisse = screen.getByRole("tab", { name: "Ergebnisse" });
+    const eingeben = screen.getByRole("tab", { name: "Eingeben" });
+    expect(ergebnisse.getAttribute("aria-selected")).toBe("true");
+    expect(ergebnisse.tabIndex).toBe(0);
+    expect(eingeben.tabIndex).toBe(-1);
+    ergebnisse.focus();
+
+    await user.keyboard("{ArrowRight}");
+    const pruefen = screen.getByRole("tab", { name: /^Prüfen/ });
+    expect(pruefen.getAttribute("aria-selected")).toBe("true");
+    expect(document.activeElement).toBe(pruefen);
+    expect(pruefen.tabIndex).toBe(0);
+    expect(ergebnisse.tabIndex).toBe(-1);
+
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("tab", { name: "Ergebnisse" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Überblick" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+
+    await user.keyboard("{End}");
+    expect(screen.getByRole("tab", { name: "Szenarien" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+
+    await user.keyboard("{Home}");
+    expect(screen.getByRole("tab", { name: "Eingeben" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Assistent" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+
+    await user.keyboard("{ArrowLeft}");
+    expect(screen.getByRole("tab", { name: "Szenarien" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+
+    await user.keyboard("{ArrowRight}");
+    expect(screen.getByRole("tab", { name: "Eingeben" }).getAttribute("aria-selected")).toBe(
+      "true",
+    );
+    await user.keyboard("{ArrowRight}");
     const ueberblick = screen.getByRole("tab", { name: "Überblick" });
-    const assistent = screen.getByRole("tab", { name: "Assistent" });
     expect(ueberblick.tabIndex).toBe(0);
-    expect(assistent.tabIndex).toBe(-1);
+    expect(screen.getByRole("tab", { name: /Gewinn und Verlust/ }).tabIndex).toBe(-1);
     ueberblick.focus();
 
     await user.keyboard("{ArrowRight}");
-    const szenarien = screen.getByRole("tab", { name: "Szenarien" });
-    expect(szenarien.getAttribute("aria-selected")).toBe("true");
-    expect(document.activeElement).toBe(szenarien);
-    expect(szenarien.tabIndex).toBe(0);
+    const gewinn = screen.getByRole("tab", { name: /Gewinn und Verlust/ });
+    expect(gewinn.getAttribute("aria-selected")).toBe("true");
+    expect(gewinn.textContent).toContain("Rentabilitätsvorschau");
+    expect(document.activeElement).toBe(gewinn);
+    expect(gewinn.tabIndex).toBe(0);
     expect(ueberblick.tabIndex).toBe(-1);
 
     await user.keyboard("{ArrowLeft}");
@@ -58,21 +103,17 @@ describe("Reiter", () => {
 
     await user.keyboard("{End}");
     expect(
-      screen
-        .getByRole("tab", { name: "Privatbedarf und Tragfähigkeit" })
-        .getAttribute("aria-selected"),
+      screen.getByRole("tab", { name: /Reicht es zum Leben/ }).getAttribute("aria-selected"),
     ).toBe("true");
 
     await user.keyboard("{Home}");
-    expect(screen.getByRole("tab", { name: "Assistent" }).getAttribute("aria-selected")).toBe(
+    expect(screen.getByRole("tab", { name: "Überblick" }).getAttribute("aria-selected")).toBe(
       "true",
     );
 
     await user.keyboard("{ArrowLeft}");
     expect(
-      screen
-        .getByRole("tab", { name: "Privatbedarf und Tragfähigkeit" })
-        .getAttribute("aria-selected"),
+      screen.getByRole("tab", { name: /Reicht es zum Leben/ }).getAttribute("aria-selected"),
     ).toBe("true");
   });
 });

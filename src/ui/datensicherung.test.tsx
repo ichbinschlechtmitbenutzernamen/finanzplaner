@@ -78,7 +78,7 @@ describe("Reiter vor der Wegwahl", () => {
     render(<Harness />);
     expect(screen.queryByRole("tab", { selected: true })).toBeNull();
     expect(screen.getByRole("heading", { name: "Wie möchten Sie beginnen?" })).toBeTruthy();
-    await user.click(screen.getByRole("tab", { name: /Prüfung/ }));
+    await user.click(screen.getByRole("tab", { name: /Prüfen/ }));
     expect(screen.queryByRole("tab", { selected: true })).toBeNull();
     expect(screen.getByRole("heading", { name: "Wie möchten Sie beginnen?" })).toBeTruthy();
     await user.click(screen.getByRole("button", { name: "Assistent starten" }));

@@ -201,8 +201,39 @@ button:disabled {
   font-weight: 650;
 }
 
-.reiter {
+.reiter-ebenen {
   margin: 0.9rem 0 0.6rem;
+}
+
+.reiter-ebenen .reiter {
+  margin: 0;
+}
+
+.reiter-ebenen .unterreiter {
+  margin-top: 0.4rem;
+}
+
+.reiter button.reiter-doppel {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  border-radius: var(--radius-md);
+  line-height: 1.15;
+  text-align: left;
+}
+
+.reiter-alltag {
+  font-weight: 650;
+}
+
+.reiter-fach {
+  color: var(--text-gedaempft);
+  font-size: 0.68rem;
+  font-weight: 500;
+}
+
+.reiter button[aria-selected="true"] .reiter-fach {
+  color: var(--text-auf-akzent);
 }
 
 .kennzahlen,
@@ -461,6 +492,42 @@ button:disabled {
   }
 }
 
+@media (max-width: 1024px) {
+  .hauptreiter,
+  .unterreiter {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+  }
+
+  .hauptreiter button,
+  .unterreiter button {
+    flex: 0 0 auto;
+  }
+}
+
+.kopfzeile.kopfzeile-kompakt {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--abstand-sm);
+}
+
+.kopf-kurz {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.kopfzeile-kompakt h1 {
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.kopfzeile-kompakt .meta {
+  margin: 0;
+  font-size: 0.85rem;
+}
+
 @media (max-width: 720px) {
   .werkzeuge {
     align-items: flex-start;
@@ -470,10 +537,51 @@ button:disabled {
     font-size: 1.45rem;
   }
 
+  .kopfzeile-kompakt h1 {
+    font-size: 1.05rem;
+  }
+
+  .hauptreiter {
+    gap: 0.3rem;
+  }
+
+  .hauptreiter button {
+    padding: 0.28rem 0.48rem;
+    font-size: 0.875rem;
+  }
+
+  .hauptreiter .pruef-zaehler {
+    min-width: 1.15rem;
+    margin-left: 0.25rem;
+    padding: 0 0.28rem;
+  }
+
   .tabelle .spalte-name {
-    width: 11rem;
-    min-width: 11rem;
-    max-width: 11rem;
+    width: 9.5rem;
+    min-width: 9.5rem;
+    max-width: 9.5rem;
+  }
+
+  .startwahl {
+    margin-top: 0.35rem;
+    padding: 0.7rem 0.75rem;
+  }
+
+  .startwahl h2 {
+    font-size: 1.15rem;
+  }
+
+  .startwahl .hinweis {
+    margin-bottom: 0.35rem;
+  }
+
+  .vorlage-wahl {
+    margin-top: 0.4rem;
+    padding: 0.45rem 0.65rem 0.55rem;
+  }
+
+  .startwahl-aktionen {
+    margin: 0.4rem 0 0;
   }
 }
 
@@ -1381,6 +1489,7 @@ button.primaer {
 
 .weitere summary,
 .weitere-menue button,
+.app-menue summary,
 .startseite button,
 .dialog .szenarien-aktionen button {
   border: 1px solid var(--linie);
@@ -1391,6 +1500,52 @@ button.primaer {
 }
 
 .weitere-menue button {
+  display: block;
+  width: 100%;
+  border-radius: var(--radius-md);
+  text-align: left;
+}
+
+.app-menue {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+.app-menue summary {
+  list-style: none;
+}
+
+.app-menue summary::-webkit-details-marker {
+  display: none;
+}
+
+.app-menue-liste {
+  position: absolute;
+  right: 0;
+  z-index: 8;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--abstand-sm);
+  width: min(18rem, calc(100vw - 1.5rem));
+  max-height: min(70vh, 28rem);
+  margin-top: var(--abstand-xs);
+  padding: var(--abstand-sm);
+  overflow: auto;
+  background: var(--flaeche);
+  border: 1px solid var(--linie);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--schatten-popup);
+}
+
+.app-menue-liste .switcher,
+.app-menue-aktionen {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.app-menue-liste .switcher button,
+.app-menue-aktionen button {
   display: block;
   width: 100%;
   border-radius: var(--radius-md);
@@ -1454,6 +1609,7 @@ button.gefaehrlich,
 
 .weitere summary:hover,
 .weitere-menue button:hover,
+.app-menue summary:hover,
 .startseite button:hover,
 .dialog .szenarien-aktionen button:hover {
   background: var(--hover);

@@ -76,6 +76,7 @@ describe("Überblick", () => {
     await user.type(feld, "1500");
     await user.keyboard("{Enter}");
 
+    await user.click(screen.getByRole("tab", { name: "Ergebnisse" }));
     await user.click(screen.getByRole("tab", { name: "Überblick" }));
     const umsatz = screen.getByRole("region", { name: "Umsatz" });
     const planjahr1 = within(umsatz).getByText("Planjahr 1").closest("li");
