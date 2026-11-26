@@ -181,7 +181,7 @@ describe("PDF-Tabellenlayout", () => {
     const inhalt = seiten.find((seite) => seite.texte.includes("Inhaltsverzeichnis"));
     expect(inhalt?.texte.some((text) => text === "jahr" || text === "monat")).toBe(false);
 
-    const vergleich = seiten.find((seite) => seite.texte.includes("Szenarienvergleich"));
+    const vergleich = seiten.find((seite) => seite.texte.includes("Variantenvergleich"));
     expect(vergleich?.texte).toContain("Steuern");
     expect(vergleich?.quer).toBe(false);
   });

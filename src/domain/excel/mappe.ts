@@ -5,7 +5,13 @@ import { istPersonenunternehmen } from "../reports/planjahr.ts";
 import { planFuerSzenario } from "../szenarien/anwenden.ts";
 import { vergleichFuerExport } from "../szenarien/vergleich.ts";
 import { BASIS_SZENARIO_ID, type Finanzplan } from "../types.ts";
-import { dateiBlaetter, excelDateiname, fehlerVermerkExcel, vorhabenName } from "./blaetter.ts";
+import {
+  EXCEL_BLATT_NAME,
+  dateiBlaetter,
+  excelDateiname,
+  fehlerVermerkExcel,
+  vorhabenName,
+} from "./blaetter.ts";
 import { baueEingaben, hebelFuerExport } from "./eingaben.ts";
 import {
   berichtSpalte,
@@ -77,7 +83,7 @@ export function erstelleArbeitsmappe(
   }
   blaetter.set("Steuern", blattSteuern(rechnung, berichte));
   blaetter.set("Prüfung", blattPruefung(meldungen));
-  blaetter.set("Szenarienvergleich", blattVergleich(plan));
+  blaetter.set(EXCEL_BLATT_NAME.vergleich, blattVergleich(plan));
 
   const auswahl = dateiBlaetter(plan.excelExport.blaetter, effektiv.stammdaten.rechtsform);
   const dateiname = excelDateiname(
@@ -510,10 +516,10 @@ function blattPruefung(meldungen: ReturnType<typeof meldungenFuerExport>): Blatt
 }
 
 function blattVergleich(plan: Finanzplan): Blatt {
-  const blatt = new Blatt("Szenarienvergleich");
+  const blatt = new Blatt(EXCEL_BLATT_NAME.vergleich);
   const spalten = vergleichFuerExport(plan);
   blatt.zeile(
-    { text: "Szenarienvergleich", stil: "kopf" },
+    { text: EXCEL_BLATT_NAME.vergleich, stil: "kopf" },
     ...spalten.map((spalte) => ({ text: spalte.name, stil: "kopf" as const })),
   );
   blatt.fixierenZeile = 1;
@@ -569,7 +575,7 @@ function blattVergleich(plan: Finanzplan): Blatt {
     );
   }
   blatt.zeile({
-    text: "Die Vergleichsspalten sind feste Werte aller Szenarien. Nur das gewählte Szenario ist in den übrigen Blättern durchgerechnet.",
+    text: "Die Vergleichsspalten sind feste Werte aller Varianten. Nur die gewählte Variante ist in den übrigen Blättern durchgerechnet.",
     stil: "hinweis",
   });
   blatt.breite(1, 42);

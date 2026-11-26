@@ -211,7 +211,7 @@ export function PlanArbeitsflaeche({
     if (modus === "abweichung") {
       const name = aktivesSzenario(plan)?.name ?? "Diesem Szenario";
       setMeldung(
-        `„${name}“ ist ein Abweichungs-Szenario. Die Eingaben sind nur lesend. Wählen Sie den Basisplan oder ändern Sie die Hebel auf der Seite Szenarien.`,
+        `„${name}“ ist eine Variante mit Stellschrauben. Die Eingaben sind nur zum Ansehen. Wählen Sie oben den Basisplan oder ändern Sie die Stellschrauben unter Szenarien.`,
       );
       return;
     }
@@ -515,7 +515,7 @@ export function PlanArbeitsflaeche({
           <>
             <div className="kopf-kurz">
               <h1>{planTitel}</h1>
-              <p className="meta">{szenarioName}</p>
+              <p className="meta">Angezeigte Variante: {szenarioName}</p>
             </div>
             <details className="app-menue" ref={menue}>
               <summary>Menü</summary>
@@ -606,7 +606,7 @@ export function PlanArbeitsflaeche({
           />
         ) : null}
         <PruefAnbieter meldungen={meldungen}>
-          <SzenarioHinweis plan={plan} />
+          <SzenarioHinweis plan={plan} onAendern={aendernSzenarien} />
           {startwahl ? (
             <Startauswahl
               vorlage={vorlage}

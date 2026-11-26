@@ -1223,9 +1223,67 @@ button.primaer {
   margin: 0.7rem 0;
 }
 
+.variante-umschalter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.35rem 0.65rem;
+}
+
+.variante-label {
+  color: var(--text);
+  font-size: 0.85rem;
+  font-weight: 650;
+}
+
 .szenario-hinweis {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem 0.75rem;
+  margin: 0.8rem 0;
+  padding: 0.55rem 0.8rem;
+  border-radius: var(--radius-lg);
+  background: var(--warnung-hintergrund);
+  color: var(--text);
+  font-size: 0.95rem;
+  font-weight: 450;
+  line-height: 1.4;
+}
+
+.szenario-hinweis button {
+  border: 1px solid var(--linie-stark);
+  background: var(--flaeche);
+  color: var(--text);
+  border-radius: var(--radius-pill);
+  padding: 0.3rem 0.7rem;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.szenario-hinweis button:hover {
+  background: var(--hover);
+}
+
+.wird-angezeigt {
+  color: var(--akzent);
+  font-weight: 650;
+}
+
+.feld-beispiel {
   display: block;
-  margin-bottom: 0.8rem;
+  margin-top: 0.15rem;
+  color: var(--text-gedaempft);
+  font-size: 0.85rem;
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+.app-menue-liste .variante-umschalter {
+  flex-direction: column;
+  align-items: stretch;
+  justify-content: flex-start;
 }
 
 .assistent-felder {

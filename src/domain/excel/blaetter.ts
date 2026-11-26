@@ -18,7 +18,7 @@ export const EXCEL_BLATT_LABEL: Record<ExcelBlattId, string> = {
   tragfaehigkeit: "Tragfähigkeit mit Lebenshaltung",
   steuern: "Steuern",
   pruefung: "Prüfung",
-  vergleich: "Szenarienvergleich",
+  vergleich: "Variantenvergleich",
 };
 
 /** Namen in der Arbeitsmappe. Excel erlaubt höchstens 31 Zeichen. */
@@ -33,7 +33,7 @@ export const EXCEL_BLATT_NAME: Record<ExcelBlattId, string> = {
   tragfaehigkeit: "Tragfähigkeit",
   steuern: "Steuern",
   pruefung: "Prüfung",
-  vergleich: "Szenarienvergleich",
+  vergleich: "Variantenvergleich",
 };
 
 export const HILFSBLATT_NAME = {
@@ -44,7 +44,7 @@ export const HILFSBLATT_NAME = {
 
 /**
  * Blätter, deren Zahlen aus Formeln kommen.
- * Prüfung und Szenarienvergleich tragen feste Werte.
+ * Prüfung und Variantenvergleich tragen feste Werte.
  */
 export const EXCEL_RECHENBLAETTER: readonly ExcelBlattId[] = [
   "uebersicht",

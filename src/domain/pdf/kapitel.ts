@@ -19,7 +19,7 @@ export const PDF_KAPITEL_LABEL: Record<PdfKapitelId, string> = {
   steuern: "Steuern",
   diagramme: "Diagramme",
   pruefung: "Prüfungsmeldungen",
-  vergleich: "Szenarienvergleich",
+  vergleich: "Variantenvergleich",
 };
 
 /** Alle Kapitel, so wie ein neuer Plan und eine Migration sie vorbelegen. */
