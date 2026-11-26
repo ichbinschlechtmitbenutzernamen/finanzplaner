@@ -33,6 +33,7 @@ import {
 } from "../domain/types.ts";
 import type { PlanAendern } from "./assistent/typen.ts";
 import { Bestaetigung } from "./Bestaetigung.tsx";
+import { Dialog } from "./dialog.tsx";
 import { DIAGRAMM_PALETTE, farben } from "./design-tokens.ts";
 import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from "./format.ts";
 
@@ -267,79 +268,78 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
       ) : null}
 
       {dialog ? (
-        <div className="dialog-hintergrund">
-          <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="hebel-titel">
-            <h2 id="hebel-titel">Hebel</h2>
-            <p className="hinweis">
-              100 % entspricht dem Basisplan. Der Umsatzstart schiebt alle Umsatzzeilen nach hinten.
-              Die ersten Monate bleiben ohne Umsatz, was über Monat 36 hinausfällt, entfällt. Der
-              Wareneinsatz folgt dem Umsatz, die Kosten bleiben liegen. Die Wareneinsatzquote ändert
-              sich in Prozentpunkten, nicht als neuer fester Satz.
-            </p>
-            <div className="dialog-felder">
-              <label>
-                Name
-                <input
-                  value={dialog.name}
-                  onChange={(event) => setDialog({ ...dialog, name: event.target.value })}
-                />
-              </label>
-              <label>
-                Umsatz in % des Basisplans
-                <input
-                  inputMode="decimal"
-                  value={dialog.umsatz}
-                  onChange={(event) => setDialog({ ...dialog, umsatz: event.target.value })}
-                />
-              </label>
-              <label>
-                Umsatzstart, Monate später
-                <input
-                  inputMode="numeric"
-                  value={dialog.start}
-                  onChange={(event) => setDialog({ ...dialog, start: event.target.value })}
-                />
-              </label>
-              <label>
-                Wareneinsatz, Prozentpunkte
-                <input
-                  inputMode="decimal"
-                  value={dialog.ware}
-                  onChange={(event) => setDialog({ ...dialog, ware: event.target.value })}
-                />
-              </label>
-              <label>
-                Personalkosten in % des Basisplans
-                <input
-                  inputMode="decimal"
-                  value={dialog.personal}
-                  onChange={(event) => setDialog({ ...dialog, personal: event.target.value })}
-                />
-              </label>
-              <label>
-                Laufende Kosten in % des Basisplans
-                <input
-                  inputMode="decimal"
-                  value={dialog.kosten}
-                  onChange={(event) => setDialog({ ...dialog, kosten: event.target.value })}
-                />
-              </label>
-            </div>
-            {dialog.fehler ? (
-              <p className="fehler" role="alert">
-                {dialog.fehler}
-              </p>
-            ) : null}
-            <div className="szenarien-aktionen">
-              <button type="button" className="primaer" onClick={speichereDialog}>
-                Hebel übernehmen
-              </button>
-              <button type="button" onClick={() => setDialog(null)}>
-                Abbrechen
-              </button>
-            </div>
+        <Dialog titelId="hebel-titel" onSchliessen={() => setDialog(null)}>
+          <h2 id="hebel-titel">Hebel</h2>
+          <p className="hinweis">
+            100 % entspricht dem Basisplan. Der Umsatzstart schiebt alle Umsatzzeilen nach hinten.
+            Die ersten Monate bleiben ohne Umsatz, was über Monat 36 hinausfällt, entfällt. Der
+            Wareneinsatz folgt dem Umsatz, die Kosten bleiben liegen. Die Wareneinsatzquote ändert
+            sich in Prozentpunkten, nicht als neuer fester Satz.
+          </p>
+          <div className="dialog-felder">
+            <label>
+              Name
+              <input
+                value={dialog.name}
+                data-anfangs-fokus="true"
+                onChange={(event) => setDialog({ ...dialog, name: event.target.value })}
+              />
+            </label>
+            <label>
+              Umsatz in % des Basisplans
+              <input
+                inputMode="decimal"
+                value={dialog.umsatz}
+                onChange={(event) => setDialog({ ...dialog, umsatz: event.target.value })}
+              />
+            </label>
+            <label>
+              Umsatzstart, Monate später
+              <input
+                inputMode="numeric"
+                value={dialog.start}
+                onChange={(event) => setDialog({ ...dialog, start: event.target.value })}
+              />
+            </label>
+            <label>
+              Wareneinsatz, Prozentpunkte
+              <input
+                inputMode="decimal"
+                value={dialog.ware}
+                onChange={(event) => setDialog({ ...dialog, ware: event.target.value })}
+              />
+            </label>
+            <label>
+              Personalkosten in % des Basisplans
+              <input
+                inputMode="decimal"
+                value={dialog.personal}
+                onChange={(event) => setDialog({ ...dialog, personal: event.target.value })}
+              />
+            </label>
+            <label>
+              Laufende Kosten in % des Basisplans
+              <input
+                inputMode="decimal"
+                value={dialog.kosten}
+                onChange={(event) => setDialog({ ...dialog, kosten: event.target.value })}
+              />
+            </label>
           </div>
-        </div>
+          {dialog.fehler ? (
+            <p className="fehler" role="alert">
+              {dialog.fehler}
+            </p>
+          ) : null}
+          <div className="szenarien-aktionen">
+            <button type="button" className="primaer" onClick={speichereDialog}>
+              Hebel übernehmen
+            </button>
+            <button type="button" onClick={() => setDialog(null)}>
+              Abbrechen
+            </button>
+          </div>
+        </Dialog>
       ) : null}
     </div>
   );

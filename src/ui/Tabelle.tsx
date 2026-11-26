@@ -10,6 +10,8 @@ import {
   formatMenge,
   formatMonatKurz,
   formatMonatLang,
+  HINWEIS_JAHR_AUFKLAPPEN,
+  PLATZHALTER_ZAHL,
 } from "./format.ts";
 import type { DatenSpalte } from "./spalten.ts";
 import type { TabellenZeile } from "./zeilen-modell.ts";
@@ -297,7 +299,10 @@ export function Tabelle({
                     bearbeiten && spalte.art === "monat" && zeile.bearbeitbar[monatIndex] === true;
                   const aktiv = auswahl?.zeile === eintrag.index && auswahl.spalte === index;
                   const imEdit = edit?.zeile === eintrag.index && edit.spalte === index;
-                  const label = zellenLabel(zeile, spalte, wert);
+                  const jahrHinweis = jahrZumBearbeiten(bearbeiten, zeile, spalte);
+                  const label = jahrHinweis
+                    ? `${zellenLabel(zeile, spalte, wert)}. ${HINWEIS_JAHR_AUFKLAPPEN}`
+                    : zellenLabel(zeile, spalte, wert);
                   const monatMarke =
                     marke?.monat != null && spalte.art === "monat" && spalte.monat === marke.monat
                       ? marke.stufe
@@ -311,7 +316,9 @@ export function Tabelle({
                       aria-readonly={!kann}
                       aria-label={label}
                       tabIndex={aktiv ? -1 : undefined}
-                      title={monatMarke ? marke?.text : undefined}
+                      title={
+                        jahrHinweis ? HINWEIS_JAHR_AUFKLAPPEN : monatMarke ? marke?.text : undefined
+                      }
                       className={zellenKlasse(zeile, spalte, wert, aktiv, kann, monatMarke)}
                       onClick={(event) => {
                         event.currentTarget.focus();
@@ -328,6 +335,7 @@ export function Tabelle({
                           value={edit.text}
                           autoFocus
                           inputMode="decimal"
+                          placeholder={PLATZHALTER_ZAHL}
                           onFocus={(event) => {
                             if (edit.ersetzen) event.currentTarget.select();
                           }}
@@ -369,6 +377,15 @@ export function Tabelle({
       </table>
     </div>
   );
+}
+
+function jahrZumBearbeiten(
+  bearbeiten: boolean,
+  zeile: TabellenZeile,
+  spalte: DatenSpalte,
+): boolean {
+  if (!bearbeiten || spalte.art !== "jahr") return false;
+  return zeile.bearbeitbar.slice(spalte.planjahr.vonIndex, spalte.planjahr.bisIndex).some(Boolean);
 }
 
 function zellenWert(zeile: TabellenZeile, spalte: DatenSpalte): number | null {

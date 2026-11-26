@@ -153,6 +153,7 @@ describe("Kennzahlenleiste", () => {
     );
     const vorher = norm(screen.getByRole("button", { name: /Ergebnis nach Steuern/ }).textContent);
 
+    await user.click(screen.getByRole("button", { name: "Planjahr 1 aufklappen" }));
     const april = screen.getByRole("gridcell", { name: /Beratung, April 2026, 1\.000,00/ });
     await user.click(april);
     await user.keyboard("{Enter}");

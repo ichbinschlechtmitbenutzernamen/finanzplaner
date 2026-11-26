@@ -2,6 +2,10 @@
 
 ## Unveröffentlicht
 
+- **Tabelle.** Planjahre starten eingeklappt. Zuerst sehen Sie die Jahressumme, die Monate öffnet ein Klick auf das Planjahr. Diese Wahl bleibt je Plan für die Sitzung erhalten. Jahressummen lassen sich nicht direkt ändern: „Zum Bearbeiten Jahr aufklappen“.
+- **Hilfeleiste.** Die Kurzhilfe steht in einer Zeile. Fortschreiben, Faktor oder Menge, Wachstum und die zwölf Monatsfelder erscheinen, wenn eine Zeile ausgewählt ist, sonst unter „Mehr Werkzeuge“. Tastatur, Einfügen aus Excel und Überschreibungen stehen unter „Hilfe“. Leere Zahlenfelder für Beträge und Mengen zeigen „z. B. 1.234,56“.
+- **Export.** PDF und Excel übernehmen das aktive Szenario. Im Dialog können Sie ein anderes wählen.
+- **Bedienung.** PDF, Excel, Hebel und Rückfragen setzen den Fokus beim Öffnen, halten ihn im Dialog und geben ihn an die auslösende Schaltfläche zurück. Escape schließt weiterhin. Die Reiter folgen den Pfeiltasten, Pos1 und Ende.
 - **Kennzahlenleiste.** Über dem Assistenten und der Tabelle bleibt eine schmale Leiste sichtbar. Sie zeigt den tiefsten Kontostand, das Ergebnis nach Steuern der ersten drei Planjahre, den Break-even, die Tragfähigkeit, die Zahl der Fehler und Warnungen und den Kapitalbedarf des aktiven Szenarios. Ein Klick öffnet den passenden Reiter. Vor der Wegwahl und bei einem leeren Plan stehen Striche.
 - **Startseite.** Aufruf ohne Beispiel-Link zeigt eine kurze Startseite. Von dort legen Sie einen eigenen Plan an, öffnen eines der vier Beispiele oder laden eine Datei. Ein bereits vorhandener Plan lässt sich fortsetzen; ein neuer Plan ersetzt ihn erst nach einer Rückfrage. Direkte Links wie `#elektro/ueberblick` bleiben gültig. Vor der Wahl zwischen Assistent und Tabelle ist kein Reiter als geöffnet markiert.
 - **Sichern und Laden.** Eigene Pläne lassen sich als JSON-Datei sichern und wieder laden, auch ältere Schema-Versionen. Ein Hinweis bleibt sichtbar, dass die Daten nur in diesem Browser liegen. Nach 30 Minuten ungesicherter Arbeit erscheint ein schließbarer Hinweis mit dem Zeitpunkt der letzten Sicherung.

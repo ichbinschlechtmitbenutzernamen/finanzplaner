@@ -1,10 +1,11 @@
 // @vitest-environment jsdom
 
-import { cleanup, render, screen } from "@testing-library/react";
+import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it } from "vitest";
 import { EXCEL_BLATT_LABEL } from "../../domain/excel/blaetter.ts";
 import type { Finanzplan } from "../../domain/types.ts";
+import { setzeAktivesSzenario } from "../../domain/szenarien/index.ts";
 import { beispielElektro } from "../../fixtures/beispiel-elektro.ts";
 import { beispielGmbh } from "../../fixtures/beispiel-gmbh.ts";
 import { PlanArbeitsflaeche } from "../PlanArbeitsflaeche.tsx";
@@ -47,6 +48,24 @@ describe("Excel-Dialog", () => {
     await user.click(screen.getByRole("checkbox", { name: "Liquidität" }));
     expect(gespeichert.at(-1)?.excelExport.blaetter).not.toContain("liquiditaet");
     expect(gespeichert.at(-1)?.excelExport.blaetter).toContain("rentabilitaet");
+  });
+
+  it("übernimmt das aktive Szenario", async () => {
+    const user = userEvent.setup();
+    render(flaeche(setzeAktivesSzenario(beispielElektro, "szenario-vorsichtig")));
+    const oeffnen = screen.getByRole("button", { name: "Excel erstellen" });
+    await user.click(oeffnen);
+    const dialog = screen.getByRole("dialog", { name: "Excel erstellen" });
+    const vorsichtig = within(dialog).getByRole("radio", { name: "Vorsichtig" });
+    expect((vorsichtig as HTMLInputElement).checked).toBe(true);
+    expect(document.activeElement).toBe(vorsichtig);
+    await user.click(within(dialog).getByRole("radio", { name: "Optimistisch" }));
+    expect(
+      (within(dialog).getByRole("radio", { name: "Optimistisch" }) as HTMLInputElement).checked,
+    ).toBe(true);
+    await user.keyboard("{Escape}");
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(document.activeElement).toBe(oeffnen);
   });
 
   it("blendet die Tragfähigkeit bei der GmbH aus", async () => {

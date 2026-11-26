@@ -82,3 +82,9 @@ export function formatZeitpunkt(iso: string): string {
 }
 
 export const KALENDER_KURZ = KURZ;
+
+/** Leeres Zahlenfeld: deutsches Format mit Tausenderpunkt. */
+export const PLATZHALTER_ZAHL = "z. B. 1.234,56";
+
+/** Jahressummen sind Summen. Die Eingabe bleibt in den Monaten. */
+export const HINWEIS_JAHR_AUFKLAPPEN = "Zum Bearbeiten Jahr aufklappen";
