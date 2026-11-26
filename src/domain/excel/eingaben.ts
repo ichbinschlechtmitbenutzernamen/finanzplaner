@@ -267,7 +267,7 @@ export function baueEingaben(
 
   blatt.zeile({ text: "Eingaben", stil: "kopf" });
   blatt.zeile({
-    text: `Szenario: ${szenarioName}. Gelbe Zellen sind Eingaben. Änderungen rechnen in den Berichtsblättern weiter.`,
+    text: `Variante: ${szenarioName}. Gelbe Zellen sind Eingaben. Änderungen rechnen in den Berichtsblättern weiter.`,
     stil: "hinweis",
   });
   blatt.zeile({ text: hebelHinweis, stil: "hinweis" });
@@ -520,7 +520,7 @@ export function hebelFuerExport(
     return {
       hebel: neutralerHebel(),
       name: "Basisplan",
-      hinweis: "Das Szenario fehlt. Ausgegeben ist der Basisplan.",
+      hinweis: "Die Variante fehlt. Ausgegeben ist der Basisplan.",
     };
   }
   if (eintrag.art === "abweichung") {

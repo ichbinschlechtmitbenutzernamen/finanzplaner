@@ -1096,7 +1096,7 @@ function Vergleich({ rahmen }: { rahmen: Rahmen }): { quer: boolean; knoten: Rea
   const breiteText = quer ? BREITE_QUER : BREITE_HOCH;
   const davor = vorspann(
     [
-      zeileH1("Szenarienvergleich", breiteText),
+      zeileH1("Variantenvergleich", breiteText),
       zeileLegende(legende, breiteText),
       ...fehler.map((spalte) => zeileHinweis(`${spalte.name}: ${spalte.fehlerText}`, breiteText)),
     ],
@@ -1113,11 +1113,11 @@ function Vergleich({ rahmen }: { rahmen: Rahmen }): { quer: boolean; knoten: Rea
         quer ? NUTZ_QUER : NUTZ_HOCH,
         (fortsetzung) =>
           fortsetzung ? (
-            <Text style={stil.h2}>Szenarienvergleich, Fortsetzung</Text>
+            <Text style={stil.h2}>Variantenvergleich, Fortsetzung</Text>
           ) : (
             <>
               <Anker id="vergleich" rahmen={rahmen} />
-              <Text style={stil.h1}>Szenarienvergleich</Text>
+              <Text style={stil.h1}>Variantenvergleich</Text>
               <Text style={stil.legende}>{legende}</Text>
             </>
           ),
@@ -1248,7 +1248,7 @@ function PdfPlan({
     if (vergleich.quer) {
       teile.push({
         art: "fluss",
-        kopf: `${dokument.vorhaben} · Szenarienvergleich`,
+        kopf: `${dokument.vorhaben} · Variantenvergleich`,
         quer: true,
         sammeln: false,
         kinder: [vergleich.knoten],
@@ -1259,7 +1259,7 @@ function PdfPlan({
       else {
         teile.push({
           art: "fluss",
-          kopf: `${dokument.vorhaben} · Szenarienvergleich`,
+          kopf: `${dokument.vorhaben} · Variantenvergleich`,
           quer: false,
           sammeln: true,
           kinder: [vergleich.knoten],

@@ -85,7 +85,7 @@ export function rechtsformText(rechtsform: Rechtsform | undefined): string {
 
 export function artText(art: "basis" | PlanSzenarioArt): string {
   if (art === "basis") return "Basisplan";
-  if (art === "abweichung") return "Abweichung";
+  if (art === "abweichung") return "Variante";
   return "Kopie";
 }
 

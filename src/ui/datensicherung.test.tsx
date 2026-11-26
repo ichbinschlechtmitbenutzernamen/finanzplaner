@@ -135,13 +135,14 @@ describe("Rückfragen", () => {
     const liste = screen.getByRole("list");
     expect(within(liste).getByText("Vorsichtig")).toBeTruthy();
     await user.click(within(liste).getAllByRole("button", { name: "Löschen" })[0]!);
-    const dialog = screen.getByRole("dialog", { name: "Szenario löschen" });
+    const dialog = screen.getByRole("dialog", { name: "Variante löschen" });
     expect(dialog.textContent).toContain("Vorsichtig");
+    expect(dialog.textContent).toContain("Die Variante „Vorsichtig“ wird gelöscht.");
     await user.click(within(dialog).getByRole("button", { name: "Abbrechen" }));
     expect(within(liste).getByText("Vorsichtig")).toBeTruthy();
     await user.click(within(liste).getAllByRole("button", { name: "Löschen" })[0]!);
     await user.click(
-      within(screen.getByRole("dialog")).getByRole("button", { name: "Szenario löschen" }),
+      within(screen.getByRole("dialog")).getByRole("button", { name: "Variante löschen" }),
     );
     expect(within(screen.getByRole("list")).queryByText("Vorsichtig")).toBeNull();
     expect(within(screen.getByRole("list")).getByText("Optimistisch")).toBeTruthy();

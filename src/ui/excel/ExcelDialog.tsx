@@ -70,11 +70,11 @@ export function ExcelDialog({ plan, onSchliessen, onBlaetter }: ExcelDialogProps
     <Dialog titelId="excel-titel" onSchliessen={onSchliessen} escapeAktiv={!laeuft}>
       <h2 id="excel-titel">Excel erstellen</h2>
       <p className="meta">
-        Das gewählte Szenario wird mit Formeln durchgerechnet. Die übrigen Szenarien stehen im
-        Szenarienvergleich. Die Datei entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
+        Die gewählte Variante wird mit Formeln durchgerechnet. Die übrigen Varianten stehen im
+        Variantenvergleich. Die Datei entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
       </p>
       <fieldset className="pdf-szenario">
-        <legend>Szenario</legend>
+        <legend>Variante</legend>
         {faelle.map((fall) => (
           <label key={fall.id}>
             <input

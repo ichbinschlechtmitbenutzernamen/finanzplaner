@@ -136,7 +136,7 @@ describe("Excel-Export", () => {
     const nurPruefung = structuredClone(beispielElektro);
     nurPruefung.excelExport = { blaetter: ["pruefung", "vergleich"] };
     const pruefung = erstelleArbeitsmappe(nurPruefung, DATUM);
-    expect(pruefung.blaetter.map((blatt) => blatt.name)).toEqual(["Prüfung", "Szenarienvergleich"]);
+    expect(pruefung.blaetter.map((blatt) => blatt.name)).toEqual(["Prüfung", "Variantenvergleich"]);
 
     const nurRente = structuredClone(beispielElektro);
     nurRente.excelExport = { blaetter: ["rentabilitaet"] };
@@ -193,7 +193,7 @@ describe("Excel-Export", () => {
       .values.map((wert) => (typeof wert === "string" ? wert : ""));
     expect(vermerk).toBeTruthy();
     expect(elektroTexte.some((text) => text === vermerk)).toBe(true);
-    expect(elektro.workbook.getWorksheet("Szenarienvergleich")?.getRow(1).getCell(2).text).toBe(
+    expect(elektro.workbook.getWorksheet("Variantenvergleich")?.getRow(1).getCell(2).text).toBe(
       "Basisplan",
     );
     expect(vergleichFuerExport(beispielElektro).length).toBeGreaterThan(1);

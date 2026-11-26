@@ -134,7 +134,7 @@ describe("Dialogfokus", () => {
     }
     render(<Harness />);
     const liste = screen.getByRole("list");
-    const hebel = within(liste).getAllByRole("button", { name: "Hebel" })[0]!;
+    const hebel = within(liste).getAllByRole("button", { name: "Stellschrauben" })[0]!;
     await user.click(hebel);
     const name = screen.getByRole("textbox", { name: "Name" });
     expect(document.activeElement).toBe(name);
@@ -162,9 +162,9 @@ describe("Dialogfokus", () => {
     const liste = screen.getByRole("list");
     const loeschen = within(liste).getAllByRole("button", { name: "Löschen" })[0]!;
     await user.click(loeschen);
-    const dialog = screen.getByRole("dialog", { name: "Szenario löschen" });
+    const dialog = screen.getByRole("dialog", { name: "Variante löschen" });
     const abbrechen = within(dialog).getByRole("button", { name: "Abbrechen" });
-    const bestaetigen = within(dialog).getByRole("button", { name: "Szenario löschen" });
+    const bestaetigen = within(dialog).getByRole("button", { name: "Variante löschen" });
     expect(document.activeElement).toBe(abbrechen);
     await user.tab();
     expect(document.activeElement).toBe(bestaetigen);

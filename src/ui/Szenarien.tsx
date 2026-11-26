@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import {
   CartesianGrid,
   Legend,
@@ -39,6 +39,7 @@ import { formatEuro, formatEuroAchse, formatMonatKurz, formatMonatLang } from ".
 
 interface DialogState {
   id: string;
+  neu: boolean;
   name: string;
   umsatz: string;
   start: string;
@@ -48,6 +49,27 @@ interface DialogState {
   fehler: string | null;
 }
 
+/** Kurzbeschreibung einer Variante, aus den Stellschrauben gegenüber dem Basisplan. */
+export function kurzbeschreibung(hebel: SzenarioHebel): string {
+  const teile: string[] = [];
+  if (hebel.umsatzFaktor !== 1)
+    teile.push(`Umsatz ${mitVorzeichen((hebel.umsatzFaktor - 1) * 100, "%")}`);
+  if (hebel.umsatzstartMonate > 0) {
+    const monate = hebel.umsatzstartMonate;
+    teile.push(`Start ${monate} ${monate === 1 ? "Monat" : "Monate"} später`);
+  }
+  if (hebel.wareneinsatzPunkte !== 0) {
+    teile.push(`Wareneinsatz ${mitVorzeichen(hebel.wareneinsatzPunkte * 100, "Prozentpunkte")}`);
+  }
+  if (hebel.personalFaktor !== 1) {
+    teile.push(`Personal ${mitVorzeichen((hebel.personalFaktor - 1) * 100, "%")}`);
+  }
+  if (hebel.kostenFaktor !== 1) {
+    teile.push(`Laufende Kosten ${mitVorzeichen((hebel.kostenFaktor - 1) * 100, "%")}`);
+  }
+  return teile.length > 0 ? teile.join(", ") : "Wie der Basisplan, ohne Änderung";
+}
+
 export function SzenarioUmschalter({
   plan,
   onAendern,
@@ -55,51 +77,59 @@ export function SzenarioUmschalter({
   plan: Finanzplan;
   onAendern: PlanAendern;
 }) {
+  const labelId = useId();
   const aktiv = plan.planSzenarien.aktivId;
   return (
-    <div className="switcher" role="group" aria-label="Szenario wählen">
-      <button
-        type="button"
-        aria-pressed={aktiv === BASIS_SZENARIO_ID}
-        onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, BASIS_SZENARIO_ID))}
-      >
-        Basisplan
-      </button>
-      {plan.planSzenarien.eintraege.map((eintrag) => (
+    <div className="variante-umschalter">
+      <span className="variante-label" id={labelId}>
+        Angezeigte Variante
+      </span>
+      <div className="switcher" role="group" aria-labelledby={labelId}>
         <button
-          key={eintrag.id}
           type="button"
-          aria-pressed={aktiv === eintrag.id}
-          onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, eintrag.id))}
+          aria-pressed={aktiv === BASIS_SZENARIO_ID}
+          onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, BASIS_SZENARIO_ID))}
         >
-          {eintrag.name}
+          Basisplan
         </button>
-      ))}
+        {plan.planSzenarien.eintraege.map((eintrag) => (
+          <button
+            key={eintrag.id}
+            type="button"
+            aria-pressed={aktiv === eintrag.id}
+            onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, eintrag.id))}
+          >
+            {eintrag.name}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
 
-export function SzenarioHinweis({ plan }: { plan: Finanzplan }) {
+export function SzenarioHinweis({ plan, onAendern }: { plan: Finanzplan; onAendern: PlanAendern }) {
   const szenario = aktivesSzenario(plan);
   if (!szenario) return null;
-  if (szenario.art === "abweichung") {
-    return (
-      <p className="flag szenario-hinweis" role="status">
-        Abweichungs-Szenario „{szenario.name}“. Die Eingaben sind nur lesend und ziehen mit dem
-        Basisplan mit. Zahlen ändern Sie im Basisplan, die Hebel auf der Seite Szenarien.
-      </p>
-    );
-  }
+  const text =
+    szenario.art === "abweichung"
+      ? `Sie sehen die Variante „${szenario.name}“. Die anderen Reiter zeigen diese Variante, die Eingaben sind nur zum Ansehen.`
+      : `Sie sehen die Variante „${szenario.name}“. Tabelle und Assistent bearbeiten diese Kopie, der Basisplan bleibt unverändert.`;
   return (
     <p className="flag szenario-hinweis" role="status">
-      Kopie-Szenario „{szenario.name}“. Tabelle und Assistent bearbeiten diese Kopie. Der Basisplan
-      bleibt unverändert, bis Sie ihn wieder auswählen.
+      <span>{text}</span>
+      <button
+        type="button"
+        onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, BASIS_SZENARIO_ID))}
+      >
+        Zurück zum Basisplan
+      </button>
     </p>
   );
 }
 
 export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: PlanAendern }) {
   const spalten = useMemo(() => vergleichFuerExport(plan), [plan]);
+  const basisAktiv = plan.planSzenarien.aktivId === BASIS_SZENARIO_ID;
   const [dialog, setDialog] = useState<DialogState | null>(null);
   const [benennenId, setBenennenId] = useState<string | null>(null);
   const [nameEntwurf, setNameEntwurf] = useState("");
@@ -107,8 +137,8 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
 
   function abweichungAnlegen() {
     const id = neueSzenarioId();
-    onAendern((aktuell) => legeAbweichungAn(aktuell, id, "Neues Szenario"));
-    setDialog(dialogAusHebel(id, "Neues Szenario", neutralAnzeige()));
+    onAendern((aktuell) => legeAbweichungAn(aktuell, id, "Neue Variante"));
+    setDialog(dialogAusHebel(id, "Neue Variante", neutralAnzeige(), true));
   }
 
   function kopieAnlegen() {
@@ -155,15 +185,19 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
   return (
     <div className="szenarien">
       <p className="hinweis">
-        Ein Abweichungs-Szenario speichert nur Hebel und zieht mit, wenn sich der Basisplan ändert.
-        Eine Kopie ist der Plan zum Zeitpunkt des Anlegens und lässt sich frei bearbeiten. Der
-        Wareneinsatzhebel zählt Prozentpunkte auf die Quote des Basisplans: 0 lässt die Quote
-        stehen, −5 senkt 30 % auf 25 %. Zeilen ohne Wareneinsatz bleiben ohne.
+        Varianten beantworten die Frage „Was wäre, wenn …?“, zum Beispiel wenn eine Bank nach einem
+        vorsichtigen Fall mit weniger Umsatz fragt. Hier legen Sie Varianten an, stellen die
+        Stellschrauben ein und vergleichen die Ergebnisse. Welche Variante alle Reiter, die
+        Kennzahlenleiste und der Export zeigen, stellen Sie oben unter „Angezeigte Variante“ ein.
+      </p>
+      <p className="hinweis">
+        „Neue Variante“ ändert nur Stellschrauben und folgt späteren Änderungen am Basisplan. „Kopie
+        des Basisplans“ ist ein eigener Stand, den Sie in Tabelle und Assistent bearbeiten.
       </p>
 
       <div className="szenarien-aktionen">
         <button type="button" onClick={abweichungAnlegen}>
-          Abweichung anlegen
+          Neue Variante
         </button>
         <button type="button" onClick={kopieAnlegen}>
           Kopie des Basisplans anlegen
@@ -171,6 +205,26 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
       </div>
 
       <ul className="szenarien-liste">
+        <li className={basisAktiv ? "aktiv" : undefined}>
+          <div>
+            <strong>Basisplan</strong>
+            <p className="szenario-art">
+              Ausgangsplan
+              {basisAktiv ? <span className="wird-angezeigt"> · wird angezeigt</span> : null}
+            </p>
+            <p className="hinweis">
+              Der Plan, den Sie eingeben. Andere Varianten rechnen von hier aus.
+            </p>
+          </div>
+          <div className="szenarien-aktionen">
+            <AnzeigenKnopf
+              aktiv={basisAktiv}
+              onAnzeigen={() =>
+                onAendern((aktuell) => setzeAktivesSzenario(aktuell, BASIS_SZENARIO_ID))
+              }
+            />
+          </div>
+        </li>
         {plan.planSzenarien.eintraege.map((eintrag) => {
           const aktiv = plan.planSzenarien.aktivId === eintrag.id;
           return (
@@ -197,25 +251,27 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
                   <strong>{eintrag.name}</strong>
                 )}
                 <p className="szenario-art">
-                  {eintrag.art === "abweichung" ? "Abweichung" : "Kopie"}
-                  {aktiv ? " · aktiv" : ""}
+                  {eintrag.art === "abweichung" ? "Was wäre, wenn …?" : "Eigener Stand"}
+                  {aktiv ? <span className="wird-angezeigt"> · wird angezeigt</span> : null}
                 </p>
                 {eintrag.art === "abweichung" ? (
-                  <p className="hinweis">{hebelText(eintrag.hebel)}</p>
+                  <p className="hinweis">{kurzbeschreibung(eintrag.hebel)}</p>
                 ) : (
-                  <p className="hinweis">Eigenständiger Stand, unabhängig vom Basisplan.</p>
+                  <p className="hinweis">
+                    Eigenständiger Stand zum Zeitpunkt des Anlegens, unabhängig vom Basisplan.
+                  </p>
                 )}
               </div>
               <div className="szenarien-aktionen">
-                <button
-                  type="button"
-                  onClick={() => onAendern((aktuell) => setzeAktivesSzenario(aktuell, eintrag.id))}
-                >
-                  Anzeigen
-                </button>
+                <AnzeigenKnopf
+                  aktiv={aktiv}
+                  onAnzeigen={() =>
+                    onAendern((aktuell) => setzeAktivesSzenario(aktuell, eintrag.id))
+                  }
+                />
                 {eintrag.art === "abweichung" ? (
                   <button type="button" onClick={() => setDialog(dialogAusSzenario(eintrag))}>
-                    Hebel
+                    Stellschrauben
                   </button>
                 ) : null}
                 <button
@@ -254,9 +310,9 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
 
       {loeschen ? (
         <Bestaetigung
-          titel="Szenario löschen"
-          text={`Das Szenario „${loeschen.name}“ wird gelöscht.`}
-          bestaetigen="Szenario löschen"
+          titel="Variante löschen"
+          text={`Die Variante „${loeschen.name}“ wird gelöscht.`}
+          bestaetigen="Variante löschen"
           gefahr
           onBestaetigen={() => {
             const ziel = loeschen;
@@ -269,12 +325,10 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
 
       {dialog ? (
         <Dialog titelId="hebel-titel" onSchliessen={() => setDialog(null)}>
-          <h2 id="hebel-titel">Hebel</h2>
+          <h2 id="hebel-titel">{dialog.neu ? "Neue Variante" : "Stellschrauben"}</h2>
           <p className="hinweis">
-            100 % entspricht dem Basisplan. Der Umsatzstart schiebt alle Umsatzzeilen nach hinten.
-            Die ersten Monate bleiben ohne Umsatz, was über Monat 36 hinausfällt, entfällt. Der
-            Wareneinsatz folgt dem Umsatz, die Kosten bleiben liegen. Die Wareneinsatzquote ändert
-            sich in Prozentpunkten, nicht als neuer fester Satz.
+            Jede Stellschraube ist eine Annahme gegenüber dem Basisplan. 100 Prozent und 0 lassen
+            die Zahlen stehen. Die Variante zieht mit, wenn Sie den Basisplan später ändern.
           </p>
           <div className="dialog-felder">
             <label>
@@ -286,44 +340,60 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
               />
             </label>
             <label>
-              Umsatz in % des Basisplans
+              Umsatz gegenüber dem Basisplan, in Prozent
               <input
                 inputMode="decimal"
                 value={dialog.umsatz}
                 onChange={(event) => setDialog({ ...dialog, umsatz: event.target.value })}
               />
+              <span className="feld-beispiel">
+                80 bedeutet: der Umsatz liegt 20 % niedriger als im Basisplan.
+              </span>
             </label>
             <label>
-              Umsatzstart, Monate später
+              Umsatz beginnt Monate später
               <input
                 inputMode="numeric"
                 value={dialog.start}
                 onChange={(event) => setDialog({ ...dialog, start: event.target.value })}
               />
+              <span className="feld-beispiel">
+                3 bedeutet: der Umsatz beginnt drei Monate später, die ersten Monate bleiben ohne
+                Einnahmen.
+              </span>
             </label>
             <label>
-              Wareneinsatz, Prozentpunkte
+              Wareneinsatz, Änderung in Prozentpunkten
               <input
                 inputMode="decimal"
                 value={dialog.ware}
                 onChange={(event) => setDialog({ ...dialog, ware: event.target.value })}
               />
+              <span className="feld-beispiel">
+                5 bedeutet: der Wareneinsatz liegt 5 Prozentpunkte höher (z. B. 30 % statt 25 %).
+              </span>
             </label>
             <label>
-              Personalkosten in % des Basisplans
+              Personalkosten gegenüber dem Basisplan, in Prozent
               <input
                 inputMode="decimal"
                 value={dialog.personal}
                 onChange={(event) => setDialog({ ...dialog, personal: event.target.value })}
               />
+              <span className="feld-beispiel">
+                110 bedeutet: die Personalkosten liegen 10 % höher als im Basisplan.
+              </span>
             </label>
             <label>
-              Laufende Kosten in % des Basisplans
+              Laufende Kosten gegenüber dem Basisplan, in Prozent
               <input
                 inputMode="decimal"
                 value={dialog.kosten}
                 onChange={(event) => setDialog({ ...dialog, kosten: event.target.value })}
               />
+              <span className="feld-beispiel">
+                90 bedeutet: Miete, Versicherung und ähnliche laufende Kosten liegen 10 % niedriger.
+              </span>
             </label>
           </div>
           {dialog.fehler ? (
@@ -333,7 +403,7 @@ export function Szenarien({ plan, onAendern }: { plan: Finanzplan; onAendern: Pl
           ) : null}
           <div className="szenarien-aktionen">
             <button type="button" className="primaer" onClick={speichereDialog}>
-              Hebel übernehmen
+              Stellschrauben übernehmen
             </button>
             <button type="button" onClick={() => setDialog(null)}>
               Abbrechen
@@ -388,8 +458,8 @@ function Vergleich({ plan, spalten }: { plan: Finanzplan; spalten: ExportSzenari
     <div className="vergleich-scroll">
       <table className="vergleich">
         <caption>
-          Vergleich mit dem Basisplan. Kapitalbedarf ist die Summe des Kapitalbedarfsplans.
-          Tragfähigkeit gilt für Einzelunternehmen und Personengesellschaften.
+          Vergleich der Varianten mit dem Basisplan. Kapitalbedarf ist die Summe des
+          Kapitalbedarfsplans. Tragfähigkeit gilt für Einzelunternehmen und Personengesellschaften.
         </caption>
         <thead>
           <tr>
@@ -408,10 +478,14 @@ function Vergleich({ plan, spalten }: { plan: Finanzplan; spalten: ExportSzenari
                 {spalte.name}
                 <span>
                   {spalte.art === "basis"
-                    ? "Basis"
+                    ? "Ausgangsplan"
                     : spalte.art === "abweichung"
-                      ? "Abweichung"
+                      ? "Variante"
                       : "Kopie"}
+                  {plan.planSzenarien.aktivId === spalte.id ||
+                  (spalte.art === "basis" && plan.planSzenarien.aktivId === BASIS_SZENARIO_ID)
+                    ? " · wird angezeigt"
+                    : ""}
                 </span>
               </th>
             ))}
@@ -447,9 +521,9 @@ function KontostandVergleich({ spalten }: { spalten: ExportSzenarioVergleich[] }
     return zeile;
   });
   return (
-    <section className="diagramm-karte" aria-label="Kontostand aller Szenarien">
+    <section className="diagramm-karte" aria-label="Kontostand aller Varianten">
       <h3>Kontostand</h3>
-      <p className="diagramm-notiz">Endbestand je Planmonat, alle Szenarien übereinander.</p>
+      <p className="diagramm-notiz">Endbestand je Planmonat, alle Varianten übereinander.</p>
       <div className="diagramm-flaeche">
         <ResponsiveContainer width="100%" height={320}>
           <LineChart data={daten} margin={{ top: 28, right: 28, left: 0, bottom: 0 }}>
@@ -555,27 +629,20 @@ function wertKlasse(wert: number | null): string | undefined {
   return undefined;
 }
 
-function hebelText(hebel: SzenarioHebel): string {
-  const teile: string[] = [];
-  if (hebel.umsatzFaktor !== 1) teile.push(`Umsatz ${prozent(hebel.umsatzFaktor)} des Basisplans`);
-  if (hebel.umsatzstartMonate > 0) {
-    teile.push(
-      `Umsatzstart ${hebel.umsatzstartMonate} ${hebel.umsatzstartMonate === 1 ? "Monat" : "Monate"} später`,
-    );
-  }
-  if (hebel.wareneinsatzPunkte !== 0)
-    teile.push(`Wareneinsatz ${punkte(hebel.wareneinsatzPunkte)}`);
-  if (hebel.personalFaktor !== 1) teile.push(`Personal ${prozent(hebel.personalFaktor)}`);
-  if (hebel.kostenFaktor !== 1) teile.push(`Laufende Kosten ${prozent(hebel.kostenFaktor)}`);
-  return teile.length > 0 ? teile.join(", ") : "Keine Abweichung vom Basisplan";
+function AnzeigenKnopf({ aktiv, onAnzeigen }: { aktiv: boolean; onAnzeigen: () => void }) {
+  if (aktiv) return null;
+  return (
+    <button type="button" onClick={onAnzeigen}>
+      Diese Variante anzeigen
+    </button>
+  );
 }
 
-function prozent(faktor: number): string {
-  return `${zahl(faktor * 100)} %`;
-}
-
-function punkte(wert: number): string {
-  return `${zahl(wert * 100)} Prozentpunkte`;
+function mitVorzeichen(delta: number, einheit: string): string {
+  const gerundet = Math.round(delta * 100) / 100;
+  const betrag = zahl(Math.abs(gerundet));
+  const zeichen = gerundet > 0 ? "+" : gerundet < 0 ? "−" : "";
+  return `${zeichen}${betrag} ${einheit}`;
 }
 
 function zahl(wert: number): string {
@@ -592,9 +659,10 @@ function neutralAnzeige(): SzenarioHebel {
   };
 }
 
-function dialogAusHebel(id: string, name: string, hebel: SzenarioHebel): DialogState {
+function dialogAusHebel(id: string, name: string, hebel: SzenarioHebel, neu: boolean): DialogState {
   return {
     id,
+    neu,
     name,
     umsatz: zahl(hebel.umsatzFaktor * 100),
     start: String(hebel.umsatzstartMonate),
@@ -606,7 +674,7 @@ function dialogAusHebel(id: string, name: string, hebel: SzenarioHebel): DialogS
 }
 
 function dialogAusSzenario(eintrag: AbweichungsSzenario): DialogState {
-  return dialogAusHebel(eintrag.id, eintrag.name, eintrag.hebel);
+  return dialogAusHebel(eintrag.id, eintrag.name, eintrag.hebel, false);
 }
 
 function pruefeDialog(
@@ -619,19 +687,20 @@ function pruefeDialog(
 ): string | null {
   if (name.length === 0) return "Bitte einen Namen angeben.";
   if (name.length > 120) return "Der Name darf höchstens 120 Zeichen haben.";
-  if (umsatz == null || umsatz < 0 || umsatz > 500)
-    return "Umsatz als Prozent zwischen 0 und 500 angeben.";
+  if (umsatz == null || umsatz < 0 || umsatz > 500) {
+    return "Bitte den Umsatz als Prozent zwischen 0 und 500 angeben. 100 entspricht dem Basisplan.";
+  }
   if (start == null || !Number.isInteger(start) || start < 0 || start > 36) {
-    return "Umsatzstart als ganze Monate von 0 bis 36 angeben.";
+    return "Bitte den späteren Umsatzstart als ganze Monate von 0 bis 36 angeben.";
   }
   if (ware == null || ware < -500 || ware > 500) {
-    return "Wareneinsatz als Prozentpunkte zwischen −500 und 500 angeben.";
+    return "Bitte die Änderung des Wareneinsatzes in Prozentpunkten zwischen −500 und 500 angeben. 0 lässt den Anteil stehen.";
   }
   if (personal == null || personal < 0 || personal > 500) {
-    return "Personalkosten als Prozent zwischen 0 und 500 angeben.";
+    return "Bitte die Personalkosten als Prozent zwischen 0 und 500 angeben. 100 entspricht dem Basisplan.";
   }
   if (kosten == null || kosten < 0 || kosten > 500) {
-    return "Laufende Kosten als Prozent zwischen 0 und 500 angeben.";
+    return "Bitte die laufenden Kosten als Prozent zwischen 0 und 500 angeben. 100 entspricht dem Basisplan.";
   }
   return null;
 }

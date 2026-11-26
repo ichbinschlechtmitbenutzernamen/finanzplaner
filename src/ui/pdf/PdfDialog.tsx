@@ -68,11 +68,11 @@ export function PdfDialog({ plan, onSchliessen, onKapitel }: PdfDialogProps) {
     <Dialog titelId="pdf-titel" onSchliessen={onSchliessen} escapeAktiv={!laeuft}>
       <h2 id="pdf-titel">PDF erstellen</h2>
       <p className="meta">
-        Das gewählte Szenario bekommt die angehakten Kapitel. Die übrigen Szenarien stehen nur im
-        Szenarienvergleich. Das PDF entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
+        Die gewählte Variante bekommt die angehakten Kapitel. Die übrigen Varianten stehen nur im
+        Variantenvergleich. Das PDF entsteht in diesem Browser, die Daten bleiben auf dem Gerät.
       </p>
       <fieldset className="pdf-szenario">
-        <legend>Szenario</legend>
+        <legend>Variante</legend>
         {faelle.map((fall) => (
           <label key={fall.id}>
             <input
