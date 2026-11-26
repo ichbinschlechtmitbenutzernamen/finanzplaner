@@ -1,5 +1,5 @@
 import { StyleSheet } from "@react-pdf/renderer";
-import { farben } from "../design-tokens.ts";
+import { pdfFarben as farben } from "../design-tokens.ts";
 
 export const HOCH_BREITE = 520;
 export const QUER_BREITE = 784;

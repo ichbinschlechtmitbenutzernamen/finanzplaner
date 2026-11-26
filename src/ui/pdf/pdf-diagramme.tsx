@@ -3,7 +3,7 @@ import { Circle, Line, Polyline, Rect, Svg, Text, View } from "@react-pdf/render
 
 void React;
 import type { PdfDiagramme } from "../../domain/pdf/modell.ts";
-import { diagrammFarbe, farben } from "../design-tokens.ts";
+import { pdfDiagrammFarbe as diagrammFarbe, pdfFarben as farben } from "../design-tokens.ts";
 import { HOCH_BREITE, stil } from "./pdf-stil.ts";
 import { achse, euro, monatKurz, monatLang } from "./zahlen.ts";
 

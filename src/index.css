@@ -1,37 +1,37 @@
 :root {
-  color-scheme: light;
-  --hintergrund: #f3f4f6;
-  --flaeche: #ffffff;
-  --text: #1a1d21;
-  --text-gedaempft: #4b5563;
-  --text-auf-akzent: #ffffff;
-  --linie: #d5dbe2;
-  --linie-stark: #7d8b99;
-  --akzent: #1e4a73;
-  --akzent-dunkel: #17395a;
-  --akzent-sanft: #e6eef5;
-  --fehler: #9b1c1c;
-  --fehler-hintergrund: #fdecec;
-  --warnung: #8a4b08;
-  --warnung-hintergrund: #fbf1e4;
-  --hinweis: #0f5c66;
-  --hinweis-hintergrund: #e6f3f4;
-  --zebra: #f6f7f9;
-  --hover: #eef1f5;
-  --jahr: #e7eef5;
-  --summe: #eef1f4;
-  --tabellenkopf: #f3f5f7;
-  --nullinie: #6b7380;
-  --reihe-umsatz: #1e4a73;
-  --reihe-kosten: #8a4f2b;
-  --reihe-ergebnis: #3d6f8f;
-  --reihe-raum: #3f6b5e;
-  --reihe-sonstige: #8a7040;
-  --reihe-neutral: #5c6570;
-  --reihe-zinsen: #8a4b08;
-  --reihe-steuern: #9b1c1c;
-  --reihe-waren: #6e5144;
-  --reihe-reserve: #2f5f73;
+  color-scheme: dark;
+  --hintergrund: #0b1426;
+  --flaeche: #111d33;
+  --text: #e8eef6;
+  --text-gedaempft: #9aa8bc;
+  --text-auf-akzent: #0b1426;
+  --linie: #5a6a84;
+  --linie-stark: #6d7d97;
+  --akzent: #c9a54c;
+  --akzent-dunkel: #b08e3a;
+  --akzent-sanft: #1c2618;
+  --fehler: #f07a7a;
+  --fehler-hintergrund: #3a1c22;
+  --warnung: #e0893a;
+  --warnung-hintergrund: #3a2614;
+  --hinweis: #7ec9d2;
+  --hinweis-hintergrund: #163038;
+  --zebra: #151e36;
+  --hover: #1a2744;
+  --jahr: #1a2438;
+  --summe: #18233a;
+  --tabellenkopf: #0f1a30;
+  --nullinie: #9aa8bc;
+  --reihe-umsatz: #c9a54c;
+  --reihe-kosten: #e08a5a;
+  --reihe-ergebnis: #7eb0d0;
+  --reihe-raum: #6fbf9a;
+  --reihe-sonstige: #d4b56a;
+  --reihe-neutral: #9aa8bc;
+  --reihe-zinsen: #e0893a;
+  --reihe-steuern: #f07a7a;
+  --reihe-waren: #c4a07a;
+  --reihe-reserve: #6aa3b8;
   --schrift:
     system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans",
     "Liberation Sans", sans-serif;
@@ -42,23 +42,25 @@
   --abstand-lg: 1rem;
   --abstand-xl: 1.5rem;
   --abstand-2xl: 2rem;
-  --radius-sm: 6px;
-  --radius-md: 8px;
-  --radius-lg: 12px;
-  --radius-xl: 16px;
-  --radius-pill: 999px;
-  --schatten-popup: 0 8px 24px rgb(26 29 33 / 10%);
-  --schatten-dialog: 0 18px 48px rgb(26 29 33 / 22%);
-  --schleier: rgb(26 29 33 / 42%);
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-pill: 2px;
+  --schatten-popup: none;
+  --schatten-dialog: none;
+  --schleier: rgb(0 0 0 / 64%);
   font-family: var(--schrift);
   font-size: 16px;
   line-height: 1.5;
+  font-variant-numeric: tabular-nums;
   color: var(--text);
   background: var(--hintergrund);
 }
 
 * {
   box-sizing: border-box;
+  scrollbar-color: var(--linie) var(--hintergrund);
 }
 
 body {
@@ -69,7 +71,20 @@ button,
 input,
 select {
   font: inherit;
+  font-variant-numeric: tabular-nums;
   color: inherit;
+  accent-color: var(--akzent);
+}
+
+::placeholder {
+  color: var(--text-gedaempft);
+  opacity: 1;
+}
+
+option,
+optgroup {
+  background-color: var(--flaeche);
+  color: var(--text);
 }
 
 .app {
@@ -194,6 +209,7 @@ button:disabled {
   display: inline-block;
   margin: 0.8rem 0 0;
   padding: 0.2rem 0.55rem;
+  border: 1px solid var(--warnung);
   border-radius: var(--radius-pill);
   background: var(--warnung-hintergrund);
   color: var(--warnung);
@@ -508,6 +524,7 @@ button:disabled {
 
 .kopfzeile.kopfzeile-kompakt {
   flex-direction: row;
+  flex-wrap: nowrap;
   align-items: center;
   justify-content: space-between;
   gap: var(--abstand-sm);
@@ -519,13 +536,19 @@ button:disabled {
 }
 
 .kopfzeile-kompakt h1 {
+  overflow: hidden;
   font-size: 1.05rem;
   line-height: 1.25;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .kopfzeile-kompakt .meta {
+  overflow: hidden;
   margin: 0;
   font-size: 0.85rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 720px) {
@@ -1189,9 +1212,10 @@ button.primaer {
   top: calc(100% - 0.2rem);
   width: min(28rem, 80vw);
   padding: 0.5rem 0.65rem;
+  border: 1px solid var(--linie-stark);
   border-radius: var(--radius-md);
-  background: var(--text);
-  color: var(--text-auf-akzent);
+  background: var(--flaeche);
+  color: var(--text);
   font-size: 0.85rem;
   font-weight: 450;
   line-height: 1.35;
@@ -1700,6 +1724,7 @@ button.gefaehrlich:hover,
   gap: 0.35rem 0.7rem;
   margin: 0.55rem 0 0;
   padding: 0.35rem 0.7rem;
+  border: 1px solid var(--hinweis);
   border-radius: var(--radius-md);
   background: var(--hinweis-hintergrund);
   color: var(--hinweis);
