@@ -1,6 +1,6 @@
 # Finanzplaner
 
-Finanzplan über 36 Monate für Gründerinnen und Gründer in Deutschland. Version 1.0. Die Rechnung läuft im Browser. Eingaben bleiben auf diesem Gerät. Es gibt keinen Server und kein Konto.
+Finanzplan über 36 Monate für Gründerinnen und Gründer in Deutschland. Version 1.1. Die Rechnung läuft im Browser. Eingaben bleiben auf diesem Gerät. Es gibt keinen Server und kein Konto.
 
 Die Anwendung: <https://ichbinschlechtmitbenutzernamen.github.io/finanzplaner/>
 
@@ -55,7 +55,7 @@ npm run export:check
 
 `npm run build` erzeugt die statische Seite in `dist/`. `npm run preview` zeigt diese Fassung lokal. Für GitHub Pages setzt [`.github/workflows/deploy.yml`](.github/workflows/deploy.yml) `VITE_BASE=/finanzplaner/`. Die Basis in `vite.config.ts` ist sonst `/`.
 
-Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die privaten Blöcke in [docs/vorsorge.md](docs/vorsorge.md), die Berichte in [docs/berichte.md](docs/berichte.md), der PDF-Aufbau in [docs/pdf.md](docs/pdf.md), der Excel-Aufbau in [docs/excel.md](docs/excel.md). Schema-Version ist 15. Was sich von Schritt 1 bis zur Fassung 1.0 geändert hat, steht in [CHANGELOG.md](CHANGELOG.md).
+Die Eingaben stehen in [docs/datenmodell.md](docs/datenmodell.md), die Monatswerte in [docs/rechenkern.md](docs/rechenkern.md), die Steuern in [docs/steuern.md](docs/steuern.md), die privaten Blöcke in [docs/vorsorge.md](docs/vorsorge.md), die Berichte in [docs/berichte.md](docs/berichte.md), der PDF-Aufbau in [docs/pdf.md](docs/pdf.md), der Excel-Aufbau in [docs/excel.md](docs/excel.md). Schema-Version ist 15. Was sich von Schritt 1 bis zur Fassung 1.1 geändert hat, steht in [CHANGELOG.md](CHANGELOG.md).
 
 ## Aufbau
 

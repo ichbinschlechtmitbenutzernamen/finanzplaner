@@ -742,7 +742,7 @@ export function PlanArbeitsflaeche({
           onAbbrechen={() => setZuruecksetzenOffen(false)}
         />
       ) : null}
-      <footer className="fusszeile">Finanzplaner 1.0</footer>
+      <footer className="fusszeile">Finanzplaner 1.1</footer>
     </div>
   );
 }

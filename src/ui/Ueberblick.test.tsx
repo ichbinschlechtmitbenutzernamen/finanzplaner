@@ -36,7 +36,7 @@ describe("Überblick", () => {
     render(<App />);
 
     expect(screen.getByRole("tab", { name: "Überblick", selected: true })).toBeTruthy();
-    expect(screen.getByRole("contentinfo").textContent).toBe("Finanzplaner 1.0");
+    expect(screen.getByRole("contentinfo").textContent).toBe("Finanzplaner 1.1");
     expect(text("Break-even-Monat")).toContain("Juni 2026");
     expect(text("Niedrigster Kontostand")).toMatch(/24\.655,01/);
     expect(text("Tragfähigkeit")).toContain("nicht tragfähig");
