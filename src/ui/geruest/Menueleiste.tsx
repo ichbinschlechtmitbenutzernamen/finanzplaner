@@ -7,6 +7,8 @@ export interface MenueEintrag {
   /** Öffnet ein Untermenü statt einer Aktion. */
   unter?: "beispiele" | "variante";
   trennung?: boolean;
+  /** Sichtbares Kürzel, rechtsbündig. Leer, wenn keines belegt ist. */
+  kuerzel?: string;
   onWaehlen?: () => void;
 }
 
@@ -30,7 +32,7 @@ interface MenueleisteProps {
 /**
  * Menüleiste mit den Rollen menubar, menu und menuitem.
  * Pfeile bewegen, Enter und Leertaste lösen aus, Escape schließt.
- * Der Fokus kehrt zum Auslöser zurück. Die Kürzelspalte bleibt leer, bis Paket H sie füllt.
+ * Der Fokus kehrt zum Auslöser zurück. Belegte Kürzel stehen rechts in der Zeile.
  */
 export function Menueleiste({ spalten, beispiele, varianten }: MenueleisteProps) {
   const [offen, setOffen] = useState<Offen | null>(null);
@@ -310,7 +312,9 @@ function MenuePunkt({
         onClick={onAktivieren}
       >
         <span>{eintrag.label}</span>
-        <span className="menue-kuerzel" aria-hidden="true" />
+        <span className="menue-kuerzel" aria-hidden="true">
+          {eintrag.kuerzel ?? ""}
+        </span>
         {eintrag.unter ? (
           <span className="menue-pfeil" aria-hidden="true">
             ›

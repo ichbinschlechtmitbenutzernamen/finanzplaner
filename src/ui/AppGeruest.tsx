@@ -1,4 +1,4 @@
-import { useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import type { AssistentStation, Rechtsform } from "../domain/types.ts";
 import { BASIS_SZENARIO_ID } from "../domain/types.ts";
 import type { PruefStufe } from "../domain/checks/typen.ts";
@@ -10,6 +10,14 @@ import { Statusleiste } from "./geruest/Statusleiste.tsx";
 import { Symbol } from "./geruest/symbole.tsx";
 import type { LeistenKennzahl, LeistenZiel } from "./kennzahlen-leiste.ts";
 import type { HauptId, ReiterId } from "./navigation.ts";
+import {
+  aktionFuerTaste,
+  istMac,
+  kuerzelTabelle,
+  kuerzelText,
+  werkzeugTitel,
+  type KuerzelAktion,
+} from "./tastenkuerzel.ts";
 
 export const APP_VERSION = "1.1.0";
 
@@ -68,12 +76,80 @@ interface Werkzeug {
 export function AppGeruest(props: AppGeruestProps) {
   const [leisteOffen, setLeisteOffen] = useState(leseLeisteOffen);
   const [kurz, setKurz] = useState(false);
+  const [kuerzelOffen, setKuerzelOffen] = useState(false);
   const [ueber, setUeber] = useState(false);
+  const mac = istMac();
 
   function setzeLeiste(offen: boolean) {
     setLeisteOffen(offen);
     merkeLeisteOffen(offen);
   }
+
+  function wechsleLeiste() {
+    setLeisteOffen((bisher) => {
+      const naechste = !bisher;
+      merkeLeisteOffen(naechste);
+      return naechste;
+    });
+  }
+
+  const ausfuehren = useRef<(aktion: KuerzelAktion) => void>(() => undefined);
+  useEffect(() => {
+    ausfuehren.current = (aktion) => {
+      switch (aktion) {
+        case "sichern":
+          props.onSichern();
+          return;
+        case "laden":
+          props.onLaden();
+          return;
+        case "undo":
+          props.onUndo();
+          return;
+        case "redo":
+          props.onRedo();
+          return;
+        case "pdf":
+          props.onPdf();
+          return;
+        case "excel":
+          props.onExcel();
+          return;
+        case "leiste":
+          wechsleLeiste();
+          return;
+        case "hilfe":
+          setKurz(true);
+          return;
+        case "start":
+          props.onStart?.();
+          return;
+        case "eingeben":
+          props.onHaupt("eingeben");
+          return;
+        case "ergebnisse":
+          props.onHaupt("ergebnisse");
+          return;
+        case "pruefen":
+          props.onHaupt("pruefen");
+          return;
+        case "szenarien":
+          props.onHaupt("szenarien");
+          return;
+      }
+    };
+  });
+
+  useEffect(() => {
+    function onKey(event: KeyboardEvent) {
+      const aktion = aktionFuerTaste(event);
+      if (!aktion || event.defaultPrevented) return;
+      event.preventDefault();
+      ausfuehren.current(aktion);
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, []);
 
   const beispiele: MenueEintrag[] = props.beispiele.map((beispiel) => ({
     id: beispiel.id,
@@ -92,10 +168,30 @@ export function AppGeruest(props: AppGeruestProps) {
       eintraege: [
         { id: "neu", label: "Neu", onWaehlen: props.onNeu },
         { id: "beispiele", label: "Beispiel laden", unter: "beispiele" },
-        { id: "sichern", label: "Plan sichern", onWaehlen: props.onSichern },
-        { id: "laden", label: "Plan laden", onWaehlen: props.onLaden },
-        { id: "pdf", label: "PDF erstellen", onWaehlen: props.onPdf },
-        { id: "excel", label: "Excel erstellen", onWaehlen: props.onExcel },
+        {
+          id: "sichern",
+          label: "Plan sichern",
+          kuerzel: kuerzelText("sichern", mac),
+          onWaehlen: props.onSichern,
+        },
+        {
+          id: "laden",
+          label: "Plan laden",
+          kuerzel: kuerzelText("laden", mac),
+          onWaehlen: props.onLaden,
+        },
+        {
+          id: "pdf",
+          label: "PDF erstellen",
+          kuerzel: kuerzelText("pdf", mac),
+          onWaehlen: props.onPdf,
+        },
+        {
+          id: "excel",
+          label: "Excel erstellen",
+          kuerzel: kuerzelText("excel", mac),
+          onWaehlen: props.onExcel,
+        },
         {
           id: "reset",
           label: props.zuruecksetzenLabel,
@@ -111,12 +207,14 @@ export function AppGeruest(props: AppGeruestProps) {
         {
           id: "undo",
           label: "Rückgängig",
+          kuerzel: kuerzelText("undo", mac),
           disabled: !props.kannUndo,
           onWaehlen: props.onUndo,
         },
         {
           id: "redo",
           label: "Wiederholen",
+          kuerzel: kuerzelText("redo", mac),
           disabled: !props.kannRedo,
           onWaehlen: props.onRedo,
         },
@@ -129,6 +227,7 @@ export function AppGeruest(props: AppGeruestProps) {
         {
           id: "leiste",
           label: "Seitenleiste ein/aus",
+          kuerzel: kuerzelText("leiste", mac),
           onWaehlen: () => setzeLeiste(!leisteOffen),
         },
         { id: "variante", label: "Variante wählen", unter: "variante" },
@@ -138,7 +237,13 @@ export function AppGeruest(props: AppGeruestProps) {
       id: "hilfe",
       label: "Hilfe",
       eintraege: [
-        { id: "kurz", label: "Kurzanleitung", onWaehlen: () => setKurz(true) },
+        {
+          id: "kurz",
+          label: "Kurzanleitung",
+          kuerzel: kuerzelText("kurz", mac),
+          onWaehlen: () => setKurz(true),
+        },
+        { id: "kuerzel", label: "Tastenkürzel", onWaehlen: () => setKuerzelOffen(true) },
         { id: "ueber", label: "Über", onWaehlen: () => setUeber(true) },
       ],
     },
@@ -205,7 +310,7 @@ export function AppGeruest(props: AppGeruestProps) {
               type="button"
               className="werkzeug"
               aria-label={werkzeug.name}
-              title={werkzeug.name}
+              title={werkzeugTitel(werkzeug.name, werkzeug.id, mac)}
               disabled={werkzeug.disabled}
               onClick={werkzeug.onWaehlen}
             >
@@ -254,6 +359,9 @@ export function AppGeruest(props: AppGeruestProps) {
         speicher={props.speicherStatus}
       />
       {kurz ? <KurzDialog onSchliessen={() => setKurz(false)} /> : null}
+      {kuerzelOffen ? (
+        <KuerzelDialog mac={mac} onSchliessen={() => setKuerzelOffen(false)} />
+      ) : null}
       {ueber ? <UeberDialog onSchliessen={() => setUeber(false)} /> : null}
     </div>
   );
@@ -277,6 +385,38 @@ function KurzDialog({ onSchliessen }: { onSchliessen: () => void }) {
         Sie später wieder laden können.
       </p>
       <p>Unter „Angezeigte Variante“ wählen Sie, was alle Bereiche und der Export zeigen.</p>
+      <div className="szenarien-aktionen">
+        <button type="button" className="primaer" onClick={onSchliessen}>
+          Schließen
+        </button>
+      </div>
+    </Dialog>
+  );
+}
+
+function KuerzelDialog({ mac, onSchliessen }: { mac: boolean; onSchliessen: () => void }) {
+  const titelId = useId();
+  const zeilen = kuerzelTabelle(mac);
+  return (
+    <Dialog titelId={titelId} onSchliessen={onSchliessen}>
+      <h2 id={titelId}>Tastenkürzel</h2>
+      <p>Neu hat kein Kürzel, der Browser belegt es.</p>
+      <table className="kuerzel-tabelle">
+        <thead>
+          <tr>
+            <th scope="col">Aktion</th>
+            <th scope="col">Kürzel</th>
+          </tr>
+        </thead>
+        <tbody>
+          {zeilen.map((zeile) => (
+            <tr key={zeile.aktion}>
+              <th scope="row">{zeile.aktion}</th>
+              <td>{zeile.kuerzel}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
       <div className="szenarien-aktionen">
         <button type="button" className="primaer" onClick={onSchliessen}>
           Schließen

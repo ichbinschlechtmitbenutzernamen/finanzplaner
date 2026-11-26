@@ -37,6 +37,8 @@ interface TabelleProps {
   ansicht?: TabellenAnsicht;
 }
 
+const ZEILEN_HOEHE = 28;
+
 interface Edit {
   zeile: number;
   spalte: number;
@@ -67,7 +69,7 @@ export function Tabelle({
   const virtualizer = useVirtualizer({
     count: zeilen.length,
     getScrollElement: () => scrollRef.current,
-    estimateSize: () => 36,
+    estimateSize: () => ZEILEN_HOEHE,
     overscan: 12,
     initialRect: { width: 1280, height: 720 },
   });
@@ -80,10 +82,10 @@ export function Tabelle({
       ? virtuell
       : zeilen.map((_, index) => ({
           index,
-          start: index * 36,
-          end: (index + 1) * 36,
+          start: index * ZEILEN_HOEHE,
+          end: (index + 1) * ZEILEN_HOEHE,
           key: index,
-          size: 36,
+          size: ZEILEN_HOEHE,
         }));
   const paddingOben = fenster[0]?.start ?? 0;
   const paddingUnten = Math.max(0, virtualizer.getTotalSize() - (fenster.at(-1)?.end ?? 0));
@@ -149,8 +151,9 @@ export function Tabelle({
   }
 
   function onTaste(event: KeyboardEvent) {
-    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement)
+    if (event.target instanceof HTMLInputElement || event.target instanceof HTMLTextAreaElement) {
       return;
+    }
     if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "z") {
       event.preventDefault();
       if (event.shiftKey) onRedo();
@@ -271,7 +274,7 @@ export function Tabelle({
                 key={zeile.id}
                 role="row"
                 className={zeilenKlasse(zeile, eintrag.index, marke?.stufe)}
-                style={{ height: 36 }}
+                style={{ height: ZEILEN_HOEHE }}
               >
                 <th
                   className="spalte-name klebt"

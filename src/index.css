@@ -355,7 +355,7 @@ button:disabled {
   width: 6.7rem;
   min-width: 6.7rem;
   max-width: 6.7rem;
-  height: 36px;
+  height: 28px;
   padding: 0 0.4rem;
   border-right: 1px solid var(--linie);
   border-bottom: 1px solid var(--linie);
@@ -466,18 +466,8 @@ button:disabled {
   background: var(--zebra);
 }
 
-.tabelle
-  tbody
-  tr.zeile:not(.kopf):not(.summe):not(.ergebnis):not(.pruef-fehler):not(.pruef-warnung):not(
-    .pruef-hinweis
-  ):hover
-  .spalte-name,
-.tabelle
-  tbody
-  tr.zeile:not(.kopf):not(.summe):not(.ergebnis):not(.pruef-fehler):not(.pruef-warnung):not(
-    .pruef-hinweis
-  ):hover
-  td {
+.tabelle tbody tr.zeile:hover .spalte-name,
+.tabelle tbody tr.zeile:hover td {
   background: var(--hover);
 }
 
@@ -2016,8 +2006,13 @@ html:has(.geruest) #root {
 
 .menue-kuerzel {
   display: inline-block;
-  flex: 1 0 4.5rem;
+  flex: 1 0 auto;
+  margin-left: 1.4rem;
   min-width: 4.5rem;
+  color: var(--text-gedaempft);
+  font-size: 0.75rem;
+  text-align: right;
+  white-space: nowrap;
 }
 
 .menue-pfeil {
@@ -2226,9 +2221,9 @@ html:has(.geruest) #root {
 }
 
 .geruest .tabelle-scroll {
-  width: max-content;
+  width: 100%;
   max-width: 100%;
-  max-height: none;
+  max-height: calc(100vh - 12.5rem);
   min-height: 0;
   overflow: auto;
   background: var(--flaeche);
@@ -2380,4 +2375,93 @@ html:has(.geruest) #root {
 .statusleiste button:focus-visible {
   outline: 2px solid var(--akzent);
   outline-offset: -2px;
+}
+
+.menue-popup {
+  min-width: 19rem;
+}
+
+.geruest .feld,
+.geruest .feld-gruppe {
+  gap: 0.1rem;
+  margin-bottom: 0.35rem;
+}
+
+.geruest .feld-raster {
+  gap: 0.35rem 0.55rem;
+  margin: 0.2rem 0 0.35rem;
+}
+
+.geruest .feld-gruppe {
+  padding: 0.4rem 0.55rem 0.45rem;
+}
+
+.geruest .feld > input,
+.geruest .feld > select,
+.geruest .hilfe-zeile input,
+.geruest .hilfe-zeile select {
+  height: 30px;
+  padding: 0 0.45rem;
+  line-height: 1.2;
+}
+
+.geruest .feld-hilfe {
+  font-size: 0.72rem;
+  line-height: 1.3;
+}
+
+.geruest .saison-raster {
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 0.25rem;
+  margin: 0.15rem 0 0;
+}
+
+.geruest .saison-raster .feld {
+  margin: 0;
+  min-width: 0;
+}
+
+.geruest .saison-raster .feld label {
+  font-size: 0.68rem;
+  line-height: 1.1;
+  white-space: nowrap;
+}
+
+.geruest .saison-raster .feld > input {
+  max-width: none;
+  padding: 0 0.2rem;
+  text-align: right;
+}
+
+.geruest .assistent-station h2 {
+  margin-bottom: 0.2rem;
+  font-size: 1.15rem;
+}
+
+.kuerzel-tabelle {
+  width: 100%;
+  margin: 0.7rem 0 1rem;
+  border-collapse: collapse;
+  font-size: 0.85rem;
+}
+
+.kuerzel-tabelle th,
+.kuerzel-tabelle td {
+  padding: 0.28rem 0.35rem;
+  border-bottom: 1px solid var(--linie);
+  font-weight: 450;
+  text-align: left;
+}
+
+.kuerzel-tabelle thead th {
+  color: var(--text-gedaempft);
+  font-size: 0.75rem;
+  font-weight: 650;
+}
+
+.kuerzel-tabelle td:last-child {
+  color: var(--text-gedaempft);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  white-space: nowrap;
 }

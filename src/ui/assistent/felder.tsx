@@ -239,12 +239,15 @@ export function ZahlFeld({
   wert,
   onChange,
   ganzzahlig = false,
+  beschreibungId,
 }: {
   label: string;
-  hilfe: string;
+  hilfe?: string;
   wert: number | null;
   onChange: (wert: number | null) => void;
   ganzzahlig?: boolean;
+  /** Gemeinsame Beschreibung der Gruppe, statt eines Hilfetexts unter dem Feld. */
+  beschreibungId?: string;
 }) {
   return (
     <ZahlFeldInnen
@@ -254,6 +257,7 @@ export function ZahlFeld({
       wert={wert}
       onChange={onChange}
       ganzzahlig={ganzzahlig}
+      beschreibungId={beschreibungId}
     />
   );
 }
@@ -264,16 +268,22 @@ function ZahlFeldInnen({
   wert,
   onChange,
   ganzzahlig = false,
+  beschreibungId,
 }: {
   label: string;
-  hilfe: string;
+  hilfe?: string;
   wert: number | null;
   onChange: (wert: number | null) => void;
   ganzzahlig?: boolean;
+  beschreibungId?: string;
 }) {
   const id = useId();
+  const fehlerId = useId();
   const [text, setText] = useState(() => (wert == null ? "" : formatZahl(wert)));
   const [fehler, setFehler] = useState<string | null>(null);
+  const beschrieben = beschreibungId
+    ? [beschreibungId, fehler ? fehlerId : null].filter(Boolean).join(" ")
+    : undefined;
   return (
     <div className="feld">
       <label htmlFor={id}>{label}</label>
@@ -281,6 +291,8 @@ function ZahlFeldInnen({
         id={id}
         inputMode="decimal"
         value={text}
+        aria-invalid={fehler != null || undefined}
+        aria-describedby={beschrieben}
         onChange={(event) => setText(event.target.value)}
         onBlur={() => {
           if (text.trim() === "") {
@@ -301,8 +313,12 @@ function ZahlFeldInnen({
           onChange(ganzzahlig ? Math.round(zahl) : zahl);
         }}
       />
-      <p className="feld-hilfe">{hilfe}</p>
-      {fehler ? <p className="fehler">{fehler}</p> : null}
+      {beschreibungId || !hilfe ? null : <p className="feld-hilfe">{hilfe}</p>}
+      {fehler ? (
+        <p className="fehler" id={fehlerId}>
+          {fehler}
+        </p>
+      ) : null}
     </div>
   );
 }

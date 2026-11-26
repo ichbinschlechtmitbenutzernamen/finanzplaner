@@ -4,6 +4,7 @@
 
 - **Dunkles Design Nachtblau und Gold.** Die Oberfläche ist dauerhaft dunkel, mit 2-Pixel-Ecken und ohne Schatten. Auf schmalen Bildschirmen bleibt der Menüknopf neben dem Titel. PDF und Excel bleiben hell.
 - **Desktop-Gerüst.** Ab 1024 Pixel füllt der Finanzplaner das Fenster: Titelleiste mit Menü, Werkzeugleiste, Seitenleiste und Statusleiste. Der Arbeitsbereich nutzt dieselben dunklen Flächen. Unter 1024 Pixel bleibt die bisherige Ansicht. Version bleibt 1.1.0.
+- **Kompaktere Ansicht und Tastenkürzel.** Ab 1024 Pixel sind Formulare und Tabellen dichter. Die Monatsfaktoren stehen in einer Zeile, Kopfzeile und Position bleiben beim Scrollen stehen. Strg+S sichert, Strg+O lädt, Strg+Z und Strg+Y machen rückgängig und wiederholen, Strg+P und Strg+E öffnen PDF und Excel, Strg+B klappt die Seitenleiste, F1 die Kurzanleitung, Alt+1 bis Alt+5 die Bereiche. Auf dem Mac gilt Cmd statt Strg. Die Hilfe listet die Kürzel. Version bleibt 1.1.0.
 
 ## 1.1.0 – 2026-11-26
 
