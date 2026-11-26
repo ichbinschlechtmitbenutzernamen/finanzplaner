@@ -379,6 +379,8 @@ button:disabled {
   position: sticky;
   top: 0;
   z-index: 2;
+  /* hidden würde den Text sticky Kopfzellen nach horizontalem Scrollen leer lassen. */
+  overflow: visible;
   background: var(--tabellenkopf);
   font-weight: 650;
   text-align: center;

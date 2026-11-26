@@ -1,5 +1,8 @@
 // @vitest-environment jsdom
 
+import { readFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { useState } from "react";
 import { act, cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -349,6 +352,23 @@ describe("Kompakte Tabellen", () => {
       const erste = zeilen[0]?.closest("tr");
       expect(erste?.style.height).toBe("28px");
     }
+  });
+
+  it("zeigt die Summenspalten Jahr 2 und Jahr 3 auch neben aufgeklapptem Planjahr 1", async () => {
+    const user = userEvent.setup();
+    render(<Harness anfang="liquiditaet" />);
+    await user.click(screen.getByRole("button", { name: "Planjahr 1 aufklappen" }));
+
+    for (const nummer of [1, 2, 3]) {
+      const kopf = screen.getByRole("columnheader", { name: new RegExp(`Jahr ${nummer}`) });
+      expect(kopf.textContent).toContain(`Jahr ${nummer}`);
+      expect(kopf.querySelector("button")).toBeTruthy();
+    }
+
+    const css = readFileSync(join(dirname(fileURLToPath(import.meta.url)), "../index.css"), "utf8");
+    const kopfRegel = css.match(/\.tabelle thead th \{[^}]*\}/)?.[0] ?? "";
+    expect(kopfRegel).toContain("position: sticky");
+    expect(kopfRegel).toContain("overflow: visible");
   });
 
   it("beschreibt die Monatsfaktoren einmal für die ganze Gruppe", async () => {
