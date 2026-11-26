@@ -25,9 +25,12 @@ import type {
   IsoMonth,
   PdfKapitelId,
 } from "../domain/types.ts";
+import { Bestaetigung } from "./Bestaetigung.tsx";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
+import { useSpeicher } from "./Speicher.tsx";
+import { merkeArbeit } from "./sicherung.ts";
 import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
 import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
@@ -75,6 +78,10 @@ const DECKUNG: Record<Berichte["kapital"]["deckungArt"], string> = {
   ausgeglichen: "ausgeglichen",
 };
 
+function standardUhr(): Date {
+  return new Date();
+}
+
 interface PlanArbeitsflaecheProps {
   anfangsplan: Finanzplan;
   beispiele: readonly { id: string; label: string }[];
@@ -83,8 +90,12 @@ interface PlanArbeitsflaecheProps {
   onBeispiel: (id: string) => void;
   onReiter: (reiter: ReiterId) => void;
   onNeu: () => void;
+  onStart?: () => void;
   onSpeichern: (plan: Finanzplan) => void;
   onZuruecksetzen: () => void;
+  onPlanUebernehmen?: (plan: Finanzplan) => void;
+  /** Feste Uhr für Tests. Sonst die aktuelle Zeit. */
+  jetzt?: () => Date;
 }
 
 export function PlanArbeitsflaeche({
@@ -95,17 +106,22 @@ export function PlanArbeitsflaeche({
   onBeispiel,
   onReiter,
   onNeu,
+  onStart,
   onSpeichern,
   onZuruecksetzen,
+  onPlanUebernehmen,
+  jetzt = standardUhr,
 }: PlanArbeitsflaecheProps) {
   const [verlauf, dispatch] = useReducer(verlaufReduzieren<Finanzplan>, anfangsplan, verlaufAnfang);
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [sprung, setSprung] = useState<Sprung | null>(null);
   const sprungAngewandt = useRef("");
+  const weitere = useRef<HTMLDetailsElement>(null);
   const [eingeklappt, setEingeklappt] = useState<ReadonlySet<number>>(() => new Set());
   const [meldung, setMeldung] = useState<string | null>(null);
   const [pdfOffen, setPdfOffen] = useState(false);
   const [excelOffen, setExcelOffen] = useState(false);
+  const [zuruecksetzenOffen, setZuruecksetzenOffen] = useState(false);
   const [vorlage, setVorlage] = useState<BranchenvorlageId>("keine");
   const plan = verlauf.gegenwart;
   const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
@@ -148,7 +164,8 @@ export function PlanArbeitsflaeche({
   useEffect(() => {
     if (verlauf.vergangenheit.length === 0 && verlauf.zukunft.length === 0) return;
     onSpeichern(plan);
-  }, [onSpeichern, plan, verlauf.vergangenheit.length, verlauf.zukunft.length]);
+    if (!plan.stammdaten.beispiel) merkeArbeit(beispielId, plan, jetzt().toISOString());
+  }, [onSpeichern, plan, verlauf.vergangenheit.length, verlauf.zukunft.length, beispielId, jetzt]);
 
   function uebernehmen(roh: Finanzplan) {
     const geprueft = finanzplanSchema.safeParse({
@@ -310,8 +327,22 @@ export function PlanArbeitsflaeche({
     onReiter(tabelle.ansicht);
   }
 
+  const speicher = useSpeicher({
+    plan,
+    planId: beispielId,
+    aktiv: !plan.stammdaten.beispiel,
+    jetzt,
+    onUebernehmen: (geladen) => {
+      if (onPlanUebernehmen) onPlanUebernehmen(geladen);
+      else uebernehmen(geladen);
+    },
+  });
   const rechtsform = ansicht.stammdaten.rechtsform;
   const letzter = monate.at(-1);
+  const startwahl = zeigeStartauswahl(plan);
+  const zuruecksetzenLabel = plan.stammdaten.beispiel
+    ? "Beispiel zurücksetzen"
+    : "Plan zurücksetzen";
 
   return (
     <div className="app">
@@ -330,6 +361,11 @@ export function PlanArbeitsflaeche({
         </div>
         <div className="werkzeuge">
           <div className="switcher" role="group" aria-label="Plan wählen">
+            {onStart ? (
+              <button type="button" onClick={onStart}>
+                Startseite
+              </button>
+            ) : null}
             <button type="button" aria-pressed={beispielId === "neu"} onClick={onNeu}>
               Neuer Plan
             </button>
@@ -345,30 +381,53 @@ export function PlanArbeitsflaeche({
             ))}
           </div>
           <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
-          <div className="werkzeuge-reihe">
-            <button
-              type="button"
-              onClick={() => dispatch({ typ: "zurueck" })}
-              disabled={verlauf.vergangenheit.length === 0}
-            >
-              Rückgängig
-            </button>
-            <button
-              type="button"
-              onClick={() => dispatch({ typ: "vor" })}
-              disabled={verlauf.zukunft.length === 0}
-            >
-              Wiederholen
-            </button>
-            <button type="button" onClick={onZuruecksetzen}>
-              {plan.stammdaten.beispiel ? "Beispiel zurücksetzen" : "Plan zurücksetzen"}
-            </button>
-            <button type="button" onClick={() => setPdfOffen(true)}>
-              PDF erstellen
-            </button>
-            <button type="button" onClick={() => setExcelOffen(true)}>
-              Excel erstellen
-            </button>
+          <div className="werkzeuge-zeile">
+            <div className="werkzeuge-reihe">
+              <button
+                type="button"
+                onClick={() => dispatch({ typ: "zurueck" })}
+                disabled={verlauf.vergangenheit.length === 0}
+              >
+                Rückgängig
+              </button>
+              <button
+                type="button"
+                onClick={() => dispatch({ typ: "vor" })}
+                disabled={verlauf.zukunft.length === 0}
+              >
+                Wiederholen
+              </button>
+              {plan.stammdaten.beispiel ? null : (
+                <>
+                  <button type="button" onClick={speicher.sichern}>
+                    Plan sichern
+                  </button>
+                  <button type="button" onClick={speicher.laden}>
+                    Plan laden
+                  </button>
+                </>
+              )}
+              <button type="button" onClick={() => setPdfOffen(true)}>
+                PDF erstellen
+              </button>
+              <button type="button" onClick={() => setExcelOffen(true)}>
+                Excel erstellen
+              </button>
+            </div>
+            <details className="weitere" ref={weitere}>
+              <summary>Weitere</summary>
+              <div className="weitere-menue">
+                <button
+                  type="button"
+                  onClick={() => {
+                    weitere.current?.removeAttribute("open");
+                    setZuruecksetzenOffen(true);
+                  }}
+                >
+                  {zuruecksetzenLabel}
+                </button>
+              </div>
+            </details>
           </div>
         </div>
       </header>
@@ -377,7 +436,9 @@ export function PlanArbeitsflaeche({
         <p className="flag">
           Fiktiver Datensatz, nicht für einen echten Antrag. Änderungen bleiben in diesem Browser.
         </p>
-      ) : null}
+      ) : (
+        speicher.knoten
+      )}
 
       <div className="reiter" role="tablist" aria-label="Ansichten">
         {REITER.map((eintrag) => (
@@ -386,14 +447,11 @@ export function PlanArbeitsflaeche({
             type="button"
             role="tab"
             id={`reiter-${eintrag.id}`}
-            aria-selected={reiter === eintrag.id}
+            aria-selected={startwahl ? false : reiter === eintrag.id}
             aria-controls="plan-ansicht"
             onClick={() => {
-              if (
-                zeigeStartauswahl(plan) &&
-                eintrag.id !== "pruefung" &&
-                eintrag.id !== "szenarien"
-              ) {
+              if (startwahl) {
+                if (eintrag.id === "pruefung" || eintrag.id === "szenarien") return;
                 aendernEingabe((aktuell) =>
                   starteMitVorlage(
                     aktuell,
@@ -418,10 +476,14 @@ export function PlanArbeitsflaeche({
         ))}
       </div>
 
-      <div role="tabpanel" id="plan-ansicht" aria-labelledby={`reiter-${reiter}`}>
+      <div
+        role="tabpanel"
+        id="plan-ansicht"
+        aria-labelledby={startwahl ? undefined : `reiter-${reiter}`}
+      >
         <PruefAnbieter meldungen={meldungen}>
           <SzenarioHinweis plan={plan} />
-          {zeigeStartauswahl(plan) ? (
+          {startwahl ? (
             <Startauswahl
               vorlage={vorlage}
               onVorlage={setVorlage}
@@ -464,11 +526,11 @@ export function PlanArbeitsflaeche({
           reiter !== "assistent" &&
           reiter !== "pruefung" &&
           reiter !== "szenarien" &&
-          !zeigeStartauswahl(plan) &&
+          !startwahl &&
           rechnung.berichte ? (
             <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
           ) : null}
-          {zeigeStartauswahl(plan) ||
+          {startwahl ||
           reiter === "assistent" ||
           reiter === "ueberblick" ||
           reiter === "pruefung" ||
@@ -488,7 +550,7 @@ export function PlanArbeitsflaeche({
           reiter !== "ueberblick" &&
           reiter !== "assistent" &&
           reiter !== "pruefung" &&
-          !zeigeStartauswahl(plan) ? (
+          !startwahl ? (
             <p className="fehler" role="alert">
               {meldung}
             </p>
@@ -500,7 +562,7 @@ export function PlanArbeitsflaeche({
           reiter !== "pruefung" ? (
             <p className="fehler">{rechnung.fehler}</p>
           ) : null}
-          {zeigeStartauswahl(plan) ||
+          {startwahl ||
           reiter === "ueberblick" ||
           reiter === "assistent" ||
           reiter === "pruefung" ||
@@ -544,6 +606,23 @@ export function PlanArbeitsflaeche({
           onBlaetter={(blaetter: ExcelBlattId[]) =>
             uebernehmen({ ...plan, excelExport: { blaetter } })
           }
+        />
+      ) : null}
+      {zuruecksetzenOffen ? (
+        <Bestaetigung
+          titel={zuruecksetzenLabel}
+          text={
+            plan.stammdaten.beispiel
+              ? "Die Änderungen an diesem Beispiel in diesem Browser werden verworfen. Das Beispiel selbst bleibt erhalten."
+              : "Der Plan in diesem Browser wird verworfen. Eine Datei, die Sie bereits gesichert haben, bleibt davon unberührt."
+          }
+          bestaetigen={zuruecksetzenLabel}
+          gefahr
+          onBestaetigen={() => {
+            setZuruecksetzenOffen(false);
+            onZuruecksetzen();
+          }}
+          onAbbrechen={() => setZuruecksetzenOffen(false)}
         />
       ) : null}
       <footer className="fusszeile">Finanzplaner 1.0</footer>

@@ -68,4 +68,17 @@ export function formatMonatLang(monat: IsoMonth): string {
   return `${LANG[month - 1] ?? monat} ${year}`;
 }
 
+const ZEITPUNKT = new Intl.DateTimeFormat("de-DE", {
+  dateStyle: "long",
+  timeStyle: "short",
+  timeZone: "Europe/Berlin",
+});
+
+/** Datum und Uhrzeit für Hinweise, in der Zeitzone Europe/Berlin. */
+export function formatZeitpunkt(iso: string): string {
+  const zeit = Date.parse(iso);
+  if (Number.isNaN(zeit)) return iso;
+  return ZEITPUNKT.format(zeit);
+}
+
 export const KALENDER_KURZ = KURZ;
