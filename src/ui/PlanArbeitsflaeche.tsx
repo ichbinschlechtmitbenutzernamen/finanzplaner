@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { useDeferredValue, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { ExcelDialog } from "./excel/ExcelDialog.tsx";
 import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
@@ -29,6 +29,8 @@ import { Bestaetigung } from "./Bestaetigung.tsx";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
+import { Kennzahlenleiste } from "./Kennzahlenleiste.tsx";
+import { planHatKennzahlen } from "./kennzahlen-leiste.ts";
 import { useSpeicher } from "./Speicher.tsx";
 import { merkeArbeit } from "./sicherung.ts";
 import { sichtbareSpalten } from "./spalten.ts";
@@ -125,6 +127,10 @@ export function PlanArbeitsflaeche({
   const [vorlage, setVorlage] = useState<BranchenvorlageId>("keine");
   const plan = verlauf.gegenwart;
   const ansicht = useMemo(() => planFuerRechnung(plan), [plan]);
+  // Auf den Eingabeseiten erst die Zelle zeichnen, die Rechnung für die Leiste danach.
+  const ansichtSpaeter = useDeferredValue(ansicht);
+  const verzoegern = reiter === "eingaben" || reiter === "assistent";
+  const rechenPlan = verzoegern ? ansichtSpaeter : ansicht;
   const modus = aktivesSzenario(plan)?.art ?? "basis";
   const monate = useMemo(() => planMonate(ansicht), [ansicht]);
   const jahre = useMemo(() => planjahreVon(monate), [monate]);
@@ -132,10 +138,10 @@ export function PlanArbeitsflaeche({
     () => sichtbareSpalten(monate, jahre, eingeklappt),
     [monate, jahre, eingeklappt],
   );
-  const rechnung = useMemo(() => rechne(ansicht), [ansicht]);
+  const rechnung = useMemo(() => rechne(rechenPlan), [rechenPlan]);
   const meldungen = useMemo(
-    () => (rechnung.berichte ? pruefePlan(ansicht, rechnung.berichte) : []),
-    [ansicht, rechnung.berichte],
+    () => (rechnung.berichte ? pruefePlan(rechenPlan, rechnung.berichte) : []),
+    [rechenPlan, rechnung.berichte],
   );
   const zeilen = useMemo(
     () => zeilenFuer(ansicht, monate, jahre, reiter, rechnung.berichte),
@@ -340,6 +346,8 @@ export function PlanArbeitsflaeche({
   const rechtsform = ansicht.stammdaten.rechtsform;
   const letzter = monate.at(-1);
   const startwahl = zeigeStartauswahl(plan);
+  const leisteLeer = startwahl || rechnung.berichte == null || !planHatKennzahlen(rechenPlan);
+  const zeigeLeiste = startwahl || reiter === "assistent" || reiter === "eingaben";
   const zuruecksetzenLabel = plan.stammdaten.beispiel
     ? "Beispiel zurücksetzen"
     : "Plan zurücksetzen";
@@ -481,6 +489,14 @@ export function PlanArbeitsflaeche({
         id="plan-ansicht"
         aria-labelledby={startwahl ? undefined : `reiter-${reiter}`}
       >
+        {zeigeLeiste ? (
+          <Kennzahlenleiste
+            berichte={leisteLeer ? null : rechnung.berichte}
+            meldungen={leisteLeer ? [] : meldungen}
+            leer={leisteLeer}
+            onReiter={onReiter}
+          />
+        ) : null}
         <PruefAnbieter meldungen={meldungen}>
           <SzenarioHinweis plan={plan} />
           {startwahl ? (

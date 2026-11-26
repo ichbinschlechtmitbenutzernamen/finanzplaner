@@ -1491,3 +1491,110 @@ button.gefaehrlich:hover,
   white-space: nowrap;
   border: 0;
 }
+
+.live-leiste {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: var(--abstand-xs);
+  margin: 0 0 var(--abstand-sm);
+  padding-bottom: var(--abstand-2xs);
+  background: var(--hintergrund);
+}
+
+.live-kennzahl,
+.live-mehr {
+  border: 1px solid var(--linie);
+  background: var(--flaeche);
+  cursor: pointer;
+}
+
+.live-kennzahl {
+  display: flex;
+  flex: 0 1 auto;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  min-width: 0;
+  padding: 0.18rem 0.55rem 0.22rem;
+  border-radius: var(--radius-md);
+  text-align: left;
+  line-height: 1.25;
+}
+
+.live-kennzahl:hover,
+.live-mehr:hover {
+  background: var(--hover);
+}
+
+.live-kennzahl[aria-disabled="true"] {
+  cursor: default;
+}
+
+.live-kennzahl[aria-disabled="true"]:hover {
+  background: var(--flaeche);
+}
+
+.live-name {
+  color: var(--text-gedaempft);
+  font-size: 0.68rem;
+  font-weight: 650;
+}
+
+.live-wert {
+  font-size: 0.78rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.live-trenner {
+  color: var(--text-gedaempft);
+}
+
+.live-negativ,
+.live-fehler,
+.live-nein {
+  color: var(--fehler);
+  font-weight: 650;
+}
+
+.live-warnung {
+  color: var(--warnung);
+  font-weight: 650;
+}
+
+.live-ja {
+  color: var(--akzent);
+  font-weight: 650;
+}
+
+.live-offen {
+  color: var(--text-gedaempft);
+}
+
+.live-mehr {
+  display: none;
+  flex: 0 0 auto;
+  align-self: center;
+  border-radius: var(--radius-pill);
+  padding: 0.25rem 0.65rem;
+  font-size: 0.75rem;
+}
+
+@media (max-width: 719px) {
+  .live-leiste {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+
+  .live-leiste:not(.erweitert) .live-neben {
+    display: none;
+  }
+
+  .live-mehr {
+    display: inline-flex;
+  }
+}
