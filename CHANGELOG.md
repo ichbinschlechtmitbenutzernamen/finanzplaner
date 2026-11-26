@@ -1,5 +1,9 @@
 # Änderungsprotokoll
 
+## Unveröffentlicht
+
+- **Desktop-Gerüst.** Ab 1024 Pixel füllt der Finanzplaner das Fenster: Titelleiste mit Menü, Werkzeugleiste, Seitenleiste und Statusleiste in Nachtblau und Gold. Unter 1024 Pixel bleibt die bisherige Ansicht. Version bleibt 1.1.0.
+
 ## 1.1.0 – 2026-11-26
 
 - **Startseite und Sichern/Laden.** Ohne Beispiel-Link erscheint die Startseite. Eigene Pläne lassen sich als JSON sichern und laden. Ein Hinweis bleibt sichtbar, dass die Daten nur in diesem Browser liegen. Zurücksetzen und Löschen fragen vorher nach.

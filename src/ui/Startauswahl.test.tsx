@@ -1,10 +1,23 @@
 // @vitest-environment jsdom
 
-import { render, screen } from "@testing-library/react";
+import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createDraftFinanzplan } from "../domain/empty-plan.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche } from "./PlanArbeitsflaeche.tsx";
+
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
+
+afterEach(() => {
+  cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
+});
 
 function eingabe(element: HTMLElement): HTMLInputElement {
   expect(element).toBeInstanceOf(HTMLInputElement);

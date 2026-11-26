@@ -2,7 +2,7 @@
 
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
 import { pruefePlan } from "../domain/checks/index.ts";
 import { createDraftFinanzplan, createEmptyFinanzplan } from "../domain/empty-plan.ts";
@@ -14,10 +14,19 @@ import { beispielElektro } from "../fixtures/beispiel-elektro.ts";
 import { beispielGmbh } from "../fixtures/beispiel-gmbh.ts";
 import { formatEuro, formatMonatLang } from "./format.ts";
 import { leisteKennzahlen, planHatKennzahlen, type LeistenZiel } from "./kennzahlen-leiste.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche } from "./PlanArbeitsflaeche.tsx";
+
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
 
 afterEach(() => {
   cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
 });
 
 function norm(text: string | null | undefined): string {

@@ -4,7 +4,12 @@ import { PdfDialog } from "./pdf/PdfDialog.tsx";
 import { springeZu } from "../domain/assistent/stationen.ts";
 import { berechnePlan } from "../domain/calc/berechnen.ts";
 import { pruefePlan, type Pruefmeldung, type TabellenAnsicht } from "../domain/checks/index.ts";
-import { aktivesSzenario, planFuerRechnung, schreibeKopie } from "../domain/szenarien/index.ts";
+import {
+  aktivesSzenario,
+  planFuerRechnung,
+  schreibeKopie,
+  setzeAktivesSzenario,
+} from "../domain/szenarien/index.ts";
 import { roundCents } from "../domain/calc/round.ts";
 import {
   einfuegenSerie,
@@ -17,23 +22,30 @@ import { planjahreVon } from "../domain/reports/planjahr.ts";
 import { erstelleBerichte } from "../domain/reports/berichte.ts";
 import type { Berichte } from "../domain/reports/typen.ts";
 import { finanzplanSchema } from "../domain/schema.ts";
-import { RECHTSFORM_LABEL } from "../domain/labels.ts";
-import type {
-  AssistentStation,
-  ExcelBlattId,
-  Finanzplan,
-  IsoMonth,
-  PdfKapitelId,
+import {
+  BASIS_SZENARIO_ID,
+  type AssistentStation,
+  type ExcelBlattId,
+  type Finanzplan,
+  type IsoMonth,
+  type PdfKapitelId,
 } from "../domain/types.ts";
+import { AppGeruest } from "./AppGeruest.tsx";
 import { Bestaetigung } from "./Bestaetigung.tsx";
 import { formatEuro, formatMonatLang, formatProzent } from "./format.ts";
 import { verlaufAnfang, verlaufReduzieren } from "./history.ts";
 import { leseOffeneJahre, merkeOffeneJahre } from "./jahre-ansicht.ts";
 import { Hilfeleiste } from "./Hilfeleiste.tsx";
 import { Kennzahlenleiste } from "./Kennzahlenleiste.tsx";
-import { planHatKennzahlen } from "./kennzahlen-leiste.ts";
+import { leisteKennzahlen, planHatKennzahlen } from "./kennzahlen-leiste.ts";
 import { useSpeicher } from "./Speicher.tsx";
-import { merkeArbeit } from "./sicherung.ts";
+import {
+  bewerteErinnerung,
+  ladeArbeitSeit,
+  ladeLetzteSicherung,
+  merkeArbeit,
+} from "./sicherung.ts";
+import { MOBIL_BIS } from "./fenster.ts";
 import { sichtbareSpalten } from "./spalten.ts";
 import { monatDerAuswahl, Tabelle, type Auswahl } from "./Tabelle.tsx";
 import { zeigeStartauswahl } from "../domain/assistent/stationen.ts";
@@ -115,7 +127,6 @@ export function PlanArbeitsflaeche({
   const [auswahl, setAuswahl] = useState<Auswahl | null>(null);
   const [sprung, setSprung] = useState<Sprung | null>(null);
   const sprungAngewandt = useRef("");
-  const weitere = useRef<HTMLDetailsElement>(null);
   const menue = useRef<HTMLDetailsElement>(null);
   const letzterUnter = useRef<Partial<Record<HauptId, ReiterId>>>({});
   const kompakt = useKompakt();
@@ -367,7 +378,6 @@ export function PlanArbeitsflaeche({
     },
   });
   const rechtsform = ansicht.stammdaten.rechtsform;
-  const letzter = monate.at(-1);
   const startwahl = zeigeStartauswahl(plan);
   const leisteLeer = startwahl || rechnung.berichte == null || !planHatKennzahlen(rechenPlan);
   const zeigeLeiste = startwahl || reiter === "assistent" || reiter === "eingaben";
@@ -394,6 +404,22 @@ export function PlanArbeitsflaeche({
     waehleReiter(ziel);
   }
 
+  function waehleStation(station: AssistentStation) {
+    if (modus === "abweichung") return;
+    if (startwahl) {
+      aendernEingabe((aktuell) =>
+        springeZu(starteMitVorlage(aktuell, "assistent", vorlage), station),
+      );
+    } else {
+      aendernEingabe((aktuell) => springeZu(aktuell, station));
+    }
+    onReiter("assistent");
+  }
+
+  function waehleVariante(id: string) {
+    aendernSzenarien((aktuell) => setzeAktivesSzenario(aktuell, id));
+  }
+
   const aktiverHaupt = hauptVon(reiter);
   useEffect(() => {
     if (!startwahl) letzterUnter.current[aktiverHaupt.id] = reiter;
@@ -401,6 +427,29 @@ export function PlanArbeitsflaeche({
   const unterSichtbar = !startwahl && hatUnterreiter(aktiverHaupt);
   const szenarioName = aktivesSzenario(plan)?.name ?? "Basisplan";
   const planTitel = ansicht.stammdaten.planName || ansicht.stammdaten.firmenname || "Finanzplaner";
+  const erinnerung = bewerteErinnerung({
+    erstelltAm: plan.erstelltAm,
+    geaendertAm: plan.geaendertAm,
+    letzteSicherung: ladeLetzteSicherung(beispielId),
+    arbeitSeit: ladeArbeitSeit(beispielId),
+    jetzt: jetzt().getTime(),
+  });
+  // Beispiele sind der hinterlegte Datensatz. Die 30-Minuten-Erinnerung gilt für eigene Pläne.
+  const speicherStatus =
+    plan.stammdaten.beispiel || !erinnerung.ungesichert ? "Gesichert" : "Nicht gesichert";
+  const kennzahlen = useMemo(
+    () =>
+      leisteKennzahlen(
+        leisteLeer ? null : rechnung.berichte,
+        leisteLeer ? [] : meldungen,
+        leisteLeer,
+      ),
+    [leisteLeer, rechnung.berichte, meldungen],
+  );
+  const varianten = [
+    { id: BASIS_SZENARIO_ID, name: "Basisplan" },
+    ...plan.planSzenarien.eintraege.map((eintrag) => ({ id: eintrag.id, name: eintrag.name })),
+  ];
 
   const planWahl = (
     <div className="switcher" role="group" aria-label="Plan wählen">
@@ -508,207 +557,142 @@ export function PlanArbeitsflaeche({
       })
     : [];
 
-  return (
-    <div className="app">
-      <header className={kompakt ? "kopfzeile kopfzeile-kompakt" : "kopfzeile"}>
-        {kompakt ? (
-          <>
-            <div className="kopf-kurz">
-              <h1>{planTitel}</h1>
-              <p className="meta">Angezeigte Variante: {szenarioName}</p>
-            </div>
-            <details className="app-menue" ref={menue}>
-              <summary>Menü</summary>
-              <div
-                className="app-menue-liste"
-                onClick={() => menue.current?.removeAttribute("open")}
-              >
-                {planWahl}
-                <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
-                <div className="app-menue-aktionen">
-                  {dateiAktionen}
-                  <button type="button" onClick={() => setZuruecksetzenOffen(true)}>
-                    {zuruecksetzenLabel}
-                  </button>
-                </div>
-              </div>
-            </details>
-          </>
-        ) : (
-          <>
-            <div>
-              <p className="eyebrow">Finanzplaner</p>
-              <h1>{ansicht.stammdaten.firmenname || "Finanzplaner"}</h1>
-              <p className="meta">
-                {ansicht.stammdaten.planName}
-                {rechtsform ? ` · ${RECHTSFORM_LABEL[rechtsform]}` : ""}
-                {ansicht.startMonat && letzter
-                  ? ` · ${formatMonatLang(ansicht.startMonat)} bis ${formatMonatLang(letzter)}`
-                  : ""}
-                {` · ${szenarioName}`}
-              </p>
-            </div>
-            <div className="werkzeuge">
-              {planWahl}
-              <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
-              <div className="werkzeuge-zeile">
-                <div className="werkzeuge-reihe">{dateiAktionen}</div>
-                <details className="weitere" ref={weitere}>
-                  <summary>Weitere</summary>
-                  <div className="weitere-menue">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        weitere.current?.removeAttribute("open");
-                        setZuruecksetzenOffen(true);
-                      }}
-                    >
-                      {zuruecksetzenLabel}
-                    </button>
-                  </div>
-                </details>
-              </div>
-            </div>
-          </>
-        )}
-      </header>
-
+  const kopfHinweis = (
+    <>
       {ansicht.stammdaten.beispiel ? (
         <p className="flag">
           Fiktiver Datensatz, nicht für einen echten Antrag. Änderungen bleiben in diesem Browser.
         </p>
-      ) : (
-        speicher.knoten
-      )}
+      ) : null}
+      {speicher.knoten}
+    </>
+  );
 
-      <div className="reiter-ebenen">
-        <Reiterleiste label="Bereiche" className="reiter hauptreiter" eintraege={hauptKnopfe} />
-        {unterKnopfe.length > 0 ? (
-          <Reiterleiste
-            label={aktiverHaupt.label}
-            className="reiter unterreiter"
-            eintraege={unterKnopfe}
+  const panel = (
+    <div
+      role={kompakt ? "tabpanel" : "region"}
+      id="plan-ansicht"
+      aria-labelledby={kompakt && !startwahl ? `reiter-${reiter}` : undefined}
+      aria-label={kompakt ? undefined : "Arbeitsbereich"}
+    >
+      {kompakt && zeigeLeiste ? (
+        <Kennzahlenleiste
+          berichte={leisteLeer ? null : rechnung.berichte}
+          meldungen={leisteLeer ? [] : meldungen}
+          leer={leisteLeer}
+          onReiter={onReiter}
+        />
+      ) : null}
+      <PruefAnbieter meldungen={meldungen}>
+        <SzenarioHinweis plan={plan} onAendern={aendernSzenarien} />
+        {startwahl ? (
+          <Startauswahl
+            vorlage={vorlage}
+            onVorlage={setVorlage}
+            onAssistent={() => {
+              aendernEingabe((aktuell) => starteMitVorlage(aktuell, "assistent", vorlage));
+              onReiter("assistent");
+            }}
+            onTabelle={() => {
+              aendernEingabe((aktuell) => starteMitVorlage(aktuell, "tabelle", vorlage));
+              onReiter("eingaben");
+            }}
           />
-        ) : null}
-      </div>
-
-      <div
-        role="tabpanel"
-        id="plan-ansicht"
-        aria-labelledby={startwahl ? undefined : `reiter-${reiter}`}
-      >
-        {zeigeLeiste ? (
-          <Kennzahlenleiste
-            berichte={leisteLeer ? null : rechnung.berichte}
-            meldungen={leisteLeer ? [] : meldungen}
-            leer={leisteLeer}
-            onReiter={onReiter}
+        ) : reiter === "assistent" ? (
+          <Assistent
+            plan={ansicht}
+            berichte={rechnung.berichte}
+            onAendern={aendernEingabe}
+            onUeberblick={() => onReiter("ueberblick")}
+            hervorhebung={sprung?.art === "assistent" ? sprung : null}
+            nurLesen={modus === "abweichung"}
+            zeigeStationen={kompakt}
           />
-        ) : null}
-        <PruefAnbieter meldungen={meldungen}>
-          <SzenarioHinweis plan={plan} onAendern={aendernSzenarien} />
-          {startwahl ? (
-            <Startauswahl
-              vorlage={vorlage}
-              onVorlage={setVorlage}
-              onAssistent={() => {
-                aendernEingabe((aktuell) => starteMitVorlage(aktuell, "assistent", vorlage));
-                onReiter("assistent");
-              }}
-              onTabelle={() => {
-                aendernEingabe((aktuell) => starteMitVorlage(aktuell, "tabelle", vorlage));
-                onReiter("eingaben");
-              }}
-            />
-          ) : reiter === "assistent" ? (
-            <Assistent
-              plan={ansicht}
-              berichte={rechnung.berichte}
-              onAendern={aendernEingabe}
-              onUeberblick={() => onReiter("ueberblick")}
-              hervorhebung={sprung?.art === "assistent" ? sprung : null}
-              nurLesen={modus === "abweichung"}
-            />
-          ) : reiter === "szenarien" ? (
-            <Szenarien plan={plan} onAendern={aendernSzenarien} />
-          ) : reiter === "pruefung" ? (
-            <Pruefung
-              plan={ansicht}
-              meldungen={meldungen}
-              fehler={rechnung.fehler}
-              onAendern={aendernEingabe}
-              onSpringen={springe}
-            />
-          ) : reiter === "ueberblick" ? (
-            rechnung.berichte ? (
-              <Ueberblick berichte={rechnung.berichte} />
-            ) : (
-              <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
-            )
-          ) : null}
-          {reiter !== "ueberblick" &&
-          reiter !== "assistent" &&
-          reiter !== "pruefung" &&
-          reiter !== "szenarien" &&
-          !startwahl &&
+        ) : reiter === "szenarien" ? (
+          <Szenarien plan={plan} onAendern={aendernSzenarien} />
+        ) : reiter === "pruefung" ? (
+          <Pruefung
+            plan={ansicht}
+            meldungen={meldungen}
+            fehler={rechnung.fehler}
+            onAendern={aendernEingabe}
+            onSpringen={springe}
+          />
+        ) : reiter === "ueberblick" ? (
           rechnung.berichte ? (
-            <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
-          ) : null}
-          {startwahl ||
-          reiter === "assistent" ||
-          reiter === "ueberblick" ||
-          reiter === "pruefung" ||
-          reiter === "szenarien" ? null : reiter === "eingaben" && modus !== "abweichung" ? (
-            <Hilfeleiste
-              plan={ansicht}
-              zeile={gewaehlt}
-              monat={monat?.monat ?? null}
-              monate={monate}
-              monatIndex={monat?.monatIndex ?? null}
-              onAendern={aendernEingabe}
-            />
-          ) : reiter === "eingaben" ? null : (
-            <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
-          )}
-          {meldung &&
-          reiter !== "ueberblick" &&
-          reiter !== "assistent" &&
-          reiter !== "pruefung" &&
-          !startwahl ? (
-            <p className="fehler" role="alert">
-              {meldung}
-            </p>
-          ) : null}
-          {rechnung.fehler &&
-          reiter !== "eingaben" &&
-          reiter !== "ueberblick" &&
-          reiter !== "assistent" &&
-          reiter !== "pruefung" ? (
-            <p className="fehler">{rechnung.fehler}</p>
-          ) : null}
-          {startwahl ||
-          reiter === "ueberblick" ||
-          reiter === "assistent" ||
-          reiter === "pruefung" ||
-          reiter === "szenarien" ? null : (
-            <Tabelle
-              zeilen={zeilen}
-              spalten={spalten}
-              auswahl={auswahl}
-              onAuswahl={setAuswahl}
-              eingeklappt={eingeklappt}
-              onUmschalten={schalteJahr}
-              onCommit={commitZelle}
-              onPaste={einfuegen}
-              onUndo={() => dispatch({ typ: "zurueck" })}
-              onRedo={() => dispatch({ typ: "vor" })}
-              bearbeiten={reiter === "eingaben" && modus !== "abweichung"}
-              pruefungen={meldungen}
-              ansicht={istTabelle(reiter) ? reiter : "eingaben"}
-            />
-          )}
-        </PruefAnbieter>
-      </div>
+            <Ueberblick berichte={rechnung.berichte} />
+          ) : (
+            <p className="fehler">{rechnung.fehler ?? "Die Rechnung ist fehlgeschlagen."}</p>
+          )
+        ) : null}
+        {kompakt &&
+        reiter !== "ueberblick" &&
+        reiter !== "assistent" &&
+        reiter !== "pruefung" &&
+        reiter !== "szenarien" &&
+        !startwahl &&
+        rechnung.berichte ? (
+          <KennzahlenZeile berichte={rechnung.berichte} reiter={reiter} />
+        ) : null}
+        {startwahl ||
+        reiter === "assistent" ||
+        reiter === "ueberblick" ||
+        reiter === "pruefung" ||
+        reiter === "szenarien" ? null : reiter === "eingaben" && modus !== "abweichung" ? (
+          <Hilfeleiste
+            plan={ansicht}
+            zeile={gewaehlt}
+            monat={monat?.monat ?? null}
+            monate={monate}
+            monatIndex={monat?.monatIndex ?? null}
+            onAendern={aendernEingabe}
+          />
+        ) : reiter === "eingaben" ? null : (
+          <p className="hinweis">{hinweis(rechnung.berichte, reiter)}</p>
+        )}
+        {meldung &&
+        reiter !== "ueberblick" &&
+        reiter !== "assistent" &&
+        reiter !== "pruefung" &&
+        !startwahl ? (
+          <p className="fehler" role="alert">
+            {meldung}
+          </p>
+        ) : null}
+        {rechnung.fehler &&
+        reiter !== "eingaben" &&
+        reiter !== "ueberblick" &&
+        reiter !== "assistent" &&
+        reiter !== "pruefung" ? (
+          <p className="fehler">{rechnung.fehler}</p>
+        ) : null}
+        {startwahl ||
+        reiter === "ueberblick" ||
+        reiter === "assistent" ||
+        reiter === "pruefung" ||
+        reiter === "szenarien" ? null : (
+          <Tabelle
+            zeilen={zeilen}
+            spalten={spalten}
+            auswahl={auswahl}
+            onAuswahl={setAuswahl}
+            eingeklappt={eingeklappt}
+            onUmschalten={schalteJahr}
+            onCommit={commitZelle}
+            onPaste={einfuegen}
+            onUndo={() => dispatch({ typ: "zurueck" })}
+            onRedo={() => dispatch({ typ: "vor" })}
+            bearbeiten={reiter === "eingaben" && modus !== "abweichung"}
+            pruefungen={meldungen}
+            ansicht={istTabelle(reiter) ? reiter : "eingaben"}
+          />
+        )}
+      </PruefAnbieter>
+    </div>
+  );
+
+  const dialoge = (
+    <>
       {pdfOffen ? (
         <PdfDialog
           plan={plan}
@@ -742,6 +726,89 @@ export function PlanArbeitsflaeche({
           onAbbrechen={() => setZuruecksetzenOffen(false)}
         />
       ) : null}
+    </>
+  );
+
+  if (!kompakt) {
+    return (
+      <>
+        <AppGeruest
+          planTitel={planTitel}
+          szenarioName={szenarioName}
+          varianten={varianten}
+          aktivId={plan.planSzenarien.aktivId}
+          onVariante={waehleVariante}
+          beispiele={beispiele}
+          onBeispiel={onBeispiel}
+          onNeu={onNeu}
+          onStart={onStart}
+          onSichern={speicher.sichern}
+          onLaden={speicher.laden}
+          onPdf={() => setPdfOffen(true)}
+          onExcel={() => setExcelOffen(true)}
+          onZuruecksetzen={() => setZuruecksetzenOffen(true)}
+          zuruecksetzenLabel={zuruecksetzenLabel}
+          onUndo={() => dispatch({ typ: "zurueck" })}
+          onRedo={() => dispatch({ typ: "vor" })}
+          kannUndo={verlauf.vergangenheit.length > 0}
+          kannRedo={verlauf.zukunft.length > 0}
+          reiter={reiter}
+          onReiter={waehleReiter}
+          onHaupt={waehleHaupt}
+          onStation={waehleStation}
+          station={plan.assistent?.station ?? null}
+          startwahl={startwahl}
+          stationenGesperrt={modus === "abweichung"}
+          rechtsform={rechtsform}
+          meldungen={meldungen.length}
+          zaehler={zaehlerStufe(meldungen)}
+          kennzahlen={kennzahlen}
+          kennzahlenLeer={leisteLeer}
+          onKennzahl={onReiter}
+          speicherStatus={speicherStatus}
+        >
+          {kopfHinweis}
+          {panel}
+        </AppGeruest>
+        {dialoge}
+      </>
+    );
+  }
+
+  return (
+    <div className="app">
+      <header className="kopfzeile kopfzeile-kompakt">
+        <div className="kopf-kurz">
+          <h1>{planTitel}</h1>
+          <p className="meta">Angezeigte Variante: {szenarioName}</p>
+        </div>
+        <details className="app-menue" ref={menue}>
+          <summary>Menü</summary>
+          <div className="app-menue-liste" onClick={() => menue.current?.removeAttribute("open")}>
+            {planWahl}
+            <SzenarioUmschalter plan={plan} onAendern={aendernSzenarien} />
+            <div className="app-menue-aktionen">
+              {dateiAktionen}
+              <button type="button" onClick={() => setZuruecksetzenOffen(true)}>
+                {zuruecksetzenLabel}
+              </button>
+            </div>
+          </div>
+        </details>
+      </header>
+      {kopfHinweis}
+      <div className="reiter-ebenen">
+        <Reiterleiste label="Bereiche" className="reiter hauptreiter" eintraege={hauptKnopfe} />
+        {unterKnopfe.length > 0 ? (
+          <Reiterleiste
+            label={aktiverHaupt.label}
+            className="reiter unterreiter"
+            eintraege={unterKnopfe}
+          />
+        ) : null}
+      </div>
+      {panel}
+      {dialoge}
       <footer className="fusszeile">Finanzplaner 1.1</footer>
     </div>
   );
@@ -855,13 +922,11 @@ function quote(wert: number | null): string {
   return formatProzent(wert);
 }
 
-const KOMPAKT_BIS = "(max-width: 1024px)";
-
 function useKompakt(): boolean {
   const [kompakt, setKompakt] = useState(() => leseKompakt());
   useEffect(() => {
     if (typeof window.matchMedia !== "function") return;
-    const media = window.matchMedia(KOMPAKT_BIS);
+    const media = window.matchMedia(MOBIL_BIS);
     const sync = () => setKompakt(media.matches);
     sync();
     media.addEventListener("change", sync);
@@ -872,5 +937,5 @@ function useKompakt(): boolean {
 
 function leseKompakt(): boolean {
   if (typeof window === "undefined" || typeof window.matchMedia !== "function") return false;
-  return window.matchMedia(KOMPAKT_BIS).matches;
+  return window.matchMedia(MOBIL_BIS).matches;
 }

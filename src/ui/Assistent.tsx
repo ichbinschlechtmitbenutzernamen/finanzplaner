@@ -103,6 +103,7 @@ export function Assistent({
   onUeberblick,
   hervorhebung = null,
   nurLesen = false,
+  zeigeStationen = true,
 }: {
   plan: Finanzplan;
   berichte: Berichte | null;
@@ -110,6 +111,8 @@ export function Assistent({
   onUeberblick: () => void;
   hervorhebung?: { station: AssistentStation; feld: string } | null;
   nurLesen?: boolean;
+  /** Auf dem Desktop stehen die Schritte in der Seitenleiste. */
+  zeigeStationen?: boolean;
 }) {
   const [meldungen, setMeldungen] = useState<string[]>([]);
   const station = plan.assistent?.station ?? "vorhaben";
@@ -133,30 +136,32 @@ export function Assistent({
 
   return (
     <div className="assistent">
-      <nav className="stationen" aria-label="Stationen">
-        {ASSISTENT_STATIONEN.map((eintrag, index) => {
-          const uebersprungen = stationFaelltWeg(eintrag, rechtsform);
-          const erledigt = plan.assistent?.erledigt.includes(eintrag) ?? false;
-          return (
-            <button
-              key={eintrag}
-              type="button"
-              aria-current={eintrag === station ? "step" : undefined}
-              data-uebersprungen={uebersprungen ? "true" : undefined}
-              className={erledigt ? "erledigt" : undefined}
-              disabled={nurLesen}
-              onClick={() => {
-                setMeldungen([]);
-                onAendern((aktuell) => springeZu(aktuell, eintrag));
-              }}
-            >
-              <span>{index + 1}</span>
-              {STATION_LABEL[eintrag]}
-              {uebersprungen ? <small>entfällt</small> : null}
-            </button>
-          );
-        })}
-      </nav>
+      {zeigeStationen ? (
+        <nav className="stationen" aria-label="Stationen">
+          {ASSISTENT_STATIONEN.map((eintrag, index) => {
+            const uebersprungen = stationFaelltWeg(eintrag, rechtsform);
+            const erledigt = plan.assistent?.erledigt.includes(eintrag) ?? false;
+            return (
+              <button
+                key={eintrag}
+                type="button"
+                aria-current={eintrag === station ? "step" : undefined}
+                data-uebersprungen={uebersprungen ? "true" : undefined}
+                className={erledigt ? "erledigt" : undefined}
+                disabled={nurLesen}
+                onClick={() => {
+                  setMeldungen([]);
+                  onAendern((aktuell) => springeZu(aktuell, eintrag));
+                }}
+              >
+                <span>{index + 1}</span>
+                {STATION_LABEL[eintrag]}
+                {uebersprungen ? <small>entfällt</small> : null}
+              </button>
+            );
+          })}
+        </nav>
+      ) : null}
       <fieldset className="assistent-felder" disabled={nurLesen}>
         <Station
           plan={plan}

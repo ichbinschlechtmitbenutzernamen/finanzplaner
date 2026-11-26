@@ -3,16 +3,24 @@
 import { useState } from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, beforeAll, describe, expect, it } from "vitest";
+import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
 import App from "../App.tsx";
 import { createEmptyFinanzplan } from "../domain/empty-plan.ts";
 import type { Finanzplan } from "../domain/types.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche, type ReiterId } from "./PlanArbeitsflaeche.tsx";
 
 const START = "2026-04";
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
 
 afterEach(() => {
   cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
 });
 
 beforeAll(() => {

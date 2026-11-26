@@ -3,13 +3,22 @@
 import { useState } from "react";
 import { cleanup, render, screen, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { createEmptyFinanzplan } from "../domain/empty-plan.ts";
+import { setzeFensterbreite } from "./fenster.ts";
 import { PlanArbeitsflaeche, type ReiterId } from "./PlanArbeitsflaeche.tsx";
+
+const ORIGINAL_MATCH = window.matchMedia;
+
+beforeEach(() => {
+  setzeFensterbreite("mobil");
+});
 import { Szenarien } from "./Szenarien.tsx";
 
 afterEach(() => {
   cleanup();
+  if (ORIGINAL_MATCH) window.matchMedia = ORIGINAL_MATCH;
+  else Reflect.deleteProperty(window, "matchMedia");
 });
 
 describe("Reiter", () => {
